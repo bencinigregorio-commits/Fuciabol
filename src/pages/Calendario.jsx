@@ -251,17 +251,17 @@ function GazzettaFuciabol({ partite, giocatori, currentUser }) {
     const topNomi = topGiocatori.map(t => t.giocatore.nome + ' (media ' + t.media.toFixed(1) + ', ' + t.gol + ' gol)').join(', ')
     const prompt = 'Sei un commentatore sportivo ULTRA-ESAGERATO stile Mediaset Sport anni 90. Scrivi un articolo BREVISSIMO (max 5 righe) sulla Gazzetta Fuciabol, campionato di calcetto tra amici. Migliori: ' + topNomi + '. Risultati:\n' + datiPartite + '\nScrivi in italiano con toni esageratissimi, esclamazioni, MAIUSCOLO per enfasi. Inizia con titolone drammatico tra *** ***. Max 5 righe.'
     try {
-      const apiKey = import.meta.env.VITE_OPENAI_API_KEY
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + apiKey },
-        body: JSON.stringify({ model: 'gpt-4o-mini', max_tokens: 400, messages: [{ role: 'user', content: prompt }] })
+        headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+        body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 400, messages: [{ role: 'user', content: prompt }] })
       })
       const data = await response.json()
       if (data.error) {
-        setArticolo('Errore OpenAI: ' + data.error.message)
+        setArticolo('Errore: ' + data.error.message)
       } else {
-        setArticolo(data.choices?.[0]?.message?.content || 'Errore nella generazione')
+        setArticolo(data.content?.[0]?.text || 'Errore nella generazione')
       }
     } catch (e) {
       setArticolo('Errore di connessione. Riprova!')
