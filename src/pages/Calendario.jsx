@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../supabase'
-import { calcolaVotoFinale, votoToPuntiForma, aggiornaOverall } from './calcoli.js'
-import { calcolaQuoteRisultato, calcolaQuoteMiglioreInCampo, calcolaQuoteCapocannoniere, verificaVincitaRisultato, verificaVincitaMiglioreInCampo, verificaVincitaCapocannoniere } from './Scommesse.jsx'
+import { calcolaVotoFinale, votoToPuntiForma, aggiornaOverall } from './calcoli'
+import { calcolaQuoteRisultato, calcolaQuoteMiglioreInCampo, calcolaQuoteCapocannoniere, verificaVincitaRisultato, verificaVincitaMiglioreInCampo, verificaVincitaCapocannoniere } from './scommesse'
 
 function Calendario({ currentUser }) {
   const [partite, setPartite] = useState([])
@@ -150,135 +150,266 @@ function Calendario({ currentUser }) {
         />
       )}
 
-      {showVoting && <ModalVotazioni partita={showVoting} currentUser={currentUser} onClose={() => setShowVoting(null)} onSaved={() => { setShowVoting(null); caricaPartite() }} />}
-      {showScommessa && <ModalScommessa partita={showScommessa} currentUser={currentUser} onClose={() => setShowScommessa(null)} onSaved={() => { setShowScommessa(null); caricaPartite() }} />}
-      {showRisultato && <ModalRisultato partita={showRisultato} onClose={() => setShowRisultato(null)} onSaved={() => { setShowRisultato(null); caricaPartite() }} />}
+      {showRisultato && (
+        <ModalInserisciRisultato
+          partita={showRisultato}
+          onClose={() => setShowRisultato(null)}
+          onSaved={() => { setShowRisultato(null); caricaPartite() }}
+        />
+      )}
+
+      {showVoting && (
+        <ModalVotazioni
+          partita={showVoting}
+          currentUser={currentUser}
+          onClose={() => setShowVoting(null)}
+          onSaved={() => { setShowVoting(null); caricaPartite() }}
+        />
+      )}
+
+      {showScommessa && (
+        <ModalScommessa
+          partita={showScommessa}
+          currentUser={currentUser}
+          onClose={() => setShowScommessa(null)}
+          onSaved={() => { setShowScommessa(null); caricaPartite() }}
+        />
+      )}
     </div>
   )
 }
 
 function PartitaCard({ partita, currentUser, onVoteClick, onChiudiVoti, onScommessaClick, onRisultatoClick }) {
   const [giocatori, setGiocatori] = useState([])
-  const [scommesse, setScommesse] = useState([])
+  const [isHovered, setIsHovered] = useState(false)
+  const [hasScommesso, setHasScommesso] = useState(false)
 
-  useEffect(() => { caricaDati() }, [partita])
+  useEffect(() => {
+    caricaNomi()
+    if (currentUser?.id) caricaScommessa()
+  }, [])
 
-  async function caricaDati() {
-    const allPlayers = [...partita.squadra_a, ...partita.squadra_b]
-    const { data: g } = await supabase.from('giocatori').select('*').in('id', allPlayers)
-    if (g) setGiocatori(g)
-
-    if (currentUser && currentUser.role !== 'admin') {
-      const { data: s } = await supabase.from('scommesse').select('*').eq('partita_id', partita.id).eq('giocatore_id', currentUser.id)
-      if (s) setScommesse(s)
-    }
+  async function caricaNomi() {
+    const ids = [...partita.squadra_a, ...partita.squadra_b]
+    const { data } = await supabase.from('giocatori').select('id, nome').in('id', ids)
+    if (data) setGiocatori(data)
   }
 
-  const getNome = (id) => giocatori.find(g => g.id === id)?.nome || '???'
-  const getOverall = (id) => giocatori.find(g => g.id === id)?.overall || 65
+  async function caricaScommessa() {
+    const { data } = await supabase
+      .from('scommesse')
+      .select('id')
+      .eq('partita_id', partita.id)
+      .eq('giocatore_id', currentUser.id)
+      .limit(1)
+    if (data && data.length > 0) setHasScommesso(true)
+  }
 
-  const ovrA = partita.squadra_a.reduce((sum, id) => sum + getOverall(id), 0) / partita.squadra_a.length
-  const ovrB = partita.squadra_b.reduce((sum, id) => sum + getOverall(id), 0) / partita.squadra_b.length
+  const getNome = (id) => giocatori.find(g => g.id === id)?.nome || `#${id}`
 
-  const isAdmin = currentUser?.role === 'admin'
-  const hasVoted = partita.votazioni?.some(v => v.voterId === (isAdmin ? 'admin' : currentUser?.id))
+  const dataStr = new Date(partita.data).toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' })
 
-  const { punteggio_a = 0, punteggio_b = 0, stato = 'pre_partita', votazioni_aperte = false, voti_calcolati = [] } = partita
+  const stato = partita.stato || 'chiusa'
+  const allPlayers = [...partita.squadra_a, ...partita.squadra_b]
+  const isInSquadra = allPlayers.includes(currentUser?.id)
+  const canVote = currentUser && (currentUser.role === 'admin' || isInSquadra)
+  const canScommettere = currentUser?.role === 'player' && stato === 'pre_partita'
+  const hasVoted = partita.votazioni?.some(v => v.voterId === (currentUser?.role === 'admin' ? 'admin' : currentUser?.id))
+  const isVittoriaA = partita.punteggio_a > partita.punteggio_b
+  const isVittoriaB = partita.punteggio_b > partita.punteggio_a
 
-  const canVote = stato === 'in_votazione' && votazioni_aperte && !hasVoted
-  const canBet = stato === 'pre_partita' && currentUser?.role !== 'admin'
+  // Colore bordo in base allo stato
+  const borderColor = stato === 'pre_partita'
+    ? 'rgba(255, 215, 0, 0.4)'
+    : stato === 'in_votazione'
+    ? 'rgba(0, 212, 255, 0.4)'
+    : 'rgba(255, 255, 255, 0.05)'
 
-  const dataPartita = new Date(partita.data).toLocaleDateString('it-IT', { day: 'numeric', month: 'short', year: 'numeric' })
-
-  const riassuntoScommesse = scommesse.map(s => `${s.tipo} (${s.importo} cr) — ${s.esito === 'pending' ? '⏳' : s.esito === 'vinta' ? '✅ +' + s.vincita : '❌'}`).join(' • ')
+  const borderHover = stato === 'pre_partita'
+    ? 'rgba(255, 215, 0, 0.7)'
+    : stato === 'in_votazione'
+    ? 'rgba(0, 212, 255, 0.7)'
+    : 'rgba(255, 255, 255, 0.1)'
 
   return (
-    <div style={{ background: 'rgba(15, 23, 41, 0.6)', border: '1px solid rgba(255, 255, 255, 0.05)', borderRadius: '20px', padding: '1.5rem', boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '1rem' }}>
-        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-          <span style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.5)', fontWeight: 600 }}>{dataPartita}</span>
-          {stato === 'pre_partita' && <span style={{ background: 'rgba(100, 116, 139, 0.3)', padding: '0.25rem 0.75rem', borderRadius: '8px', fontSize: '0.75rem', fontWeight: 700, color: 'rgba(255, 255, 255, 0.7)' }}>IN ATTESA</span>}
-          {stato === 'in_votazione' && <span style={{ background: 'rgba(0, 212, 255, 0.2)', padding: '0.25rem 0.75rem', borderRadius: '8px', fontSize: '0.75rem', fontWeight: 700, color: '#00d4ff' }}>VOTAZIONE</span>}
-          {stato === 'chiusa' && <span style={{ background: 'rgba(34, 197, 94, 0.2)', padding: '0.25rem 0.75rem', borderRadius: '8px', fontSize: '0.75rem', fontWeight: 700, color: '#22c55e' }}>CHIUSA</span>}
-        </div>
-        {isAdmin && stato === 'pre_partita' && (
-          <button onClick={onRisultatoClick} style={{ background: 'linear-gradient(135deg, #00d4ff, #0099ff)', border: 'none', borderRadius: '10px', padding: '0.5rem 1rem', color: '#0f1729', fontWeight: 700, cursor: 'pointer', fontSize: '0.85rem', boxShadow: '0 4px 12px rgba(0, 212, 255, 0.3)' }}>
-            📝 Inserisci Risultato
-          </button>
-        )}
-        {isAdmin && stato === 'in_votazione' && votazioni_aperte && (
-          <button onClick={() => onChiudiVoti(partita)} style={{ background: 'linear-gradient(135deg, #ffd700, #ffa500)', border: 'none', borderRadius: '10px', padding: '0.5rem 1rem', color: '#0f1729', fontWeight: 700, cursor: 'pointer', fontSize: '0.85rem', boxShadow: '0 4px 12px rgba(255, 215, 0, 0.3)' }}>
-            🔒 Chiudi Votazioni
-          </button>
-        )}
-      </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: '1.5rem', alignItems: 'center', marginBottom: '1.5rem' }}>
-        <div>
-          <div style={{ fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.4)', marginBottom: '0.5rem', fontWeight: 600 }}>SQUADRA A • OVR {ovrA.toFixed(0)}</div>
-          {partita.squadra_a.map(id => (
-            <div key={id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
-              <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>{getNome(id)}</span>
-              {partita.eventi?.[id]?.gol > 0 && <span style={{ fontSize: '0.75rem' }}>⚽ {partita.eventi[id].gol}</span>}
-              {partita.eventi?.[id]?.assist > 0 && <span style={{ fontSize: '0.75rem' }}>🎯 {partita.eventi[id].assist}</span>}
-              {voti_calcolati.find(v => v.playerId === id) && <span style={{ fontSize: '0.75rem', color: '#ffd700', marginLeft: 'auto' }}>★ {voti_calcolati.find(v => v.playerId === id).votoFinale.toFixed(1)}</span>}
-            </div>
-          ))}
-        </div>
-
-        <div style={{ textAlign: 'center', fontSize: '3rem', fontWeight: 900, color: '#00d4ff', minWidth: '80px' }}>
-          {stato === 'pre_partita' ? 'VS' : `${punteggio_a} - ${punteggio_b}`}
-        </div>
-
-        <div>
-          <div style={{ fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.4)', marginBottom: '0.5rem', fontWeight: 600 }}>SQUADRA B • OVR {ovrB.toFixed(0)}</div>
-          {partita.squadra_b.map(id => (
-            <div key={id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
-              <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>{getNome(id)}</span>
-              {partita.eventi?.[id]?.gol > 0 && <span style={{ fontSize: '0.75rem' }}>⚽ {partita.eventi[id].gol}</span>}
-              {partita.eventi?.[id]?.assist > 0 && <span style={{ fontSize: '0.75rem' }}>🎯 {partita.eventi[id].assist}</span>}
-              {voti_calcolati.find(v => v.playerId === id) && <span style={{ fontSize: '0.75rem', color: '#ffd700', marginLeft: 'auto' }}>★ {voti_calcolati.find(v => v.playerId === id).votoFinale.toFixed(1)}</span>}
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {canBet && (
-        <div style={{ marginBottom: '1rem' }}>
-          <button onClick={onScommessaClick} style={{ width: '100%', background: 'linear-gradient(135deg, #ffd700, #ffa500)', border: 'none', borderRadius: '12px', padding: '0.75rem', color: '#0f1729', fontWeight: 700, cursor: 'pointer', fontSize: '0.95rem', boxShadow: '0 4px 15px rgba(255, 215, 0, 0.3)', transition: 'all 0.2s' }}
-            onMouseOver={(e) => e.target.style.transform = 'translateY(-2px)'}
-            onMouseOut={(e) => e.target.style.transform = 'translateY(0)'}>
-            🎰 SCOMMETTI
-          </button>
-        </div>
-      )}
-
-      {scommesse.length > 0 && (
-        <div style={{ background: 'rgba(0, 0, 0, 0.3)', borderRadius: '10px', padding: '0.75rem', marginBottom: '1rem', fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.7)' }}>
-          <strong>Le tue scommesse:</strong> {riassuntoScommesse || 'Nessuna'}
-        </div>
-      )}
-
-      {canVote && (
-        <div style={{ marginTop: '1rem' }}>
-          <button onClick={onVoteClick} style={{ width: '100%', background: 'linear-gradient(135deg, #00d4ff, #0099ff)', border: 'none', borderRadius: '12px', padding: '0.75rem', color: '#0f1729', fontWeight: 700, cursor: 'pointer', fontSize: '0.95rem', boxShadow: '0 4px 15px rgba(0, 212, 255, 0.3)', transition: 'all 0.2s' }}
-            onMouseOver={(e) => e.target.style.transform = 'translateY(-2px)'}
-            onMouseOut={(e) => e.target.style.transform = 'translateY(0)'}>
-            {hasVoted ? '✓ HAI VOTATO' : '🗳️ VOTA ORA'}
-          </button>
-        </div>
-      )}
-
-      {stato === 'chiusa' && voti_calcolati.length > 0 && (
-        <div style={{ marginTop: '1rem', padding: '1rem', background: 'rgba(0, 212, 255, 0.1)', borderRadius: '12px', border: '1px solid rgba(0, 212, 255, 0.2)' }}>
-          <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#00d4ff', marginBottom: '0.5rem' }}>📊 Voti Finali</div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '0.5rem' }}>
-            {voti_calcolati.map(v => (
-              <div key={v.playerId} style={{ fontSize: '0.75rem' }}>
-                {getNome(v.playerId)}: <span style={{ color: '#ffd700', fontWeight: 700 }}>{v.votoFinale.toFixed(1)}</span>
-              </div>
-            ))}
+    <div
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      style={{
+        background: 'rgba(15, 23, 41, 0.6)',
+        border: `1px solid ${isHovered ? borderHover : borderColor}`,
+        borderRadius: '20px',
+        padding: '2rem',
+        transition: 'all 0.3s',
+        transform: isHovered ? 'translateY(-4px)' : 'translateY(0)',
+        boxShadow: isHovered ? '0 8px 30px rgba(0, 212, 255, 0.2)' : 'none'
+      }}
+    >
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <div style={{ color: 'rgba(255, 255, 255, 0.5)', fontSize: '0.9rem', fontWeight: 600, letterSpacing: '0.5px' }}>
+            {dataStr.toUpperCase()}
           </div>
+          {/* Badge stato */}
+          <span style={{
+            padding: '0.25rem 0.75rem',
+            borderRadius: '20px',
+            fontSize: '0.75rem',
+            fontWeight: 700,
+            background: stato === 'pre_partita' ? 'rgba(255, 215, 0, 0.15)' : stato === 'in_votazione' ? 'rgba(0, 212, 255, 0.15)' : 'rgba(255, 255, 255, 0.05)',
+            color: stato === 'pre_partita' ? '#ffd700' : stato === 'in_votazione' ? '#00d4ff' : 'rgba(255, 255, 255, 0.5)',
+            border: `1px solid ${stato === 'pre_partita' ? 'rgba(255, 215, 0, 0.3)' : stato === 'in_votazione' ? 'rgba(0, 212, 255, 0.3)' : 'rgba(255, 255, 255, 0.1)'}`
+          }}>
+            {stato === 'pre_partita' ? '🟡 In programma' : stato === 'in_votazione' ? '🔵 Votazioni aperte' : '✅ Chiusa'}
+          </span>
+        </div>
+
+        {/* Pulsanti azione */}
+        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+
+          {/* PRE_PARTITA: Scommetti (giocatori) + Inserisci Risultato (admin) */}
+          {stato === 'pre_partita' && (
+            <>
+              {canScommettere && (
+                <button onClick={onScommessaClick} style={{
+                  padding: '0.5rem 1rem', borderRadius: '10px', fontSize: '0.85rem', fontWeight: 700, border: 'none', cursor: 'pointer',
+                  background: hasScommesso ? 'linear-gradient(135deg, #00d4ff, #0099ff)' : 'linear-gradient(135deg, #ffd700, #ffa500)',
+                  color: '#0f1729',
+                  boxShadow: hasScommesso ? '0 2px 10px rgba(0, 212, 255, 0.3)' : '0 2px 10px rgba(255, 215, 0, 0.3)',
+                  transition: 'all 0.2s'
+                }}
+                  onMouseOver={(e) => e.target.style.transform = 'scale(1.05)'}
+                  onMouseOut={(e) => e.target.style.transform = 'scale(1)'}
+                >
+                  {hasScommesso ? '✅ Scommesso' : '🎰 Scommetti'}
+                </button>
+              )}
+              {currentUser?.role === 'admin' && (
+                <button onClick={onRisultatoClick} style={{
+                  padding: '0.5rem 1rem', borderRadius: '10px', fontSize: '0.85rem', fontWeight: 700, border: 'none', cursor: 'pointer',
+                  background: 'linear-gradient(135deg, #00d4ff, #0099ff)',
+                  color: '#0f1729',
+                  boxShadow: '0 2px 10px rgba(0, 212, 255, 0.3)',
+                  transition: 'all 0.2s'
+                }}
+                  onMouseOver={(e) => e.target.style.transform = 'scale(1.05)'}
+                  onMouseOut={(e) => e.target.style.transform = 'scale(1)'}
+                >
+                  📝 Inserisci Risultato
+                </button>
+              )}
+            </>
+          )}
+
+          {/* IN_VOTAZIONE: Vota + Chiudi (admin) */}
+          {stato === 'in_votazione' && (
+            <>
+              {canVote && (
+                <button onClick={onVoteClick} style={{
+                  padding: '0.5rem 1rem', borderRadius: '10px', fontSize: '0.85rem', fontWeight: 700, border: 'none', cursor: 'pointer',
+                  background: hasVoted ? 'linear-gradient(135deg, #ffd700, #ffa500)' : 'linear-gradient(135deg, #00d4ff, #0099ff)',
+                  color: '#0f1729',
+                  boxShadow: hasVoted ? '0 2px 10px rgba(255, 215, 0, 0.3)' : '0 2px 10px rgba(0, 212, 255, 0.3)',
+                  transition: 'all 0.2s'
+                }}
+                  onMouseOver={(e) => e.target.style.transform = 'scale(1.05)'}
+                  onMouseOut={(e) => e.target.style.transform = 'scale(1)'}
+                >
+                  {hasVoted ? '✏️ Modifica' : '🗳️ Vota'}
+                </button>
+              )}
+              {currentUser?.role === 'admin' && partita.votazioni?.length > 0 && (
+                <button onClick={onChiudiVoti} style={{
+                  padding: '0.5rem 1rem', borderRadius: '10px', fontSize: '0.85rem', fontWeight: 700, border: 'none', cursor: 'pointer',
+                  background: 'linear-gradient(135deg, #9333ea, #7c3aed)',
+                  color: '#fff',
+                  boxShadow: '0 2px 10px rgba(147, 51, 234, 0.3)',
+                  transition: 'all 0.2s'
+                }}
+                  onMouseOver={(e) => e.target.style.transform = 'scale(1.05)'}
+                  onMouseOut={(e) => e.target.style.transform = 'scale(1)'}
+                >
+                  🔒 Chiudi Votazioni
+                </button>
+              )}
+            </>
+          )}
+
+          {/* CHIUSA */}
+          {stato === 'chiusa' && (
+            <span style={{
+              padding: '0.5rem 1rem', borderRadius: '10px', fontSize: '0.85rem', fontWeight: 700,
+              background: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.1)', color: 'rgba(255, 255, 255, 0.5)'
+            }}>
+              ✓ Chiusa
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Punteggio - mostrato solo se non pre_partita */}
+      {stato === 'pre_partita' ? (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', gap: '2rem' }}>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '1rem', color: '#3b82f6' }}>SQUADRA A</div>
+            <div style={{ fontSize: '0.85rem', color: 'rgba(255, 255, 255, 0.7)', lineHeight: 1.6 }}>
+              {partita.squadra_a.map((id, i) => <div key={i}>{getNome(id)}</div>)}
+            </div>
+          </div>
+          <div style={{ background: 'rgba(255, 215, 0, 0.1)', border: '1px solid rgba(255, 215, 0, 0.3)', borderRadius: '15px', padding: '1.5rem 2rem', textAlign: 'center' }}>
+            <div style={{ fontSize: '1rem', fontWeight: 700, color: '#ffd700' }}>DA GIOCARE</div>
+          </div>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '1rem', color: '#ef4444' }}>SQUADRA B</div>
+            <div style={{ fontSize: '0.85rem', color: 'rgba(255, 255, 255, 0.7)', lineHeight: 1.6 }}>
+              {partita.squadra_b.map((id, i) => <div key={i}>{getNome(id)}</div>)}
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', gap: '2rem' }}>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '1rem', color: isVittoriaA ? '#00d4ff' : 'rgba(255, 255, 255, 0.5)' }}>
+              SQUADRA A {isVittoriaA && '👑'}
+            </div>
+            <div style={{ fontSize: '0.85rem', color: 'rgba(255, 255, 255, 0.7)', lineHeight: 1.6 }}>
+              {partita.squadra_a.map((id, i) => (
+                <div key={i} style={{ marginBottom: '0.25rem' }}>
+                  {getNome(id)}
+                  {partita.eventi?.[id]?.gol > 0 && ` ⚽${partita.eventi[id].gol}`}
+                  {partita.eventi?.[id]?.assist > 0 && ` 🎯${partita.eventi[id].assist}`}
+                </div>
+              ))}
+            </div>
+          </div>
+          <div style={{ background: 'rgba(0, 0, 0, 0.3)', border: '1px solid rgba(0, 212, 255, 0.2)', borderRadius: '15px', padding: '1.5rem 2rem', textAlign: 'center' }}>
+            <div style={{ fontSize: '3.5rem', fontWeight: 900, lineHeight: 1 }}>
+              <span style={{ color: isVittoriaA ? '#00d4ff' : '#fff' }}>{partita.punteggio_a}</span>
+              <span style={{ color: 'rgba(255, 255, 255, 0.3)', margin: '0 0.5rem' }}>-</span>
+              <span style={{ color: isVittoriaB ? '#00d4ff' : '#fff' }}>{partita.punteggio_b}</span>
+            </div>
+          </div>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '1rem', color: isVittoriaB ? '#00d4ff' : 'rgba(255, 255, 255, 0.5)' }}>
+              SQUADRA B {isVittoriaB && '👑'}
+            </div>
+            <div style={{ fontSize: '0.85rem', color: 'rgba(255, 255, 255, 0.7)', lineHeight: 1.6 }}>
+              {partita.squadra_b.map((id, i) => (
+                <div key={i} style={{ marginBottom: '0.25rem' }}>
+                  {getNome(id)}
+                  {partita.eventi?.[id]?.gol > 0 && ` ⚽${partita.eventi[id].gol}`}
+                  {partita.eventi?.[id]?.assist > 0 && ` 🎯${partita.eventi[id].assist}`}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {partita.votazioni?.length > 0 && stato !== 'pre_partita' && (
+        <div style={{ marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid rgba(255, 255, 255, 0.05)', fontSize: '0.85rem', color: 'rgba(255, 255, 255, 0.5)', textAlign: 'center' }}>
+          {partita.votazioni.length} {partita.votazioni.length === 1 ? 'voto registrato' : 'voti registrati'}
         </div>
       )}
     </div>
@@ -287,75 +418,95 @@ function PartitaCard({ partita, currentUser, onVoteClick, onChiudiVoti, onScomme
 
 function ModalNuovaPartita({ onClose, onSaved }) {
   const [giocatori, setGiocatori] = useState([])
+  const [data, setData] = useState(new Date().toISOString().split('T')[0])
   const [squadraA, setSquadraA] = useState([])
   const [squadraB, setSquadraB] = useState([])
-  const [data, setData] = useState(new Date().toISOString().slice(0, 10))
 
   useEffect(() => { caricaGiocatori() }, [])
 
   async function caricaGiocatori() {
-    const { data } = await supabase.from('giocatori').select('*').order('nome')
+    const { data } = await supabase.from('giocatori').select('id, nome').order('nome')
     if (data) setGiocatori(data)
   }
 
-  function toggleSquadra(gid, squadra) {
+  function toggleGiocatore(id, squadra) {
     if (squadra === 'A') {
-      if (squadraA.includes(gid)) setSquadraA(squadraA.filter(x => x !== gid))
-      else { setSquadraA([...squadraA, gid]); setSquadraB(squadraB.filter(x => x !== gid)) }
+      if (squadraB.includes(id)) return
+      setSquadraA(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
     } else {
-      if (squadraB.includes(gid)) setSquadraB(squadraB.filter(x => x !== gid))
-      else { setSquadraB([...squadraB, gid]); setSquadraA(squadraA.filter(x => x !== gid)) }
+      if (squadraA.includes(id)) return
+      setSquadraB(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
     }
   }
 
-  async function salva() {
+  async function salvaPartita() {
     if (squadraA.length === 0 || squadraB.length === 0) {
-      alert('Entrambe le squadre devono avere almeno 1 giocatore')
+      alert('Seleziona almeno 1 giocatore per squadra')
       return
     }
-    const { error } = await supabase.from('partite').insert([{ data, squadra_a: squadraA, squadra_b: squadraB, stato: 'pre_partita' }])
+    const { error } = await supabase.from('partite').insert({
+      data,
+      squadra_a: squadraA,
+      squadra_b: squadraB,
+      punteggio_a: 0,
+      punteggio_b: 0,
+      stato: 'pre_partita',
+      votazioni_aperte: false
+    })
     if (error) alert('Errore: ' + error.message)
     else onSaved()
   }
 
+  const getNomeGiocatore = (id) => giocatori.find(g => g.id === id)?.nome || `#${id}`
+
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0, 0, 0, 0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', zIndex: 50, backdropFilter: 'blur(4px)' }} onClick={onClose}>
-      <div style={{ background: 'rgba(15, 23, 41, 0.95)', border: '1px solid rgba(0, 212, 255, 0.2)', borderRadius: '20px', padding: '2rem', maxWidth: '900px', width: '100%', maxHeight: '90vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
-        <h2 style={{ fontSize: '2rem', fontWeight: 900, marginBottom: '0.5rem' }}>⚽ Nuova Partita</h2>
-        <div style={{ fontSize: '0.9rem', color: 'rgba(255, 255, 255, 0.5)', marginBottom: '1.5rem' }}>Seleziona i giocatori per ciascuna squadra.</div>
+      <div style={{ background: 'rgba(15, 23, 41, 0.95)', border: '1px solid rgba(0, 212, 255, 0.2)', borderRadius: '20px', padding: '2rem', maxWidth: '700px', width: '100%', maxHeight: '90vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
+        <h2 style={{ fontSize: '2rem', fontWeight: 900, marginBottom: '0.5rem' }}>+ Nuova Partita</h2>
+        <p style={{ color: 'rgba(255, 255, 255, 0.5)', fontSize: '0.9rem', marginBottom: '1.5rem' }}>
+          Inserisci solo le squadre. Il risultato lo aggiungerai dopo la partita.
+        </p>
 
         <div style={{ marginBottom: '1.5rem' }}>
-          <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, marginBottom: '0.5rem', color: 'rgba(255, 255, 255, 0.7)' }}>Data Partita</label>
-          <input type="date" value={data} onChange={(e) => setData(e.target.value)} style={{ width: '100%', background: 'rgba(0, 0, 0, 0.3)', border: '1px solid rgba(0, 212, 255, 0.3)', borderRadius: '10px', padding: '0.75rem', color: '#fff', fontSize: '1rem' }} />
+          <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '0.5rem', color: 'rgba(255, 255, 255, 0.7)' }}>Data</label>
+          <input type="date" value={data} onChange={(e) => setData(e.target.value)}
+            style={{ width: '100%', background: 'rgba(0, 0, 0, 0.3)', border: '1px solid rgba(0, 212, 255, 0.3)', borderRadius: '12px', padding: '0.75rem', color: '#fff', outline: 'none' }} />
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '1.5rem' }}>
-          <div>
-            <div style={{ fontSize: '0.9rem', fontWeight: 700, marginBottom: '0.75rem', color: '#00d4ff' }}>SQUADRA A ({squadraA.length})</div>
-            <div style={{ display: 'grid', gap: '0.5rem' }}>
-              {giocatori.map(g => (
-                <div key={g.id} onClick={() => toggleSquadra(g.id, 'A')} style={{ background: squadraA.includes(g.id) ? 'rgba(0, 212, 255, 0.2)' : 'rgba(0, 0, 0, 0.3)', border: `2px solid ${squadraA.includes(g.id) ? '#00d4ff' : 'rgba(255, 255, 255, 0.1)'}`, borderRadius: '10px', padding: '0.75rem', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', transition: 'all 0.2s' }}>
-                  <span style={{ fontWeight: 600 }}>{g.nome}</span>
-                  <span style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.5)' }}>OVR {g.overall}</span>
-                </div>
-              ))}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+          <div style={{ background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.3)', borderRadius: '12px', padding: '1rem' }}>
+            <div style={{ color: '#3b82f6', fontWeight: 700, marginBottom: '0.75rem', textAlign: 'center' }}>SQUADRA A ({squadraA.length})</div>
+            <div style={{ fontSize: '0.85rem', minHeight: '60px' }}>
+              {squadraA.map(id => <div key={id} style={{ color: '#93c5fd', marginBottom: '0.25rem' }}>• {getNomeGiocatore(id)}</div>)}
             </div>
           </div>
-          <div>
-            <div style={{ fontSize: '0.9rem', fontWeight: 700, marginBottom: '0.75rem', color: '#ffa500' }}>SQUADRA B ({squadraB.length})</div>
-            <div style={{ display: 'grid', gap: '0.5rem' }}>
-              {giocatori.map(g => (
-                <div key={g.id} onClick={() => toggleSquadra(g.id, 'B')} style={{ background: squadraB.includes(g.id) ? 'rgba(255, 165, 0, 0.2)' : 'rgba(0, 0, 0, 0.3)', border: `2px solid ${squadraB.includes(g.id) ? '#ffa500' : 'rgba(255, 255, 255, 0.1)'}`, borderRadius: '10px', padding: '0.75rem', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', transition: 'all 0.2s' }}>
-                  <span style={{ fontWeight: 600 }}>{g.nome}</span>
-                  <span style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.5)' }}>OVR {g.overall}</span>
-                </div>
-              ))}
+          <div style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '12px', padding: '1rem' }}>
+            <div style={{ color: '#ef4444', fontWeight: 700, marginBottom: '0.75rem', textAlign: 'center' }}>SQUADRA B ({squadraB.length})</div>
+            <div style={{ fontSize: '0.85rem', minHeight: '60px' }}>
+              {squadraB.map(id => <div key={id} style={{ color: '#fca5a5', marginBottom: '0.25rem' }}>• {getNomeGiocatore(id)}</div>)}
             </div>
+          </div>
+        </div>
+
+        <div style={{ marginBottom: '1.5rem' }}>
+          <div style={{ fontSize: '0.9rem', fontWeight: 700, marginBottom: '0.75rem' }}>Assegna giocatori:</div>
+          <div style={{ display: 'grid', gap: '0.5rem', maxHeight: '300px', overflowY: 'auto' }}>
+            {giocatori.map(g => {
+              const inA = squadraA.includes(g.id)
+              const inB = squadraB.includes(g.id)
+              return (
+                <div key={g.id} style={{ background: 'rgba(0, 0, 0, 0.3)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', padding: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <span style={{ flex: 1, fontSize: '0.9rem' }}>{g.nome}</span>
+                  <button onClick={() => toggleGiocatore(g.id, 'A')} style={{ padding: '0.5rem 1rem', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 700, border: 'none', cursor: 'pointer', background: inA ? '#3b82f6' : 'rgba(100, 116, 139, 0.3)', color: inA ? '#fff' : 'rgba(255, 255, 255, 0.5)', transition: 'all 0.2s' }}>A</button>
+                  <button onClick={() => toggleGiocatore(g.id, 'B')} style={{ padding: '0.5rem 1rem', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 700, border: 'none', cursor: 'pointer', background: inB ? '#ef4444' : 'rgba(100, 116, 139, 0.3)', color: inB ? '#fff' : 'rgba(255, 255, 255, 0.5)', transition: 'all 0.2s' }}>B</button>
+                </div>
+              )
+            })}
           </div>
         </div>
 
         <div style={{ display: 'flex', gap: '1rem' }}>
-          <button onClick={salva} style={{ flex: 1, background: 'linear-gradient(135deg, #00d4ff, #0099ff)', border: 'none', borderRadius: '12px', padding: '1rem', color: '#0f1729', fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 15px rgba(0, 212, 255, 0.4)', transition: 'all 0.2s' }}
+          <button onClick={salvaPartita} style={{ flex: 1, background: 'linear-gradient(135deg, #00d4ff, #0099ff)', border: 'none', borderRadius: '12px', padding: '1rem', color: '#0f1729', fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 15px rgba(0, 212, 255, 0.4)', transition: 'all 0.2s' }}
             onMouseOver={(e) => e.target.style.transform = 'translateY(-2px)'} onMouseOut={(e) => e.target.style.transform = 'translateY(0)'}>
             CREA PARTITA
           </button>
@@ -369,100 +520,91 @@ function ModalNuovaPartita({ onClose, onSaved }) {
   )
 }
 
-function ModalRisultato({ partita, onClose, onSaved }) {
+function ModalInserisciRisultato({ partita, onClose, onSaved }) {
   const [giocatori, setGiocatori] = useState([])
-  const [punteggio_a, setPunteggio_a] = useState(partita.punteggio_a || 0)
-  const [punteggio_b, setPunteggio_b] = useState(partita.punteggio_b || 0)
-  const [eventi, setEventi] = useState(partita.eventi || {})
+  const [punteggioA, setPunteggioA] = useState(0)
+  const [punteggioB, setPunteggioB] = useState(0)
+  const [eventi, setEventi] = useState({})
 
-  useEffect(() => { caricaDati() }, [])
+  useEffect(() => { caricaGiocatori() }, [])
 
-  async function caricaDati() {
+  async function caricaGiocatori() {
     const allIds = [...partita.squadra_a, ...partita.squadra_b]
-    const { data } = await supabase.from('giocatori').select('*').in('id', allIds)
+    const { data } = await supabase.from('giocatori').select('id, nome').in('id', allIds)
     if (data) setGiocatori(data)
   }
 
-  function updateEvento(playerId, field, value) {
-    setEventi(prev => ({ ...prev, [playerId]: { ...prev[playerId], [field]: Math.max(0, parseInt(value) || 0) } }))
+  function setEvento(id, field, value) {
+    setEventi(prev => ({ ...prev, [id]: { ...prev[id], [field]: parseInt(value) || 0 } }))
   }
 
   async function salvaRisultato() {
-    const { error } = await supabase
-      .from('partite')
-      .update({ punteggio_a, punteggio_b, eventi, stato: 'in_votazione', votazioni_aperte: true })
-      .eq('id', partita.id)
+    const { error } = await supabase.from('partite').update({
+      punteggio_a: punteggioA,
+      punteggio_b: punteggioB,
+      eventi,
+      stato: 'in_votazione',
+      votazioni_aperte: true
+    }).eq('id', partita.id)
 
     if (error) alert('Errore: ' + error.message)
-    else onSaved()
+    else {
+      alert('✓ Risultato inserito! Votazioni aperte.')
+      onSaved()
+    }
   }
+
+  const getNome = (id) => giocatori.find(g => g.id === id)?.nome || `#${id}`
+  const allIds = [...partita.squadra_a, ...partita.squadra_b]
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0, 0, 0, 0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', zIndex: 50, backdropFilter: 'blur(4px)' }} onClick={onClose}>
-      <div style={{ background: 'rgba(15, 23, 41, 0.95)', border: '1px solid rgba(0, 212, 255, 0.2)', borderRadius: '20px', padding: '2rem', maxWidth: '900px', width: '100%', maxHeight: '90vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
+      <div style={{ background: 'rgba(15, 23, 41, 0.95)', border: '1px solid rgba(0, 212, 255, 0.2)', borderRadius: '20px', padding: '2rem', maxWidth: '600px', width: '100%', maxHeight: '90vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
         <h2 style={{ fontSize: '2rem', fontWeight: 900, marginBottom: '0.5rem' }}>📝 Inserisci Risultato</h2>
-        <div style={{ fontSize: '0.9rem', color: 'rgba(255, 255, 255, 0.5)', marginBottom: '1.5rem' }}>Inserisci punteggio, gol e assist.</div>
+        <p style={{ color: 'rgba(255, 255, 255, 0.5)', fontSize: '0.9rem', marginBottom: '1.5rem' }}>
+          Dopo aver salvato, le votazioni si apriranno automaticamente.
+        </p>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '2rem' }}>
-          <div>
-            <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, marginBottom: '0.5rem', color: '#00d4ff' }}>Punteggio Squadra A</label>
-            <input type="number" value={punteggio_a} onChange={(e) => setPunteggio_a(parseInt(e.target.value) || 0)} style={{ width: '100%', background: 'rgba(0, 0, 0, 0.3)', border: '1px solid rgba(0, 212, 255, 0.3)', borderRadius: '10px', padding: '0.75rem', color: '#fff', fontSize: '1.5rem', textAlign: 'center', fontWeight: 700 }} />
-          </div>
-          <div>
-            <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, marginBottom: '0.5rem', color: '#ffa500' }}>Punteggio Squadra B</label>
-            <input type="number" value={punteggio_b} onChange={(e) => setPunteggio_b(parseInt(e.target.value) || 0)} style={{ width: '100%', background: 'rgba(0, 0, 0, 0.3)', border: '1px solid rgba(255, 165, 0, 0.3)', borderRadius: '10px', padding: '0.75rem', color: '#fff', fontSize: '1.5rem', textAlign: 'center', fontWeight: 700 }} />
+        {/* Punteggio */}
+        <div style={{ background: 'rgba(0, 0, 0, 0.3)', border: '1px solid rgba(0, 212, 255, 0.2)', borderRadius: '15px', padding: '1.5rem', marginBottom: '1.5rem' }}>
+          <div style={{ fontSize: '0.9rem', color: 'rgba(255, 255, 255, 0.5)', marginBottom: '1rem', fontWeight: 600 }}>PUNTEGGIO FINALE</div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1.5rem' }}>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ color: '#3b82f6', fontWeight: 700, marginBottom: '0.5rem', fontSize: '0.85rem' }}>SQUADRA A</div>
+              <input type="number" min="0" value={punteggioA} onChange={(e) => setPunteggioA(parseInt(e.target.value) || 0)}
+                style={{ width: '80px', background: 'rgba(0, 0, 0, 0.4)', border: '2px solid rgba(59, 130, 246, 0.5)', borderRadius: '10px', padding: '0.75rem', textAlign: 'center', color: '#fff', fontSize: '2rem', fontWeight: 900, outline: 'none' }} />
+            </div>
+            <div style={{ fontSize: '2rem', color: 'rgba(255, 255, 255, 0.3)', fontWeight: 900 }}>-</div>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ color: '#ef4444', fontWeight: 700, marginBottom: '0.5rem', fontSize: '0.85rem' }}>SQUADRA B</div>
+              <input type="number" min="0" value={punteggioB} onChange={(e) => setPunteggioB(parseInt(e.target.value) || 0)}
+                style={{ width: '80px', background: 'rgba(0, 0, 0, 0.4)', border: '2px solid rgba(239, 68, 68, 0.5)', borderRadius: '10px', padding: '0.75rem', textAlign: 'center', color: '#fff', fontSize: '2rem', fontWeight: 900, outline: 'none' }} />
+            </div>
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '1.5rem' }}>
-          <div>
-            <div style={{ fontSize: '0.9rem', fontWeight: 700, marginBottom: '0.75rem', color: '#00d4ff' }}>SQUADRA A</div>
-            {partita.squadra_a.map(id => {
-              const g = giocatori.find(x => x.id === id)
-              return (
-                <div key={id} style={{ background: 'rgba(0, 0, 0, 0.3)', borderRadius: '10px', padding: '1rem', marginBottom: '0.75rem' }}>
-                  <div style={{ fontWeight: 700, marginBottom: '0.5rem' }}>{g?.nome || id}</div>
-                  <div style={{ display: 'flex', gap: '1rem' }}>
-                    <div style={{ flex: 1 }}>
-                      <label style={{ fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.5)' }}>Gol</label>
-                      <input type="number" value={eventi[id]?.gol || 0} onChange={(e) => updateEvento(id, 'gol', e.target.value)} style={{ width: '100%', background: 'rgba(0, 212, 255, 0.1)', border: '1px solid rgba(0, 212, 255, 0.3)', borderRadius: '8px', padding: '0.5rem', color: '#fff', textAlign: 'center' }} />
-                    </div>
-                    <div style={{ flex: 1 }}>
-                      <label style={{ fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.5)' }}>Assist</label>
-                      <input type="number" value={eventi[id]?.assist || 0} onChange={(e) => updateEvento(id, 'assist', e.target.value)} style={{ width: '100%', background: 'rgba(0, 212, 255, 0.1)', border: '1px solid rgba(0, 212, 255, 0.3)', borderRadius: '8px', padding: '0.5rem', color: '#fff', textAlign: 'center' }} />
-                    </div>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-          <div>
-            <div style={{ fontSize: '0.9rem', fontWeight: 700, marginBottom: '0.75rem', color: '#ffa500' }}>SQUADRA B</div>
-            {partita.squadra_b.map(id => {
-              const g = giocatori.find(x => x.id === id)
-              return (
-                <div key={id} style={{ background: 'rgba(0, 0, 0, 0.3)', borderRadius: '10px', padding: '1rem', marginBottom: '0.75rem' }}>
-                  <div style={{ fontWeight: 700, marginBottom: '0.5rem' }}>{g?.nome || id}</div>
-                  <div style={{ display: 'flex', gap: '1rem' }}>
-                    <div style={{ flex: 1 }}>
-                      <label style={{ fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.5)' }}>Gol</label>
-                      <input type="number" value={eventi[id]?.gol || 0} onChange={(e) => updateEvento(id, 'gol', e.target.value)} style={{ width: '100%', background: 'rgba(255, 165, 0, 0.1)', border: '1px solid rgba(255, 165, 0, 0.3)', borderRadius: '8px', padding: '0.5rem', color: '#fff', textAlign: 'center' }} />
-                    </div>
-                    <div style={{ flex: 1 }}>
-                      <label style={{ fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.5)' }}>Assist</label>
-                      <input type="number" value={eventi[id]?.assist || 0} onChange={(e) => updateEvento(id, 'assist', e.target.value)} style={{ width: '100%', background: 'rgba(255, 165, 0, 0.1)', border: '1px solid rgba(255, 165, 0, 0.3)', borderRadius: '8px', padding: '0.5rem', color: '#fff', textAlign: 'center' }} />
-                    </div>
-                  </div>
-                </div>
-              )
-            })}
+        {/* Gol e Assist */}
+        <div style={{ marginBottom: '1.5rem' }}>
+          <div style={{ fontSize: '0.9rem', fontWeight: 700, marginBottom: '0.75rem' }}>Gol e Assist:</div>
+          <div style={{ display: 'grid', gap: '0.75rem', maxHeight: '300px', overflowY: 'auto' }}>
+            {allIds.map(id => (
+              <div key={id} style={{ background: 'rgba(0, 0, 0, 0.3)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', padding: '0.75rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <span style={{ flex: 1, fontSize: '0.9rem', fontWeight: 600 }}>{getNome(id)}</span>
+                <input type="number" min="0" max="20" placeholder="⚽ Gol" value={eventi[id]?.gol || ''}
+                  onChange={(e) => setEvento(id, 'gol', e.target.value)}
+                  style={{ width: '80px', background: 'rgba(0, 0, 0, 0.3)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '6px', padding: '0.5rem', fontSize: '0.85rem', color: '#fff', outline: 'none', textAlign: 'center' }} />
+                <input type="number" min="0" max="20" placeholder="🎯 Ass" value={eventi[id]?.assist || ''}
+                  onChange={(e) => setEvento(id, 'assist', e.target.value)}
+                  style={{ width: '80px', background: 'rgba(0, 0, 0, 0.3)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '6px', padding: '0.5rem', fontSize: '0.85rem', color: '#fff', outline: 'none', textAlign: 'center' }} />
+              </div>
+            ))}
           </div>
         </div>
 
         <div style={{ display: 'flex', gap: '1rem' }}>
           <button onClick={salvaRisultato} style={{ flex: 1, background: 'linear-gradient(135deg, #00d4ff, #0099ff)', border: 'none', borderRadius: '12px', padding: '1rem', color: '#0f1729', fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 15px rgba(0, 212, 255, 0.4)', transition: 'all 0.2s' }}
             onMouseOver={(e) => e.target.style.transform = 'translateY(-2px)'} onMouseOut={(e) => e.target.style.transform = 'translateY(0)'}>
-            SALVA & APRI VOTAZIONI
+            SALVA E APRI VOTAZIONI
           </button>
           <button onClick={onClose} style={{ flex: 1, background: 'rgba(100, 116, 139, 0.3)', border: 'none', borderRadius: '12px', padding: '1rem', color: '#fff', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s' }}
             onMouseOver={(e) => e.target.style.background = 'rgba(100, 116, 139, 0.5)'} onMouseOut={(e) => e.target.style.background = 'rgba(100, 116, 139, 0.3)'}>
@@ -476,81 +618,106 @@ function ModalRisultato({ partita, onClose, onSaved }) {
 
 function ModalScommessa({ partita, currentUser, onClose, onSaved }) {
   const [giocatori, setGiocatori] = useState([])
+  const [creditiDisponibili, setCreditiDisponibili] = useState(500)
   const [tab, setTab] = useState('risultato')
-  const [importo, setImporto] = useState(10)
   const [sceltaRisultato, setSceltaRisultato] = useState(null)
   const [sceltaMigliore, setSceltaMigliore] = useState(null)
   const [sceltaCapo, setSceltaCapo] = useState(null)
-  const [quoteRisultato, setQuoteRisultato] = useState({})
-  const [quoteMigliore, setQuoteMigliore] = useState({})
-  const [quoteCapo, setQuoteCapo] = useState({})
+  const [importo, setImporto] = useState(10)
+  const [loading, setLoading] = useState(true)
+  const [scommesseEsistenti, setScommesseEsistenti] = useState([])
 
   useEffect(() => { caricaDati() }, [])
 
   async function caricaDati() {
     const allIds = [...partita.squadra_a, ...partita.squadra_b]
-    const { data: g } = await supabase.from('giocatori').select('*').in('id', allIds)
-    if (g) {
-      setGiocatori(g)
-      const qr = calcolaQuoteRisultato(partita, g)
-      const qm = calcolaQuoteMiglioreInCampo(partita, g)
-      const qc = calcolaQuoteCapocannoniere(partita, g)
-      setQuoteRisultato(qr)
-      setQuoteMigliore(qm)
-      setQuoteCapo(qc)
+    const { data: giocatoriData } = await supabase.from('giocatori').select('*').in('id', allIds)
+    const { data: giocatoreCorrente } = await supabase.from('giocatori').select('crediti').eq('id', currentUser.id).single()
+    const { data: scommesseData } = await supabase.from('scommesse').select('*').eq('partita_id', partita.id).eq('giocatore_id', currentUser.id)
+
+    if (giocatoriData) setGiocatori(giocatoriData)
+    if (giocatoreCorrente) setCreditiDisponibili(giocatoreCorrente.crediti ?? 500)
+    if (scommesseData) {
+      setScommesseEsistenti(scommesseData)
+      scommesseData.forEach(s => {
+        if (s.tipo === 'risultato') setSceltaRisultato(s.scelta)
+        if (s.tipo === 'migliore_in_campo') setSceltaMigliore(parseInt(s.scelta))
+        if (s.tipo === 'capocannoniere') setSceltaCapo(parseInt(s.scelta))
+      })
     }
+    setLoading(false)
   }
+
+  const allIds = [...partita.squadra_a, ...partita.squadra_b]
+  const quoteRisultato = giocatori.length > 0 ? calcolaQuoteRisultato(giocatori, partita.squadra_a, partita.squadra_b) : { squadra_a: 2.00, pareggio: 3.00, squadra_b: 2.00 }
+  const quoteMigliore = giocatori.length > 0 ? calcolaQuoteMiglioreInCampo(giocatori, allIds) : {}
+  const quoteCapo = calcolaQuoteCapocannoniere(allIds)
+  const importoValido = Math.max(5, Math.min(importo, creditiDisponibili - 1))
 
   async function salvaScommessa(tipo, scelta, quota) {
-    if (!scelta) { alert('Seleziona una scelta'); return }
-    if (importo < 5 || importo > (currentUser.crediti - 1)) { alert('Importo non valido'); return }
+    if (!scelta) { alert('Seleziona una scelta!'); return }
+    const esistente = scommesseEsistenti.find(s => s.tipo === tipo)
 
-    const { error: errCrediti } = await supabase.from('giocatori').update({ crediti: currentUser.crediti - importo }).eq('id', currentUser.id)
-    if (errCrediti) { alert('Errore: ' + errCrediti.message); return }
+    if (esistente) {
+      const { data: g } = await supabase.from('giocatori').select('crediti').eq('id', currentUser.id).single()
+      const nuoviCrediti = (g.crediti || 500) + esistente.importo - importoValido
+      await supabase.from('scommesse').update({ scelta: String(scelta), importo: importoValido, quota }).eq('id', esistente.id)
+      await supabase.from('giocatori').update({ crediti: nuoviCrediti }).eq('id', currentUser.id)
+    } else {
+      if (importoValido > creditiDisponibili - 1) { alert('Crediti insufficienti!'); return }
+      await supabase.from('scommesse').insert({ partita_id: partita.id, giocatore_id: currentUser.id, tipo, scelta: String(scelta), importo: importoValido, quota, esito: 'pending' })
+      await supabase.from('giocatori').update({ crediti: creditiDisponibili - importoValido }).eq('id', currentUser.id)
+      setCreditiDisponibili(prev => prev - importoValido)
+    }
 
-    const { error } = await supabase.from('scommesse').insert([{ partita_id: partita.id, giocatore_id: currentUser.id, tipo, scelta: scelta.toString(), importo, quota }])
-    if (error) alert('Errore: ' + error.message)
-    else onSaved()
+    alert(`✅ Scommessa piazzata! ${importoValido} crediti puntati a quota ${quota}x`)
+    caricaDati()
   }
 
-  const getNome = (id) => giocatori.find(g => g.id === id)?.nome || '???'
-  const allIds = [...partita.squadra_a, ...partita.squadra_b]
-  const importoValido = Math.max(5, Math.min(importo, currentUser.crediti - 1))
-
-  const opzioniRisultato = [
-    { key: 'squadra_a', label: 'SQUADRA A', quota: quoteRisultato.squadra_a || 0 },
-    { key: 'pareggio', label: 'PAREGGIO', quota: quoteRisultato.pareggio || 0 },
-    { key: 'squadra_b', label: 'SQUADRA B', quota: quoteRisultato.squadra_b || 0 }
-  ]
+  if (loading) return null
+  const getNome = (id) => giocatori.find(g => g.id === id)?.nome || `#${id}`
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0, 0, 0, 0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', zIndex: 50, backdropFilter: 'blur(4px)' }} onClick={onClose}>
-      <div style={{ background: 'rgba(15, 23, 41, 0.95)', border: '1px solid rgba(255, 215, 0, 0.3)', borderRadius: '20px', padding: '2rem', maxWidth: '700px', width: '100%', maxHeight: '90vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
-        <h2 style={{ fontSize: '2rem', fontWeight: 900, marginBottom: '0.5rem' }}>🎰 Piazza Scommessa</h2>
-        <div style={{ fontSize: '0.9rem', color: 'rgba(255, 255, 255, 0.5)', marginBottom: '1.5rem' }}>Crediti disponibili: {currentUser.crediti || 500}</div>
-
-        <div style={{ marginBottom: '1.5rem' }}>
-          <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, marginBottom: '0.5rem', color: 'rgba(255, 255, 255, 0.7)' }}>Importo (min 5, max {currentUser.crediti - 1})</label>
-          <input type="number" value={importo} onChange={(e) => setImporto(parseInt(e.target.value) || 5)} min={5} max={currentUser.crediti - 1} style={{ width: '100%', background: 'rgba(0, 0, 0, 0.3)', border: '1px solid rgba(255, 215, 0, 0.3)', borderRadius: '10px', padding: '0.75rem', color: '#fff', fontSize: '1.5rem', textAlign: 'center', fontWeight: 700 }} />
+      <div style={{ background: 'rgba(15, 23, 41, 0.98)', border: '1px solid rgba(255, 215, 0, 0.3)', borderRadius: '20px', padding: '2rem', maxWidth: '700px', width: '100%', maxHeight: '90vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+          <h2 style={{ fontSize: '2rem', fontWeight: 900 }}>🎰 Piazza Scommessa</h2>
+          <div style={{ background: 'linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(255, 165, 0, 0.1))', border: '1px solid rgba(255, 215, 0, 0.4)', borderRadius: '12px', padding: '0.5rem 1rem', fontSize: '1.2rem', fontWeight: 900, color: '#ffd700' }}>
+            💰 {creditiDisponibili}
+          </div>
         </div>
 
-        <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem' }}>
-          {['risultato', 'migliore', 'capocannoniere'].map(t => (
-            <button key={t} onClick={() => setTab(t)} style={{ flex: 1, background: tab === t ? 'rgba(255, 215, 0, 0.2)' : 'rgba(0, 0, 0, 0.3)', border: `2px solid ${tab === t ? '#ffd700' : 'rgba(255, 255, 255, 0.1)'}`, borderRadius: '10px', padding: '0.75rem', color: tab === t ? '#ffd700' : '#fff', fontWeight: 700, cursor: 'pointer', fontSize: '0.85rem', textTransform: 'uppercase', transition: 'all 0.2s' }}>
-              {t === 'risultato' ? '1X2' : t === 'migliore' ? 'MVP' : 'TOP SCORER'}
+        <div style={{ background: 'rgba(0, 0, 0, 0.3)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '15px', padding: '1.25rem', marginBottom: '1.5rem' }}>
+          <div style={{ fontSize: '0.9rem', color: 'rgba(255, 255, 255, 0.5)', marginBottom: '0.75rem', fontWeight: 600 }}>IMPORTO SCOMMESSA</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <input type="number" min="5" max={creditiDisponibili - 1} value={importo}
+              onChange={(e) => setImporto(Math.max(5, Math.min(parseInt(e.target.value) || 5, creditiDisponibili - 1)))}
+              style={{ flex: 1, background: 'rgba(0, 0, 0, 0.4)', border: '1px solid rgba(255, 215, 0, 0.4)', borderRadius: '10px', padding: '0.75rem', color: '#ffd700', fontSize: '1.5rem', fontWeight: 900, textAlign: 'center', outline: 'none' }} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              {[10, 50, 100].map(v => (
+                <button key={v} onClick={() => setImporto(Math.min(v, creditiDisponibili - 1))} style={{ background: 'rgba(255, 215, 0, 0.1)', border: '1px solid rgba(255, 215, 0, 0.3)', borderRadius: '8px', padding: '0.4rem 0.75rem', color: '#ffd700', fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer' }}>
+                  {v}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', background: 'rgba(0, 0, 0, 0.3)', borderRadius: '12px', padding: '0.4rem' }}>
+          {[{ key: 'risultato', label: '🏆 Risultato' }, { key: 'migliore', label: '⭐ MVP' }, { key: 'capocannoniere', label: '⚽ Gol' }].map(t => (
+            <button key={t.key} onClick={() => setTab(t.key)} style={{ flex: 1, padding: '0.6rem', borderRadius: '10px', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: '0.85rem', background: tab === t.key ? 'linear-gradient(135deg, #ffd700, #ffa500)' : 'transparent', color: tab === t.key ? '#0f1729' : 'rgba(255, 255, 255, 0.5)', transition: 'all 0.2s' }}>
+              {t.label}
             </button>
           ))}
         </div>
 
         {tab === 'risultato' && (
-          <div style={{ display: 'grid', gap: '0.75rem', marginBottom: '1.5rem' }}>
-            {opzioniRisultato.map(opt => (
-              <div key={opt.key} onClick={() => setSceltaRisultato(opt.key)} style={{ background: sceltaRisultato === opt.key ? 'rgba(255, 215, 0, 0.2)' : 'rgba(0, 0, 0, 0.3)', border: `2px solid ${sceltaRisultato === opt.key ? '#ffd700' : 'rgba(255, 255, 255, 0.1)'}`, borderRadius: '12px', padding: '1rem 1.5rem', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', transition: 'all 0.2s' }}>
-                <div style={{ fontWeight: 700, fontSize: '1.1rem' }}>{opt.label}</div>
-                <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: '2rem', fontWeight: 900, color: sceltaRisultato === opt.key ? '#ffd700' : '#fff' }}>{opt.quota}</div>
-                  <div style={{ fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.4)', marginTop: '0.5rem' }}>Vinci: {Math.floor(importoValido * opt.quota)} cr.</div>
-                </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+            {[{ key: 'squadra_a', label: 'SQUADRA A', quota: quoteRisultato.squadra_a }, { key: 'pareggio', label: 'PAREGGIO', quota: quoteRisultato.pareggio }, { key: 'squadra_b', label: 'SQUADRA B', quota: quoteRisultato.squadra_b }].map(opt => (
+              <div key={opt.key} onClick={() => setSceltaRisultato(opt.key)} style={{ background: sceltaRisultato === opt.key ? 'rgba(255, 215, 0, 0.2)' : 'rgba(0, 0, 0, 0.3)', border: `2px solid ${sceltaRisultato === opt.key ? '#ffd700' : 'rgba(255, 255, 255, 0.1)'}`, borderRadius: '15px', padding: '1.5rem', textAlign: 'center', cursor: 'pointer', transition: 'all 0.2s' }}>
+                <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.5)', marginBottom: '0.5rem', fontWeight: 600 }}>{opt.label}</div>
+                <div style={{ fontSize: '2rem', fontWeight: 900, color: sceltaRisultato === opt.key ? '#ffd700' : '#fff' }}>{opt.quota}</div>
+                <div style={{ fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.4)', marginTop: '0.5rem' }}>Vinci: {Math.floor(importoValido * opt.quota)} cr.</div>
               </div>
             ))}
           </div>
