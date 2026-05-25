@@ -250,13 +250,14 @@ function GazzettaFuciabol({ partite, giocatori }) {
     const topNomi = topGiocatori.map(t => t.giocatore.nome + ' (media ' + t.media.toFixed(1) + ', ' + t.gol + ' gol)').join(', ')
     const prompt = 'Sei un commentatore sportivo ULTRA-ESAGERATO stile Mediaset Sport anni 90. Scrivi un articolo BREVISSIMO (max 5 righe) sulla Gazzetta Fuciabol, campionato di calcetto tra amici. Migliori: ' + topNomi + '. Risultati:\n' + datiPartite + '\nScrivi in italiano con toni esageratissimi, esclamazioni, MAIUSCOLO per enfasi. Inizia con titolone drammatico tra *** ***. Max 5 righe.'
     try {
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
+      const apiKey = import.meta.env.VITE_OPENAI_API_KEY
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 400, messages: [{ role: 'user', content: prompt }] })
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + apiKey },
+        body: JSON.stringify({ model: 'gpt-4o-mini', max_tokens: 400, messages: [{ role: 'user', content: prompt }] })
       })
       const data = await response.json()
-      setArticolo(data.content?.[0]?.text || 'Errore nella generazione')
+      setArticolo(data.choices?.[0]?.message?.content || 'Errore nella generazione')
     } catch (e) {
       setArticolo('Errore di connessione. Riprova!')
     }
@@ -316,8 +317,8 @@ function GazzettaFuciabol({ partite, giocatori }) {
             {topGiocatori.map((top, i) => {
               const cfg = cardCfgs[i]
               const isFirst = i === 0
-              const nomi = top.giocatore.nome.split(' ')
-              const cognome = nomi.length > 1 ? nomi[nomi.length - 1].toUpperCase() : top.giocatore.nome.toUpperCase()
+              const nomiPuliti = top.giocatore.nome.replace(/\s*\(.*?\)/g, '').trim().split(' ')
+              const cognome = nomiPuliti.length > 1 ? nomiPuliti[nomiPuliti.length - 1].toUpperCase() : top.giocatore.nome.toUpperCase()
               return (
                 <div key={top.id} style={{ flex: isFirst ? '1.2' : '1', minWidth: '120px', maxWidth: isFirst ? '200px' : '170px', height: isFirst ? '200px' : '175px', borderRadius: '12px', background: cfg.bg, border: '2px solid ' + cfg.border, position: 'relative', overflow: 'hidden', animation: cfg.glow, display: 'flex', flexDirection: 'column' }}>
                   <div style={{ position: 'absolute', top: '-50%', left: '-20%', width: '35%', height: '200%', background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent)', animation: 'shimmerGaz 2.5s ease-in-out infinite', pointerEvents: 'none', zIndex: 2 }} />
