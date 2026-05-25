@@ -191,24 +191,20 @@ function PartitaCard({ partita, currentUser, onVoteClick, onChiudiVoti, onScomme
 
   async function caricaNomi() {
     const ids = [...partita.squadra_a, ...partita.squadra_b]
-    const { data } = await supabase.from('giocatori').select('id, nome').in('id', ids)
+    const { data } = await supabase.from('giocatori').select('id, nome, foto_url, overall').in('id', ids)
     if (data) setGiocatori(data)
   }
 
   async function caricaScommessa() {
-    const { data } = await supabase
-      .from('scommesse')
-      .select('id')
-      .eq('partita_id', partita.id)
-      .eq('giocatore_id', currentUser.id)
-      .limit(1)
+    const { data } = await supabase.from('scommesse').select('id').eq('partita_id', partita.id).eq('giocatore_id', currentUser.id).limit(1)
     if (data && data.length > 0) setHasScommesso(true)
   }
 
   const getNome = (id) => giocatori.find(g => g.id === id)?.nome || `#${id}`
+  const getFoto = (id) => giocatori.find(g => g.id === id)?.foto_url || null
+  const getOverall = (id) => giocatori.find(g => g.id === id)?.overall || 65
 
-  const dataStr = new Date(partita.data).toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' })
-
+  const dataStr = new Date(partita.data).toLocaleDateString('it-IT', { day: 'numeric', month: 'short', year: 'numeric' })
   const stato = partita.stato || 'chiusa'
   const allPlayers = [...partita.squadra_a, ...partita.squadra_b]
   const isInSquadra = allPlayers.includes(currentUser?.id)
@@ -217,201 +213,275 @@ function PartitaCard({ partita, currentUser, onVoteClick, onChiudiVoti, onScomme
   const hasVoted = partita.votazioni?.some(v => v.voterId === (currentUser?.role === 'admin' ? 'admin' : currentUser?.id))
   const isVittoriaA = partita.punteggio_a > partita.punteggio_b
   const isVittoriaB = partita.punteggio_b > partita.punteggio_a
+  const isPareggio = stato !== 'pre_partita' && partita.punteggio_a === partita.punteggio_b
 
-  // Colore bordo in base allo stato
-  const borderColor = stato === 'pre_partita'
-    ? 'rgba(255, 215, 0, 0.4)'
-    : stato === 'in_votazione'
-    ? 'rgba(0, 212, 255, 0.4)'
-    : 'rgba(255, 255, 255, 0.05)'
+  // Trova MVP (voto più alto)
+  const mvp = partita.voti_calcolati?.length > 0
+    ? partita.voti_calcolati.reduce((best, v) => v.votoFinale > (best?.votoFinale || 0) ? v : best, null)
+    : null
 
-  const borderHover = stato === 'pre_partita'
-    ? 'rgba(255, 215, 0, 0.7)'
-    : stato === 'in_votazione'
-    ? 'rgba(0, 212, 255, 0.7)'
-    : 'rgba(255, 255, 255, 0.1)'
+  // Colori per stato
+  const statoCfg = {
+    pre_partita: { color: '#ffd700', bg: 'rgba(255,215,0,0.08)', border: 'rgba(255,215,0,0.3)', label: '🟡 IN PROGRAMMA' },
+    in_votazione: { color: '#00d4ff', bg: 'rgba(0,212,255,0.08)', border: 'rgba(0,212,255,0.3)', label: '🗳️ VOTAZIONI APERTE' },
+    chiusa: { color: 'rgba(255,255,255,0.3)', bg: 'rgba(255,255,255,0.03)', border: 'rgba(255,255,255,0.08)', label: '✅ CHIUSA' },
+  }
+  const sc = statoCfg[stato] || statoCfg.chiusa
 
   return (
     <div
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       style={{
-        background: 'rgba(15, 23, 41, 0.6)',
-        border: `1px solid ${isHovered ? borderHover : borderColor}`,
         borderRadius: '20px',
-        padding: '2rem',
+        overflow: 'hidden',
         transition: 'all 0.3s',
         transform: isHovered ? 'translateY(-4px)' : 'translateY(0)',
-        boxShadow: isHovered ? '0 8px 30px rgba(0, 212, 255, 0.2)' : 'none'
+        boxShadow: isHovered ? `0 12px 40px rgba(0,0,0,0.5), 0 0 0 1px ${sc.border}` : `0 4px 20px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.06)`,
       }}
     >
-      {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+      {/* HEADER BAND */}
+      <div style={{
+        background: `linear-gradient(135deg, rgba(10,16,30,0.98), rgba(15,23,41,0.98))`,
+        borderBottom: `1px solid ${sc.border}`,
+        padding: '0.85rem 1.5rem',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        flexWrap: 'wrap',
+        gap: '0.75rem',
+      }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <div style={{ color: 'rgba(255, 255, 255, 0.5)', fontSize: '0.9rem', fontWeight: 600, letterSpacing: '0.5px' }}>
-            {dataStr.toUpperCase()}
+          <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.45)', fontWeight: 600, letterSpacing: '0.5px' }}>
+            📅 {dataStr.toUpperCase()}
           </div>
-          {/* Badge stato */}
-          <span style={{
-            padding: '0.25rem 0.75rem',
-            borderRadius: '20px',
-            fontSize: '0.75rem',
-            fontWeight: 700,
-            background: stato === 'pre_partita' ? 'rgba(255, 215, 0, 0.15)' : stato === 'in_votazione' ? 'rgba(0, 212, 255, 0.15)' : 'rgba(255, 255, 255, 0.05)',
-            color: stato === 'pre_partita' ? '#ffd700' : stato === 'in_votazione' ? '#00d4ff' : 'rgba(255, 255, 255, 0.5)',
-            border: `1px solid ${stato === 'pre_partita' ? 'rgba(255, 215, 0, 0.3)' : stato === 'in_votazione' ? 'rgba(0, 212, 255, 0.3)' : 'rgba(255, 255, 255, 0.1)'}`
+          <div style={{
+            padding: '0.2rem 0.7rem', borderRadius: '20px', fontSize: '0.7rem', fontWeight: 800,
+            background: sc.bg, color: sc.color, border: `1px solid ${sc.border}`, letterSpacing: '0.5px'
           }}>
-            {stato === 'pre_partita' ? '🟡 In programma' : stato === 'in_votazione' ? '🔵 Votazioni aperte' : '✅ Chiusa'}
-          </span>
+            {sc.label}
+          </div>
+          {partita.votazioni?.length > 0 && stato !== 'pre_partita' && (
+            <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.3)' }}>
+              {partita.votazioni.length} voti
+            </div>
+          )}
         </div>
 
-        {/* Pulsanti azione */}
+        {/* Bottoni azione */}
         <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-
-          {/* PRE_PARTITA: Scommetti (giocatori) + Inserisci Risultato (admin) */}
           {stato === 'pre_partita' && (
             <>
               {canScommettere && (
                 <button onClick={onScommessaClick} style={{
-                  padding: '0.5rem 1rem', borderRadius: '10px', fontSize: '0.85rem', fontWeight: 700, border: 'none', cursor: 'pointer',
-                  background: hasScommesso ? 'linear-gradient(135deg, #00d4ff, #0099ff)' : 'linear-gradient(135deg, #ffd700, #ffa500)',
-                  color: '#0f1729',
-                  boxShadow: hasScommesso ? '0 2px 10px rgba(0, 212, 255, 0.3)' : '0 2px 10px rgba(255, 215, 0, 0.3)',
+                  padding: '0.45rem 1rem', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 700, border: 'none', cursor: 'pointer',
+                  background: hasScommesso ? 'rgba(0,212,255,0.15)' : 'linear-gradient(135deg, #ffd700, #ffa500)',
+                  color: hasScommesso ? '#00d4ff' : '#0f1729',
+                  border: hasScommesso ? '1px solid rgba(0,212,255,0.4)' : 'none',
                   transition: 'all 0.2s'
-                }}
-                  onMouseOver={(e) => e.target.style.transform = 'scale(1.05)'}
-                  onMouseOut={(e) => e.target.style.transform = 'scale(1)'}
-                >
+                }}>
                   {hasScommesso ? '✅ Scommesso' : '🎰 Scommetti'}
                 </button>
               )}
               {currentUser?.role === 'admin' && (
                 <button onClick={onRisultatoClick} style={{
-                  padding: '0.5rem 1rem', borderRadius: '10px', fontSize: '0.85rem', fontWeight: 700, border: 'none', cursor: 'pointer',
-                  background: 'linear-gradient(135deg, #00d4ff, #0099ff)',
-                  color: '#0f1729',
-                  boxShadow: '0 2px 10px rgba(0, 212, 255, 0.3)',
-                  transition: 'all 0.2s'
-                }}
-                  onMouseOver={(e) => e.target.style.transform = 'scale(1.05)'}
-                  onMouseOut={(e) => e.target.style.transform = 'scale(1)'}
-                >
-                  📝 Inserisci Risultato
+                  padding: '0.45rem 1rem', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 700, border: 'none', cursor: 'pointer',
+                  background: 'linear-gradient(135deg, #00d4ff, #0099ff)', color: '#0f1729', transition: 'all 0.2s'
+                }}>
+                  📝 Risultato
                 </button>
               )}
             </>
           )}
-
-          {/* IN_VOTAZIONE: Vota + Chiudi (admin) */}
           {stato === 'in_votazione' && (
             <>
               {canVote && (
                 <button onClick={onVoteClick} style={{
-                  padding: '0.5rem 1rem', borderRadius: '10px', fontSize: '0.85rem', fontWeight: 700, border: 'none', cursor: 'pointer',
+                  padding: '0.45rem 1rem', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 700, border: 'none', cursor: 'pointer',
                   background: hasVoted ? 'linear-gradient(135deg, #ffd700, #ffa500)' : 'linear-gradient(135deg, #00d4ff, #0099ff)',
-                  color: '#0f1729',
-                  boxShadow: hasVoted ? '0 2px 10px rgba(255, 215, 0, 0.3)' : '0 2px 10px rgba(0, 212, 255, 0.3)',
-                  transition: 'all 0.2s'
-                }}
-                  onMouseOver={(e) => e.target.style.transform = 'scale(1.05)'}
-                  onMouseOut={(e) => e.target.style.transform = 'scale(1)'}
-                >
-                  {hasVoted ? '✏️ Modifica' : '🗳️ Vota'}
+                  color: '#0f1729', transition: 'all 0.2s'
+                }}>
+                  {hasVoted ? '✏️ Modifica voto' : '🗳️ Vota ora'}
                 </button>
               )}
               {currentUser?.role === 'admin' && partita.votazioni?.length > 0 && (
                 <button onClick={onChiudiVoti} style={{
-                  padding: '0.5rem 1rem', borderRadius: '10px', fontSize: '0.85rem', fontWeight: 700, border: 'none', cursor: 'pointer',
-                  background: 'linear-gradient(135deg, #9333ea, #7c3aed)',
-                  color: '#fff',
-                  boxShadow: '0 2px 10px rgba(147, 51, 234, 0.3)',
-                  transition: 'all 0.2s'
-                }}
-                  onMouseOver={(e) => e.target.style.transform = 'scale(1.05)'}
-                  onMouseOut={(e) => e.target.style.transform = 'scale(1)'}
-                >
-                  🔒 Chiudi Votazioni
+                  padding: '0.45rem 1rem', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 700, border: 'none', cursor: 'pointer',
+                  background: 'linear-gradient(135deg, #9333ea, #7c3aed)', color: '#fff', transition: 'all 0.2s'
+                }}>
+                  🔒 Chiudi
                 </button>
               )}
             </>
           )}
-
-          {/* CHIUSA */}
-          {stato === 'chiusa' && (
-            <span style={{
-              padding: '0.5rem 1rem', borderRadius: '10px', fontSize: '0.85rem', fontWeight: 700,
-              background: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.1)', color: 'rgba(255, 255, 255, 0.5)'
-            }}>
-              ✓ Chiusa
-            </span>
-          )}
         </div>
       </div>
 
-      {/* Punteggio - mostrato solo se non pre_partita */}
-      {stato === 'pre_partita' ? (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', gap: '2rem' }}>
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '1rem', color: '#3b82f6' }}>SQUADRA A</div>
-            <div style={{ fontSize: '0.85rem', color: 'rgba(255, 255, 255, 0.7)', lineHeight: 1.6 }}>
-              {partita.squadra_a.map((id, i) => <div key={i}>{getNome(id)}</div>)}
-            </div>
-          </div>
-          <div style={{ background: 'rgba(255, 215, 0, 0.1)', border: '1px solid rgba(255, 215, 0, 0.3)', borderRadius: '15px', padding: '1.5rem 2rem', textAlign: 'center' }}>
-            <div style={{ fontSize: '1rem', fontWeight: 700, color: '#ffd700' }}>DA GIOCARE</div>
-          </div>
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '1rem', color: '#ef4444' }}>SQUADRA B</div>
-            <div style={{ fontSize: '0.85rem', color: 'rgba(255, 255, 255, 0.7)', lineHeight: 1.6 }}>
-              {partita.squadra_b.map((id, i) => <div key={i}>{getNome(id)}</div>)}
-            </div>
-          </div>
-        </div>
-      ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', gap: '2rem' }}>
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '1rem', color: isVittoriaA ? '#00d4ff' : 'rgba(255, 255, 255, 0.5)' }}>
-              SQUADRA A {isVittoriaA && '👑'}
-            </div>
-            <div style={{ fontSize: '0.85rem', color: 'rgba(255, 255, 255, 0.7)', lineHeight: 1.6 }}>
-              {partita.squadra_a.map((id, i) => (
-                <div key={i} style={{ marginBottom: '0.25rem' }}>
-                  {getNome(id)}
-                  {partita.eventi?.[id]?.gol > 0 && ` ⚽${partita.eventi[id].gol}`}
-                  {partita.eventi?.[id]?.assist > 0 && ` 🎯${partita.eventi[id].assist}`}
-                </div>
-              ))}
-            </div>
-          </div>
-          <div style={{ background: 'rgba(0, 0, 0, 0.3)', border: '1px solid rgba(0, 212, 255, 0.2)', borderRadius: '15px', padding: '1.5rem 2rem', textAlign: 'center' }}>
-            <div style={{ fontSize: '3.5rem', fontWeight: 900, lineHeight: 1 }}>
-              <span style={{ color: isVittoriaA ? '#00d4ff' : '#fff' }}>{partita.punteggio_a}</span>
-              <span style={{ color: 'rgba(255, 255, 255, 0.3)', margin: '0 0.5rem' }}>-</span>
-              <span style={{ color: isVittoriaB ? '#00d4ff' : '#fff' }}>{partita.punteggio_b}</span>
-            </div>
-          </div>
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '1rem', color: isVittoriaB ? '#00d4ff' : 'rgba(255, 255, 255, 0.5)' }}>
-              SQUADRA B {isVittoriaB && '👑'}
-            </div>
-            <div style={{ fontSize: '0.85rem', color: 'rgba(255, 255, 255, 0.7)', lineHeight: 1.6 }}>
-              {partita.squadra_b.map((id, i) => (
-                <div key={i} style={{ marginBottom: '0.25rem' }}>
-                  {getNome(id)}
-                  {partita.eventi?.[id]?.gol > 0 && ` ⚽${partita.eventi[id].gol}`}
-                  {partita.eventi?.[id]?.assist > 0 && ` 🎯${partita.eventi[id].assist}`}
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
+      {/* CORPO CARD - Match area */}
+      <div style={{
+        background: `linear-gradient(135deg, rgba(15,23,41,0.97) 0%, rgba(10,16,30,0.98) 50%, rgba(15,23,41,0.97) 100%)`,
+        padding: '1.5rem',
+        position: 'relative',
+        overflow: 'hidden',
+      }}>
+        {/* Sfondo decorativo campo */}
+        <div style={{
+          position: 'absolute', inset: 0,
+          background: 'radial-gradient(ellipse at 50% 50%, rgba(0,212,255,0.04) 0%, transparent 70%)',
+          pointerEvents: 'none'
+        }} />
+        <div style={{
+          position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
+          width: '120px', height: '120px',
+          border: '1px solid rgba(255,255,255,0.03)',
+          borderRadius: '50%',
+          pointerEvents: 'none'
+        }} />
 
-      {partita.votazioni?.length > 0 && stato !== 'pre_partita' && (
-        <div style={{ marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid rgba(255, 255, 255, 0.05)', fontSize: '0.85rem', color: 'rgba(255, 255, 255, 0.5)', textAlign: 'center' }}>
-          {partita.votazioni.length} {partita.votazioni.length === 1 ? 'voto registrato' : 'voti registrati'}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', gap: '1.5rem', position: 'relative' }}>
+
+          {/* SQUADRA A */}
+          <div>
+            <div style={{
+              fontSize: '0.7rem', fontWeight: 800, letterSpacing: '1px', textTransform: 'uppercase',
+              color: stato === 'chiusa' && isVittoriaA ? '#00d4ff' : 'rgba(255,255,255,0.4)',
+              marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.4rem'
+            }}>
+              {stato === 'chiusa' && isVittoriaA && <span style={{ color: '#ffd700' }}>👑</span>}
+              Squadra A
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+              {partita.squadra_a.map((id) => (
+                <div key={id} style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                  {/* Mini avatar */}
+                  <div style={{
+                    width: '28px', height: '28px', borderRadius: '50%', overflow: 'hidden', flexShrink: 0,
+                    background: 'rgba(0,212,255,0.1)', border: '1px solid rgba(0,212,255,0.2)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem'
+                  }}>
+                    {getFoto(id)
+                      ? <img src={getFoto(id)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top' }} />
+                      : '👤'
+                    }
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {getNome(id)}
+                      {mvp?.playerId === id && <span style={{ marginLeft: '0.3rem', fontSize: '0.7rem', color: '#ffd700' }}>⭐</span>}
+                    </div>
+                    {(partita.eventi?.[id]?.gol > 0 || partita.eventi?.[id]?.assist > 0) && (
+                      <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)' }}>
+                        {partita.eventi[id]?.gol > 0 && `⚽${partita.eventi[id].gol} `}
+                        {partita.eventi[id]?.assist > 0 && `🎯${partita.eventi[id].assist}`}
+                      </div>
+                    )}
+                  </div>
+                  {/* Voto finale */}
+                  {partita.voti_calcolati?.find(v => v.playerId === id) && (
+                    <div style={{
+                      fontSize: '0.75rem', fontWeight: 900,
+                      color: partita.voti_calcolati.find(v => v.playerId === id).votoFinale >= 7 ? '#00d4ff' : partita.voti_calcolati.find(v => v.playerId === id).votoFinale >= 6 ? '#ffd700' : '#ef4444',
+                      minWidth: '28px', textAlign: 'right'
+                    }}>
+                      {partita.voti_calcolati.find(v => v.playerId === id).votoFinale.toFixed(1)}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* CENTRO - Punteggio */}
+          <div style={{ textAlign: 'center', minWidth: '100px' }}>
+            {stato === 'pre_partita' ? (
+              <div style={{
+                background: 'rgba(255,215,0,0.08)', border: '1px solid rgba(255,215,0,0.2)',
+                borderRadius: '14px', padding: '1rem 1.25rem'
+              }}>
+                <div style={{ fontSize: '0.7rem', fontWeight: 800, color: '#ffd700', letterSpacing: '1px' }}>VS</div>
+                <div style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.3)', marginTop: '0.25rem' }}>DA GIOCARE</div>
+              </div>
+            ) : (
+              <div style={{
+                background: 'rgba(0,0,0,0.4)',
+                border: `2px solid ${isPareggio ? 'rgba(255,215,0,0.3)' : isVittoriaA ? 'rgba(0,212,255,0.2)' : 'rgba(0,212,255,0.2)'}`,
+                borderRadius: '16px',
+                padding: '0.75rem 1rem',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+                  <span style={{
+                    fontSize: '2.8rem', fontWeight: 900, lineHeight: 1,
+                    color: isVittoriaA ? '#00d4ff' : isPareggio ? '#ffd700' : 'rgba(255,255,255,0.5)'
+                  }}>
+                    {partita.punteggio_a}
+                  </span>
+                  <span style={{ fontSize: '1.5rem', color: 'rgba(255,255,255,0.2)', fontWeight: 300 }}>—</span>
+                  <span style={{
+                    fontSize: '2.8rem', fontWeight: 900, lineHeight: 1,
+                    color: isVittoriaB ? '#00d4ff' : isPareggio ? '#ffd700' : 'rgba(255,255,255,0.5)'
+                  }}>
+                    {partita.punteggio_b}
+                  </span>
+                </div>
+                <div style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.25)', marginTop: '0.25rem', letterSpacing: '0.5px' }}>
+                  {isVittoriaA ? 'VINCE A' : isVittoriaB ? 'VINCE B' : 'PAREGGIO'}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* SQUADRA B */}
+          <div>
+            <div style={{
+              fontSize: '0.7rem', fontWeight: 800, letterSpacing: '1px', textTransform: 'uppercase',
+              color: stato === 'chiusa' && isVittoriaB ? '#00d4ff' : 'rgba(255,255,255,0.4)',
+              marginBottom: '1rem', textAlign: 'right', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.4rem'
+            }}>
+              Squadra B
+              {stato === 'chiusa' && isVittoriaB && <span style={{ color: '#ffd700' }}>👑</span>}
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+              {partita.squadra_b.map((id) => (
+                <div key={id} style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexDirection: 'row-reverse' }}>
+                  {/* Mini avatar */}
+                  <div style={{
+                    width: '28px', height: '28px', borderRadius: '50%', overflow: 'hidden', flexShrink: 0,
+                    background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem'
+                  }}>
+                    {getFoto(id)
+                      ? <img src={getFoto(id)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top' }} />
+                      : '👤'
+                    }
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0, textAlign: 'right' }}>
+                    <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {mvp?.playerId === id && <span style={{ marginRight: '0.3rem', fontSize: '0.7rem', color: '#ffd700' }}>⭐</span>}
+                      {getNome(id)}
+                    </div>
+                    {(partita.eventi?.[id]?.gol > 0 || partita.eventi?.[id]?.assist > 0) && (
+                      <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)' }}>
+                        {partita.eventi[id]?.gol > 0 && `⚽${partita.eventi[id].gol} `}
+                        {partita.eventi[id]?.assist > 0 && `🎯${partita.eventi[id].assist}`}
+                      </div>
+                    )}
+                  </div>
+                  {/* Voto finale */}
+                  {partita.voti_calcolati?.find(v => v.playerId === id) && (
+                    <div style={{
+                      fontSize: '0.75rem', fontWeight: 900,
+                      color: partita.voti_calcolati.find(v => v.playerId === id).votoFinale >= 7 ? '#00d4ff' : partita.voti_calcolati.find(v => v.playerId === id).votoFinale >= 6 ? '#ffd700' : '#ef4444',
+                      minWidth: '28px', textAlign: 'left'
+                    }}>
+                      {partita.voti_calcolati.find(v => v.playerId === id).votoFinale.toFixed(1)}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
-      )}
+      </div>
     </div>
   )
 }
