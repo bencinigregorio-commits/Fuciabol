@@ -1,75 +1,128 @@
-export function calcolaVotoFinale(partita, playerId, allVotazioni) {
-  const votiAltriGiocatori = allVotazioni
-    .filter(v => v.voterId !== playerId && v.voterId !== 'admin')
-    .map(v => v.voti[playerId])
-    .filter(v => v !== undefined)
+// Calcola la forza di una squadra considerando overall medio e forma
+export function calcolaForzaSquadra(giocatori, squadraIds) {
+  if (!squadraIds || squadraIds.length === 0) return 65 // default
+
+  const giocatoriSquadra = giocatori.filter(g => squadraIds.includes(g.id))
   
-  const autovoto = allVotazioni.find(v => v.voterId === playerId)?.voti[playerId] || 6
-  const votoAdmin = allVotazioni.find(v => v.voterId === 'admin')?.voti[playerId] || 6
+  // Media overall
+  const mediaOverall = giocatoriSquadra.reduce((sum, g) => sum + g.overall, 0) / giocatoriSquadra.length
   
-  const mediaAltri = votiAltriGiocatori.length > 0 
-    ? votiAltriGiocatori.reduce((s, v) => s + v, 0) / votiAltriGiocatori.length 
-    : 6
+  // Bonus forma medio (punti forma diviso soglia standard)
+  const bonusForma = giocatoriSquadra.reduce((sum, g) => {
+    const punti = g.forma_punti || 0
+    return sum + (punti / 5) // normalizza
+  }, 0) / giocatoriSquadra.length
+
+  return mediaOverall + bonusForma
+}
+
+// Calcola quote per risultato partita
+export function calcolaQuoteRisultato(giocatori, squadraA, squadraB) {
+  const forzaA = calcolaForzaSquadra(giocatori, squadraA)
+  const forzaB = calcolaForzaSquadra(giocatori, squadraB)
+  const forzaTotale = forzaA + forzaB
   
-  let autovotoCorretto = autovoto
-  if (autovoto > mediaAltri + 0.5) autovotoCorretto = mediaAltri + 0.5
-  if (autovoto < mediaAltri - 0.5) autovotoCorretto = mediaAltri - 0.5
+  // Probabilità grezze (85% diviso tra vittorie, 15% base pareggio)
+  let probA = (forzaA / forzaTotale) * 0.85
+  let probB = (forzaB / forzaTotale) * 0.85
   
-  const votoBase = mediaAltri * 0.7 + votoAdmin * 0.2 + autovotoCorretto * 0.1
+  // Probabilità pareggio aumenta se squadre equilibrate
+  const differenza = Math.abs(forzaA - forzaB)
+  let probPareggio = 0.15 + (Math.max(0, (10 - differenza)) * 0.01) // max +10%
   
-  const eventi = partita.eventi?.[playerId] || {}
-  let bonusStatistici = 0
-  bonusStatistici += (eventi.gol || 0) * 0.20
-  bonusStatistici += (eventi.assist || 0) * 0.15
-  bonusStatistici = Math.max(-0.8, Math.min(0.8, bonusStatistici))
+  // Normalizza (deve fare 1.00)
+  const totale = probA + probB + probPareggio
+  probA = probA / totale
+  probB = probB / totale
+  probPareggio = probPareggio / totale
   
-  const inSquadraA = partita.squadra_a.includes(playerId)
-  const vintoA = partita.punteggio_a > partita.punteggio_b
-  const vintoB = partita.punteggio_b > partita.punteggio_a
-  const haVinto = (inSquadraA && vintoA) || (!inSquadraA && vintoB)
-  const haPerso = (inSquadraA && vintoB) || (!inSquadraA && vintoA)
-  
-  let bonusRisultato = 0
-  if (haVinto) bonusRisultato = 0.20
-  if (haPerso) bonusRisultato = -0.20
-  
-  const votoFinale = votoBase + bonusStatistici + bonusRisultato
+  // Converti in quote con margine bookmaker 5%
+  const quotaA = Math.max(1.20, ((1 / probA) * 0.95))
+  const quotaPareggio = Math.max(2.00, ((1 / probPareggio) * 0.95))
+  const quotaB = Math.max(1.20, ((1 / probB) * 0.95))
   
   return {
-    votoFinale: Math.max(1, Math.min(10, votoFinale)),
-    votoBase,
-    mediaAltri,
-    autovotoCorretto,
-    votoAdmin,
-    bonusStatistici,
-    bonusRisultato
+    squadra_a: parseFloat(quotaA.toFixed(2)),
+    pareggio: parseFloat(quotaPareggio.toFixed(2)),
+    squadra_b: parseFloat(quotaB.toFixed(2))
   }
 }
 
-export function votoToPuntiForma(voto) {
-  if (voto >= 9.0) return 8
-  if (voto >= 8.5) return 6
-  if (voto >= 8.0) return 5
-  if (voto >= 7.5) return 4
-  if (voto >= 7.0) return 3
-  if (voto >= 6.5) return 2
-  if (voto >= 6.0) return 1
-  if (voto >= 5.5) return -1
-  return -2
+// Calcola quote per migliore in campo
+export function calcolaQuoteMiglioreInCampo(giocatori, allPlayerIds) {
+  const giocatoriPartita = giocatori.filter(g => allPlayerIds.includes(g.id))
+  
+  // Overall totale
+  const overallTotale = giocatoriPartita.reduce((sum, g) => sum + g.overall, 0)
+  
+  const quote = {}
+  
+  giocatoriPartita.forEach(g => {
+    // Probabilità proporzionale all'overall
+    const prob = g.overall / overallTotale
+    
+    // Quota con margine
+    const quota = Math.max(1.50, ((1 / prob) * 0.90))
+    
+    quote[g.id] = parseFloat(quota.toFixed(2))
+  })
+  
+  return quote
 }
 
-export function aggiornaOverall(currentOverall, puntiFormaAccumulati) {
-  let soglia
-  if (currentOverall >= 95) soglia = 15
-  else if (currentOverall >= 90) soglia = 10
-  else if (currentOverall >= 85) soglia = 7
-  else if (currentOverall >= 75) soglia = 5
-  else if (currentOverall >= 65) soglia = 3
-  else soglia = 2
+// Calcola quote per capocannoniere (tutti uguali)
+export function calcolaQuoteCapocannoniere(allPlayerIds) {
+  const numGiocatori = allPlayerIds.length
+  const quotaBase = numGiocatori * 0.8 // es: 10 giocatori → quota 8.00
   
-  const cambio = Math.floor(puntiFormaAccumulati / soglia)
-  const residuo = puntiFormaAccumulati % soglia
-  const newOverall = Math.max(55, Math.min(99, currentOverall + cambio))
+  const quote = {}
+  allPlayerIds.forEach(id => {
+    quote[id] = parseFloat(Math.max(2.00, quotaBase).toFixed(2))
+  })
   
-  return { newOverall, residuo }
+  return quote
+}
+
+// Verifica vincita risultato
+export function verificaVincitaRisultato(partita, scelta) {
+  if (partita.punteggio_a > partita.punteggio_b) return scelta === 'squadra_a'
+  if (partita.punteggio_b > partita.punteggio_a) return scelta === 'squadra_b'
+  return scelta === 'pareggio'
+}
+
+// Verifica vincita migliore in campo
+export function verificaVincitaMiglioreInCampo(partita, giocatoreId) {
+  if (!partita.voti_calcolati) return false
+  
+  const voti = partita.voti_calcolati
+  const maxVoto = Math.max(...voti.map(v => v.votoFinale))
+  const migliore = voti.find(v => v.votoFinale === maxVoto)
+  
+  return migliore?.playerId === giocatoreId
+}
+
+// Verifica vincita capocannoniere
+export function verificaVincitaCapocannoniere(partita, giocatoreId) {
+  if (!partita.eventi) return false
+  
+  const allPlayers = [...partita.squadra_a, ...partita.squadra_b]
+  
+  let maxGol = 0
+  let capocannonieri = []
+  
+  allPlayers.forEach(id => {
+    const gol = partita.eventi[id]?.gol || 0
+    if (gol > maxGol) {
+      maxGol = gol
+      capocannonieri = [id]
+    } else if (gol === maxGol && gol > 0) {
+      capocannonieri.push(id)
+    }
+  })
+  
+  // Se nessuno ha segnato, tutti perdono
+  if (maxGol === 0) return false
+  
+  // Se pareggio tra più giocatori, dividono la vincita
+  return capocannonieri.includes(giocatoreId)
 }
