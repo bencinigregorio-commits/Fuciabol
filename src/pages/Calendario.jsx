@@ -134,6 +134,7 @@ function Calendario({ currentUser }) {
         <GazzettaFuciabol
           partite={partite.filter(p => p.stato === 'chiusa').slice(0, 3)}
           giocatori={giocatoriAll}
+          currentUser={currentUser}
         />
       )}
 
@@ -194,7 +195,7 @@ function Calendario({ currentUser }) {
 }
 
 
-function GazzettaFuciabol({ partite, giocatori }) {
+function GazzettaFuciabol({ partite, giocatori, currentUser }) {
   const [articolo, setArticolo] = useState(null)
   const [loading, setLoading] = useState(false)
   const [topGiocatori, setTopGiocatori] = useState([])
@@ -305,9 +306,11 @@ function GazzettaFuciabol({ partite, giocatori }) {
             <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.35)', letterSpacing: '1px', marginTop: '2px' }}>IL GIORNALE DEI CAMPIONI DEL CALCETTO</div>
           </div>
         </div>
-        <button onClick={generaArticolo} disabled={loading} style={{ background: loading ? 'rgba(255,215,0,0.1)' : 'linear-gradient(135deg, #ffd700, #ffa500)', border: loading ? '1px solid rgba(255,215,0,0.3)' : 'none', borderRadius: '10px', padding: '0.6rem 1.25rem', color: loading ? '#ffd700' : '#0f1729', fontWeight: 800, cursor: loading ? 'default' : 'pointer', fontSize: '0.85rem', transition: 'all 0.2s' }}>
-          {loading ? '⏳ Scrivendo...' : generato ? '🔄 Rigenera' : '✍️ Genera articolo'}
-        </button>
+        {currentUser?.role === 'admin' && (
+          <button onClick={generaArticolo} disabled={loading} style={{ background: loading ? 'rgba(255,215,0,0.1)' : 'linear-gradient(135deg, #ffd700, #ffa500)', border: loading ? '1px solid rgba(255,215,0,0.3)' : 'none', borderRadius: '10px', padding: '0.6rem 1.25rem', color: loading ? '#ffd700' : '#0f1729', fontWeight: 800, cursor: loading ? 'default' : 'pointer', fontSize: '0.85rem', transition: 'all 0.2s' }}>
+            {loading ? '⏳ Scrivendo...' : generato ? '🔄 Rigenera' : '✍️ Genera articolo'}
+          </button>
+        )}
       </div>
 
       <div style={{ background: 'linear-gradient(135deg, rgba(10,16,30,0.95), rgba(8,12,25,0.98))', border: '1px solid rgba(255,215,0,0.2)', borderTop: 'none', borderRadius: '0 0 20px 20px', padding: '1.75rem' }}>
