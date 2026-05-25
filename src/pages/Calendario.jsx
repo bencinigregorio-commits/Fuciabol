@@ -258,7 +258,11 @@ function GazzettaFuciabol({ partite, giocatori, currentUser }) {
         body: JSON.stringify({ model: 'gpt-4o-mini', max_tokens: 400, messages: [{ role: 'user', content: prompt }] })
       })
       const data = await response.json()
-      setArticolo(data.choices?.[0]?.message?.content || 'Errore nella generazione')
+      if (data.error) {
+        setArticolo('Errore OpenAI: ' + data.error.message)
+      } else {
+        setArticolo(data.choices?.[0]?.message?.content || 'Errore nella generazione')
+      }
     } catch (e) {
       setArticolo('Errore di connessione. Riprova!')
     }
@@ -360,9 +364,16 @@ function GazzettaFuciabol({ partite, giocatori, currentUser }) {
         </div>
 
         {!generato && (
-          <div style={{ background: 'rgba(255,215,0,0.04)', border: '1px dashed rgba(255,215,0,0.2)', borderRadius: '12px', padding: '1.25rem', textAlign: 'center' }}>
-            <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>✍️</div>
-            <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.4)', fontStyle: 'italic' }}>Clicca "Genera articolo" per il commento del nostro giornalista!</div>
+          <div style={{ background: 'rgba(255,215,0,0.04)', border: '1px dashed rgba(255,215,0,0.2)', borderRadius: '12px', padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <div style={{ fontSize: '2rem', flexShrink: 0 }}>🗞️</div>
+            <div>
+              <div style={{ fontSize: '0.9rem', fontWeight: 700, color: 'rgba(255,215,0,0.7)', marginBottom: '0.25rem' }}>I NOSTRI GIORNALISTI SONO AL LAVORO...</div>
+              <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.35)', fontStyle: 'italic' }}>
+                {currentUser?.role === 'admin'
+                  ? 'Clicca "Genera articolo" per pubblicare i titoli di oggi! 📰'
+                  : 'Gli ultimi titoli saranno disponibili a breve. Torna più tardi! ⏳'}
+              </div>
+            </div>
           </div>
         )}
         {loading && (
