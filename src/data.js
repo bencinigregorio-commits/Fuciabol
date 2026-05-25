@@ -1,0 +1,16 @@
+﻿export const GIOCATORI = [
+  { id: 1, nome: 'Mattia Lovino', ruolo: 'ATT', overall: 65, gol: 0, assist: 0, presenze: 0, avatar: null },
+  { id: 2, nome: 'Mario "la suerte" Diana', ruolo: 'ATT', overall: 65, gol: 0, assist: 0, presenze: 0, avatar: null },
+  { id: 3, nome: 'Marco Gemma', ruolo: 'CC/DC', overall: 65, gol: 0, assist: 0, presenze: 0, avatar: null },
+  { id: 4, nome: 'Leonardo Scanferla', ruolo: 'DC', overall: 65, gol: 0, assist: 0, presenze: 0, avatar: null },
+  { id: 5, nome: 'Gregorio Bencini', ruolo: 'DC/ATT', overall: 65, gol: 0, assist: 0, presenze: 0, avatar: null },
+  { id: 6, nome: 'Jacopo Palladini', ruolo: 'DC/CC', overall: 65, gol: 0, assist: 0, presenze: 0, avatar: null },
+  { id: 7, nome: 'Pietro Matteoni', ruolo: 'POR/CC', overall: 65, gol: 0, assist: 0, presenze: 0, avatar: null },
+  { id: 8, nome: 'Carlo Parodo', ruolo: 'DC', overall: 65, gol: 0, assist: 0, presenze: 0, avatar: null },
+  { id: 9, nome: 'Giuseppe Zola', ruolo: 'CC', overall: 65, gol: 0, assist: 0, presenze: 0, avatar: null },
+  { id: 10, nome: 'Davide Dianese', ruolo: 'CC', overall: 65, gol: 0, assist: 0, presenze: 0, avatar: null },
+  { id: 11, nome: 'Il Maestro', ruolo: 'CC', overall: 65, gol: 0, assist: 0, presenze: 0, avatar: null },
+  { id: 12, nome: 'Jack', ruolo: 'CC', overall: 65, gol: 0, assist: 0, presenze: 0, avatar: null },
+  { id: 13, nome: 'Federico White', ruolo: 'DC/CC', overall: 65, gol: 0, assist: 0, presenze: 0, avatar: null },
+  { id: 14, nome: 'Riccardo Scatizzi', ruolo: 'ATT/POR', overall: 65, gol: 0, assist: 0, presenze: 0, avatar: null },
+]
