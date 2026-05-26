@@ -192,8 +192,8 @@ function Statistiche() {
       {/* Grid card giocatori */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
-        gap: '2rem',
+        gridTemplateColumns: 'repeat(auto-fill, minmax(min(160px, 28vw), 1fr))',
+        gap: '1rem',
         justifyItems: 'center'
       }}>
         {giocatoriOrdinati.map((g, i) => (
@@ -215,8 +215,8 @@ function Statistiche() {
         return (
           <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, backdropFilter: 'blur(4px)' }} onClick={() => setSelected(null)}>
             <div style={{ background: 'rgba(15, 23, 41, 0.98)', border: `1px solid ${cfg.border}`, borderRadius: '20px', padding: '2rem', maxWidth: '500px', width: '90%', animation: 'fadeInUp 0.3s ease', boxShadow: `0 0 30px ${cfg.glowColor}` }} onClick={e => e.stopPropagation()}>
-              <div style={{ display: 'flex', gap: '1.5rem', marginBottom: '1.5rem' }}>
-                <div style={{ width: '100px', height: '130px', borderRadius: '8px', overflow: 'hidden', background: cfg.bg, border: `2px solid ${cfg.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
+                <div style={{ width: '80px', height: '105px', borderRadius: '8px', overflow: 'hidden', background: cfg.bg, border: `2px solid ${cfg.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                   {g.foto_url
                     ? <img src={g.foto_url} alt={g.nome} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top center' }} />
                     : <span style={{ fontSize: '3rem' }}>👤</span>}
@@ -228,7 +228,7 @@ function Statistiche() {
                     </span>
                     {g.isIF && <span style={{ animation: 'ifPulse 1.5s ease-in-out infinite', fontSize: '0.7rem', color: '#00d4ff' }}>⚡ MVP ultima partita</span>}
                   </div>
-                  <div style={{ fontSize: '1.8rem', fontWeight: 900, marginBottom: '0.25rem' }}>{g.nome}</div>
+                  <div style={{ fontSize: 'clamp(1.2rem, 4vw, 1.8rem)', fontWeight: 900, marginBottom: '0.25rem' }}>{g.nome}</div>
                   <div style={{ color: cfg.labelColor, fontWeight: 700, marginBottom: '0.5rem' }}>{g.ruolo}</div>
                   <div style={{ display: 'flex', gap: '0.5rem' }}>
                     <span style={{ background: `${cfg.labelBg}`, border: `1px solid ${cfg.border}`, borderRadius: '20px', padding: '0.25rem 0.75rem', fontSize: '0.85rem', fontWeight: 700, color: cfg.labelColor }}>OVR {g.overall}</span>
@@ -274,7 +274,7 @@ function FutStatCard({ giocatore, onClick }) {
   const cardType = getCardType(giocatore.overall, giocatore.isIF)
   const cfg = CARD_CONFIGS[cardType]
 
-  const nomeParti = giocatore.nome.split(' ')
+  const nomeParti = giocatore.nome.replace(/\s*\(.*?\)/g, '').trim().split(' ')
   const cognome = nomeParti.length > 1 ? nomeParti[nomeParti.length - 1].toUpperCase() : giocatore.nome.toUpperCase()
 
   return (
@@ -285,7 +285,7 @@ function FutStatCard({ giocatore, onClick }) {
       onMouseLeave={() => setHovered(false)}
       style={{
         width: '100%',
-        height: '290px',
+        height: 'min(290px, 55vw)',
         borderRadius: '14px',
         background: cfg.bg,
         border: `2px solid ${cfg.border}`,

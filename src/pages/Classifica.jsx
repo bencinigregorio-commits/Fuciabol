@@ -107,23 +107,25 @@ function Classifica() {
 
       {/* PODIO FUT CARDS */}
       {top3.length >= 3 && (
-        <div style={{ marginBottom: '4rem', padding: '2rem 0' }}>
+        <div style={{ marginBottom: '3rem', padding: '1rem 0', overflowX: 'hidden' }}>
           <div style={{
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'flex-end',
-            gap: '2rem',
+            gap: '0.75rem',
+            flexWrap: 'nowrap',
+            maxWidth: '100%',
           }}>
             {/* 2° */}
-            <div style={{ animation: 'fadeInUp 0.6s ease 0.2s both' }}>
+            <div style={{ animation: 'fadeInUp 0.6s ease 0.2s both', flexShrink: 1 }}>
               <FutCard giocatore={top3[1]} position={2} />
             </div>
             {/* 1° - più in alto */}
-            <div style={{ animation: 'fadeInUp 0.6s ease 0s both', marginBottom: '30px' }}>
+            <div style={{ animation: 'fadeInUp 0.6s ease 0s both', marginBottom: '20px', flexShrink: 1 }}>
               <FutCard giocatore={top3[0]} position={1} />
             </div>
             {/* 3° */}
-            <div style={{ animation: 'fadeInUp 0.6s ease 0.4s both' }}>
+            <div style={{ animation: 'fadeInUp 0.6s ease 0.4s both', flexShrink: 1 }}>
               <FutCard giocatore={top3[2]} position={3} />
             </div>
           </div>
@@ -142,20 +144,18 @@ function Classifica() {
       }}>
         <div style={{
           display: 'grid',
-          gridTemplateColumns: '55px 50px 1fr 50px 50px 50px 50px 55px 60px 75px',
-          padding: '1rem 1.5rem',
+          gridTemplateColumns: '44px 44px 1fr 36px 36px 36px 50px',
+          padding: '0.75rem 0.75rem',
           borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-          fontSize: '0.72rem', fontWeight: 700,
+          fontSize: '0.65rem', fontWeight: 700,
           color: 'rgba(255, 255, 255, 0.35)',
-          textTransform: 'uppercase', letterSpacing: '0.8px'
+          textTransform: 'uppercase', letterSpacing: '0.5px',
+          gap: '0.25rem',
         }}>
           <div>POS.</div><div></div><div>GIOCATORE</div>
-          <div style={{ textAlign: 'center' }}>PG</div>
           <div style={{ textAlign: 'center' }}>V</div>
-          <div style={{ textAlign: 'center' }}>P</div>
           <div style={{ textAlign: 'center' }}>S</div>
           <div style={{ textAlign: 'center' }}>GF</div>
-          <div style={{ textAlign: 'center' }}>DR</div>
           <div style={{ textAlign: 'center' }}>PTS</div>
         </div>
         {classifica.map((g, index) => (
@@ -181,12 +181,12 @@ function FutCard({ giocatore, position }) {
       statsBarBg: 'rgba(0,0,0,0.5)',
       statsText: '#fff5cc',
       labelText: 'rgba(42,24,0,0.65)',
-      width: '200px',
-      height: '310px',
-      overallSize: '2.4rem',
-      nameSize: '0.9rem',
-      photoSize: '120px',
-      photoH: '140px',
+      width: 'min(200px, 28vw)',
+      height: 'min(310px, 43vw)',
+      overallSize: 'clamp(1.4rem, 4vw, 2.4rem)',
+      nameSize: 'clamp(0.6rem, 2vw, 0.9rem)',
+      photoSize: 'clamp(70px, 15vw, 120px)',
+      photoH: 'clamp(85px, 18vw, 140px)',
     },
     2: {
       glowAnim: 'glowSilver 2.5s ease-in-out infinite',
@@ -198,6 +198,12 @@ function FutCard({ giocatore, position }) {
       textDark: '#1a1a1a',
       statsBarBg: 'rgba(0,0,0,0.4)',
       statsText: '#f0f0f0',
+      width: 'min(175px, 25vw)',
+      height: 'min(275px, 39vw)',
+      overallSize: 'clamp(1.2rem, 3.5vw, 2rem)',
+      nameSize: 'clamp(0.55rem, 1.8vw, 0.8rem)',
+      photoSize: 'clamp(60px, 13vw, 100px)',
+      photoH: 'clamp(75px, 16vw, 120px)',
       labelText: 'rgba(26,26,26,0.6)',
       width: '175px',
       height: '275px',
@@ -227,7 +233,7 @@ function FutCard({ giocatore, position }) {
   }
 
   const c = cfg[position]
-  const nomeParti = giocatore.nome.split(' ')
+  const nomeParti = giocatore.nome.replace(/\s*\(.*?\)/g, '').trim().split(' ')
   const cognome = nomeParti.length > 1 ? nomeParti[nomeParti.length - 1].toUpperCase() : giocatore.nome.toUpperCase()
 
   const medals = { 1: '🥇', 2: '🥈', 3: '🥉' }
@@ -365,53 +371,50 @@ function FutCard({ giocatore, position }) {
 }
 
 function RankRow({ giocatore, position, index }) {
+  const nomePulito = giocatore.nome.replace(/\s*\(.*?\)/g, '').trim()
   return (
     <div className="rank-row" style={{
       display: 'grid',
-      gridTemplateColumns: '55px 50px 1fr 50px 50px 50px 50px 55px 60px 75px',
-      padding: '0.9rem 1.5rem', alignItems: 'center',
+      gridTemplateColumns: '44px 44px 1fr 36px 36px 36px 50px',
+      padding: '0.75rem 0.75rem', alignItems: 'center',
       borderBottom: '1px solid rgba(255,255,255,0.03)',
       background: position <= 3 ? 'rgba(255,215,0,0.02)' : 'transparent',
-      animation: `fadeInUp 0.3s ease ${index * 0.04}s both`
+      animation: `fadeInUp 0.3s ease ${index * 0.04}s both`,
+      gap: '0.25rem',
     }}>
       <div style={{
-        width: '36px', height: '36px', borderRadius: '50%',
+        width: '32px', height: '32px', borderRadius: '50%',
         background: position === 1 ? 'linear-gradient(135deg,#ffd700,#ffa500)' : position === 2 ? 'linear-gradient(135deg,#c0c0c0,#a0a0a0)' : position === 3 ? 'linear-gradient(135deg,#cd7f32,#a05a20)' : 'rgba(255,255,255,0.05)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: '0.85rem', fontWeight: 700,
+        fontSize: '0.8rem', fontWeight: 700,
         color: position <= 3 ? '#0f1729' : 'rgba(255,255,255,0.4)',
-        boxShadow: position === 1 ? '0 2px 8px rgba(255,215,0,0.4)' : 'none'
+        flexShrink: 0,
       }}>{position}</div>
 
       <div style={{
-        width: '38px', height: '38px', borderRadius: '50%', overflow: 'hidden',
+        width: '36px', height: '36px', borderRadius: '50%', overflow: 'hidden',
         background: 'rgba(0,212,255,0.08)',
         border: position <= 3 ? '2px solid rgba(255,215,0,0.4)' : '2px solid rgba(0,212,255,0.15)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem'
+        display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem',
+        flexShrink: 0,
       }}>
         {giocatore.foto_url ? <img src={giocatore.foto_url} alt={giocatore.nome} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : '👤'}
       </div>
 
-      <div>
-        <div style={{ fontWeight: 700, fontSize: '0.95rem', marginBottom: '0.1rem' }}>{giocatore.nome}</div>
-        <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.35)', fontWeight: 600 }}>{giocatore.ruolo} • OVR {giocatore.overall}</div>
+      <div style={{ minWidth: 0 }}>
+        <div style={{ fontWeight: 700, fontSize: '0.85rem', marginBottom: '0.1rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{nomePulito}</div>
+        <div style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.35)', fontWeight: 600 }}>{giocatore.ruolo} • {giocatore.overall}</div>
       </div>
 
-      <div style={{ textAlign: 'center', fontSize: '0.88rem', color: 'rgba(255,255,255,0.55)', fontWeight: 600 }}>{giocatore.pg}</div>
-      <div style={{ textAlign: 'center', fontSize: '0.88rem', color: '#00d4ff', fontWeight: 700 }}>{giocatore.v}</div>
-      <div style={{ textAlign: 'center', fontSize: '0.88rem', color: '#ffd700', fontWeight: 700 }}>{giocatore.p}</div>
-      <div style={{ textAlign: 'center', fontSize: '0.88rem', color: '#ef4444', fontWeight: 700 }}>{giocatore.s}</div>
-      <div style={{ textAlign: 'center', fontSize: '0.88rem', color: 'rgba(255,255,255,0.55)', fontWeight: 600 }}>{giocatore.gf}</div>
-      <div style={{ textAlign: 'center', fontSize: '0.88rem', fontWeight: 700, color: giocatore.dr > 0 ? '#00d4ff' : giocatore.dr < 0 ? '#ef4444' : 'rgba(255,255,255,0.35)' }}>
-        {giocatore.dr > 0 ? `+${giocatore.dr}` : giocatore.dr}
-      </div>
+      <div style={{ textAlign: 'center', fontSize: '0.8rem', color: '#00d4ff', fontWeight: 700 }}>{giocatore.v}</div>
+      <div style={{ textAlign: 'center', fontSize: '0.8rem', color: '#ef4444', fontWeight: 700 }}>{giocatore.s}</div>
+      <div style={{ textAlign: 'center', fontSize: '0.8rem', color: 'rgba(255,255,255,0.55)', fontWeight: 600 }}>{giocatore.gf}</div>
       <div style={{ textAlign: 'center' }}>
         <div style={{
           display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-          width: '44px', height: '44px', borderRadius: '50%',
+          width: '38px', height: '38px', borderRadius: '50%',
           background: position <= 3 ? 'linear-gradient(135deg,#ffd700,#ffa500)' : 'linear-gradient(135deg,#00d4ff,#0099ff)',
-          fontSize: '1rem', fontWeight: 900, color: '#0f1729',
-          boxShadow: position <= 3 ? '0 2px 10px rgba(255,215,0,0.35)' : '0 2px 10px rgba(0,212,255,0.25)'
+          fontSize: '0.9rem', fontWeight: 900, color: '#0f1729',
         }}>{giocatore.punti}</div>
       </div>
     </div>

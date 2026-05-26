@@ -320,12 +320,12 @@ function GazzettaFuciabol({ partite, giocatori, currentUser }) {
       <div style={{ background: 'linear-gradient(135deg, rgba(10,16,30,0.95), rgba(8,12,25,0.98))', border: '1px solid rgba(255,215,0,0.2)', borderTop: 'none', borderRadius: '0 0 20px 20px', padding: '1.75rem' }}>
         <div style={{ marginBottom: '1.5rem' }}>
           <div style={{ fontSize: '0.7rem', fontWeight: 800, color: 'rgba(255,215,0,0.6)', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '1rem' }}>⚡ MIGLIORI DELLA SETTIMANA</div>
-          <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: '1rem', flexWrap: 'nowrap', overflowX: 'auto', paddingBottom: '0.5rem' }}>
             {topGiocatori.map((top, i) => {
               const cfg = cardCfgs[i]
               const isFirst = i === 0
               const nomiPuliti = top.giocatore.nome.replace(/\s*\(.*?\)/g, '').trim().split(' ')
-              const cognome = nomiPuliti.length > 1 ? nomiPuliti[nomiPuliti.length - 1].toUpperCase() : top.giocatore.nome.toUpperCase()
+              const cognome = nomiPuliti.length > 1 ? nomiPuliti[nomiPuliti.length - 1].toUpperCase() : top.giocatore.nome.replace(/\s*\(.*?\)/g, '').trim().toUpperCase()
               return (
                 <div key={top.id} style={{ flex: isFirst ? '1.2' : '1', minWidth: '120px', maxWidth: isFirst ? '200px' : '170px', height: isFirst ? '200px' : '175px', borderRadius: '12px', background: cfg.bg, border: '2px solid ' + cfg.border, position: 'relative', overflow: 'hidden', animation: cfg.glow, display: 'flex', flexDirection: 'column' }}>
                   <div style={{ position: 'absolute', top: '-50%', left: '-20%', width: '35%', height: '200%', background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent)', animation: 'shimmerGaz 2.5s ease-in-out infinite', pointerEvents: 'none', zIndex: 2 }} />
@@ -465,12 +465,12 @@ function PartitaCard({ partita, currentUser, onVoteClick, onChiudiVoti, onScomme
       <div style={{
         background: `linear-gradient(135deg, rgba(10,16,30,0.98), rgba(15,23,41,0.98))`,
         borderBottom: `1px solid ${sc.border}`,
-        padding: '0.85rem 1.5rem',
+        padding: '0.65rem 0.85rem',
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
         flexWrap: 'wrap',
-        gap: '0.75rem',
+        gap: '0.5rem',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
           <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.45)', fontWeight: 600, letterSpacing: '0.5px' }}>
@@ -559,7 +559,7 @@ function PartitaCard({ partita, currentUser, onVoteClick, onChiudiVoti, onScomme
           pointerEvents: 'none'
         }} />
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', gap: '1.5rem', position: 'relative' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', gap: '0.75rem', position: 'relative' }}>
 
           {/* SQUADRA A */}
           <div>
@@ -586,7 +586,7 @@ function PartitaCard({ partita, currentUser, onVoteClick, onChiudiVoti, onScomme
                     }
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    <div style={{ fontSize: 'clamp(0.7rem, 2.5vw, 0.85rem)', fontWeight: 600, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       {getNome(id)}
                       {mvp?.playerId === id && <span style={{ marginLeft: '0.3rem', fontSize: '0.7rem', color: '#ffd700' }}>⭐</span>}
                     </div>
@@ -627,18 +627,18 @@ function PartitaCard({ partita, currentUser, onVoteClick, onChiudiVoti, onScomme
                 background: 'rgba(0,0,0,0.4)',
                 border: `2px solid ${isPareggio ? 'rgba(255,215,0,0.3)' : isVittoriaA ? 'rgba(0,212,255,0.2)' : 'rgba(0,212,255,0.2)'}`,
                 borderRadius: '16px',
-                padding: '0.75rem 1rem',
+                padding: '0.5rem 0.5rem',
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
                   <span style={{
-                    fontSize: '2.8rem', fontWeight: 900, lineHeight: 1,
+                    fontSize: 'clamp(1.8rem, 6vw, 2.8rem)', fontWeight: 900, lineHeight: 1,
                     color: isVittoriaA ? '#00d4ff' : isPareggio ? '#ffd700' : 'rgba(255,255,255,0.5)'
                   }}>
                     {partita.punteggio_a}
                   </span>
-                  <span style={{ fontSize: '1.5rem', color: 'rgba(255,255,255,0.2)', fontWeight: 300 }}>—</span>
+                  <span style={{ fontSize: 'clamp(1rem, 3vw, 1.5rem)', color: 'rgba(255,255,255,0.2)', fontWeight: 300 }}>—</span>
                   <span style={{
-                    fontSize: '2.8rem', fontWeight: 900, lineHeight: 1,
+                    fontSize: 'clamp(1.8rem, 6vw, 2.8rem)', fontWeight: 900, lineHeight: 1,
                     color: isVittoriaB ? '#00d4ff' : isPareggio ? '#ffd700' : 'rgba(255,255,255,0.5)'
                   }}>
                     {partita.punteggio_b}
@@ -676,7 +676,7 @@ function PartitaCard({ partita, currentUser, onVoteClick, onChiudiVoti, onScomme
                     }
                   </div>
                   <div style={{ flex: 1, minWidth: 0, textAlign: 'right' }}>
-                    <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    <div style={{ fontSize: 'clamp(0.7rem, 2.5vw, 0.85rem)', fontWeight: 600, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       {mvp?.playerId === id && <span style={{ marginRight: '0.3rem', fontSize: '0.7rem', color: '#ffd700' }}>⭐</span>}
                       {getNome(id)}
                     </div>
