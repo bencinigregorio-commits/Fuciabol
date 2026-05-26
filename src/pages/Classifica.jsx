@@ -138,8 +138,6 @@ function Classifica() {
         border: '1px solid rgba(255, 255, 255, 0.05)',
         borderRadius: '20px',
         overflow: 'hidden',
-        maxWidth: '1000px',
-        margin: '0 auto',
         animation: 'fadeInUp 0.6s ease 0.3s both'
       }}>
         <div style={{

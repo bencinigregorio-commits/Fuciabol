@@ -541,7 +541,7 @@ function PartitaCard({ partita, currentUser, onVoteClick, onChiudiVoti, onScomme
       {/* CORPO CARD - Match area */}
       <div style={{
         background: `linear-gradient(135deg, rgba(15,23,41,0.97) 0%, rgba(10,16,30,0.98) 50%, rgba(15,23,41,0.97) 100%)`,
-        padding: '1.5rem',
+        padding: '0.85rem',
         position: 'relative',
         overflow: 'hidden',
       }}>
@@ -559,7 +559,7 @@ function PartitaCard({ partita, currentUser, onVoteClick, onChiudiVoti, onScomme
           pointerEvents: 'none'
         }} />
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', gap: '0.75rem', position: 'relative' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'start', gap: '0.5rem', position: 'relative' }}>
 
           {/* SQUADRA A */}
           <div>
