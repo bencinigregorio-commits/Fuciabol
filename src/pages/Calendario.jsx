@@ -545,65 +545,58 @@ function PartitaCard({ partita, currentUser, onVoteClick, onChiudiVoti, onScomme
         position: 'relative',
         overflow: 'hidden',
       }}>
-        {/* Sfondo decorativo campo */}
-        <div style={{
-          position: 'absolute', inset: 0,
-          background: 'radial-gradient(ellipse at 50% 50%, rgba(0,212,255,0.04) 0%, transparent 70%)',
-          pointerEvents: 'none'
-        }} />
-        <div style={{
-          position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
-          width: '120px', height: '120px',
-          border: '1px solid rgba(255,255,255,0.03)',
-          borderRadius: '50%',
-          pointerEvents: 'none'
-        }} />
+        <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at 50% 50%, rgba(0,212,255,0.04) 0%, transparent 70%)', pointerEvents: 'none' }} />
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'start', gap: '0.5rem', position: 'relative' }}>
+        {/* PUNTEGGIO in cima */}
+        <div style={{ textAlign: 'center', marginBottom: '0.85rem' }}>
+          {stato === 'pre_partita' ? (
+            <div style={{ display: 'inline-block', background: 'rgba(255,215,0,0.08)', border: '1px solid rgba(255,215,0,0.2)', borderRadius: '12px', padding: '0.5rem 1.5rem' }}>
+              <div style={{ fontSize: '1rem', fontWeight: 800, color: '#ffd700', letterSpacing: '2px' }}>VS</div>
+              <div style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.3)', letterSpacing: '1px' }}>DA GIOCARE</div>
+            </div>
+          ) : (
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.75rem', background: 'rgba(0,0,0,0.4)', border: `2px solid ${isPareggio ? 'rgba(255,215,0,0.3)' : 'rgba(0,212,255,0.2)'}`, borderRadius: '14px', padding: '0.5rem 1.25rem' }}>
+              <span style={{ fontSize: 'clamp(2rem, 8vw, 2.8rem)', fontWeight: 900, color: isVittoriaA ? '#00d4ff' : isPareggio ? '#ffd700' : 'rgba(255,255,255,0.5)' }}>{partita.punteggio_a}</span>
+              <span style={{ fontSize: '1.2rem', color: 'rgba(255,255,255,0.2)', fontWeight: 300 }}>—</span>
+              <span style={{ fontSize: 'clamp(2rem, 8vw, 2.8rem)', fontWeight: 900, color: isVittoriaB ? '#00d4ff' : isPareggio ? '#ffd700' : 'rgba(255,255,255,0.5)' }}>{partita.punteggio_b}</span>
+            </div>
+          )}
+          {stato !== 'pre_partita' && (
+            <div style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.25)', marginTop: '0.25rem', letterSpacing: '0.5px' }}>
+              {isVittoriaA ? 'VINCE A' : isVittoriaB ? 'VINCE B' : 'PAREGGIO'}
+            </div>
+          )}
+        </div>
+
+        {/* SQUADRE affiancate */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', position: 'relative' }}>
 
           {/* SQUADRA A */}
-          <div>
-            <div style={{
-              fontSize: '0.7rem', fontWeight: 800, letterSpacing: '1px', textTransform: 'uppercase',
-              color: stato === 'chiusa' && isVittoriaA ? '#00d4ff' : 'rgba(255,255,255,0.4)',
-              marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.4rem'
-            }}>
+          <div style={{ borderRight: '1px solid rgba(255,255,255,0.06)', paddingRight: '0.75rem' }}>
+            <div style={{ fontSize: '0.65rem', fontWeight: 800, letterSpacing: '1px', textTransform: 'uppercase', color: stato === 'chiusa' && isVittoriaA ? '#00d4ff' : 'rgba(255,255,255,0.4)', marginBottom: '0.6rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
               {stato === 'chiusa' && isVittoriaA && <span style={{ color: '#ffd700' }}>👑</span>}
               Squadra A
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
               {partita.squadra_a.map((id) => (
-                <div key={id} style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                  {/* Mini avatar */}
-                  <div style={{
-                    width: '28px', height: '28px', borderRadius: '50%', overflow: 'hidden', flexShrink: 0,
-                    background: 'rgba(0,212,255,0.1)', border: '1px solid rgba(0,212,255,0.2)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem'
-                  }}>
-                    {getFoto(id)
-                      ? <img src={getFoto(id)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top' }} />
-                      : '👤'
-                    }
+                <div key={id} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <div style={{ width: '24px', height: '24px', borderRadius: '50%', overflow: 'hidden', flexShrink: 0, background: 'rgba(0,212,255,0.1)', border: '1px solid rgba(0,212,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.6rem' }}>
+                    {getFoto(id) ? <img src={getFoto(id)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top' }} /> : '👤'}
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 'clamp(0.7rem, 2.5vw, 0.85rem)', fontWeight: 600, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {getNome(id)}
-                      {mvp?.playerId === id && <span style={{ marginLeft: '0.3rem', fontSize: '0.7rem', color: '#ffd700' }}>⭐</span>}
+                    <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {getNome(id).replace(/\s*\(.*?\)/g, '').trim()}
+                      {mvp?.playerId === id && <span style={{ marginLeft: '0.2rem', fontSize: '0.65rem', color: '#ffd700' }}>⭐</span>}
                     </div>
                     {(partita.eventi?.[id]?.gol > 0 || partita.eventi?.[id]?.assist > 0) && (
-                      <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)' }}>
+                      <div style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.4)' }}>
                         {partita.eventi[id]?.gol > 0 && `⚽${partita.eventi[id].gol} `}
                         {partita.eventi[id]?.assist > 0 && `🎯${partita.eventi[id].assist}`}
                       </div>
                     )}
                   </div>
-                  {/* Voto finale */}
                   {partita.voti_calcolati?.find(v => v.playerId === id) && (
-                    <div style={{
-                      fontSize: '0.75rem', fontWeight: 900,
-                      color: partita.voti_calcolati.find(v => v.playerId === id).votoFinale >= 7 ? '#00d4ff' : partita.voti_calcolati.find(v => v.playerId === id).votoFinale >= 6 ? '#ffd700' : '#ef4444',
-                      minWidth: '28px', textAlign: 'right'
-                    }}>
+                    <div style={{ fontSize: '0.7rem', fontWeight: 900, flexShrink: 0, color: partita.voti_calcolati.find(v => v.playerId === id).votoFinale >= 7 ? '#00d4ff' : partita.voti_calcolati.find(v => v.playerId === id).votoFinale >= 6 ? '#ffd700' : '#ef4444' }}>
                       {partita.voti_calcolati.find(v => v.playerId === id).votoFinale.toFixed(1)}
                     </div>
                   )}
@@ -612,73 +605,24 @@ function PartitaCard({ partita, currentUser, onVoteClick, onChiudiVoti, onScomme
             </div>
           </div>
 
-          {/* CENTRO - Punteggio */}
-          <div style={{ textAlign: 'center', minWidth: '100px' }}>
-            {stato === 'pre_partita' ? (
-              <div style={{
-                background: 'rgba(255,215,0,0.08)', border: '1px solid rgba(255,215,0,0.2)',
-                borderRadius: '14px', padding: '1rem 1.25rem'
-              }}>
-                <div style={{ fontSize: '0.7rem', fontWeight: 800, color: '#ffd700', letterSpacing: '1px' }}>VS</div>
-                <div style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.3)', marginTop: '0.25rem' }}>DA GIOCARE</div>
-              </div>
-            ) : (
-              <div style={{
-                background: 'rgba(0,0,0,0.4)',
-                border: `2px solid ${isPareggio ? 'rgba(255,215,0,0.3)' : isVittoriaA ? 'rgba(0,212,255,0.2)' : 'rgba(0,212,255,0.2)'}`,
-                borderRadius: '16px',
-                padding: '0.5rem 0.5rem',
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
-                  <span style={{
-                    fontSize: 'clamp(1.8rem, 6vw, 2.8rem)', fontWeight: 900, lineHeight: 1,
-                    color: isVittoriaA ? '#00d4ff' : isPareggio ? '#ffd700' : 'rgba(255,255,255,0.5)'
-                  }}>
-                    {partita.punteggio_a}
-                  </span>
-                  <span style={{ fontSize: 'clamp(1rem, 3vw, 1.5rem)', color: 'rgba(255,255,255,0.2)', fontWeight: 300 }}>—</span>
-                  <span style={{
-                    fontSize: 'clamp(1.8rem, 6vw, 2.8rem)', fontWeight: 900, lineHeight: 1,
-                    color: isVittoriaB ? '#00d4ff' : isPareggio ? '#ffd700' : 'rgba(255,255,255,0.5)'
-                  }}>
-                    {partita.punteggio_b}
-                  </span>
-                </div>
-                <div style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.25)', marginTop: '0.25rem', letterSpacing: '0.5px' }}>
-                  {isVittoriaA ? 'VINCE A' : isVittoriaB ? 'VINCE B' : 'PAREGGIO'}
-                </div>
-              </div>
-            )}
-          </div>
+
 
           {/* SQUADRA B */}
-          <div>
-            <div style={{
-              fontSize: '0.7rem', fontWeight: 800, letterSpacing: '1px', textTransform: 'uppercase',
-              color: stato === 'chiusa' && isVittoriaB ? '#00d4ff' : 'rgba(255,255,255,0.4)',
-              marginBottom: '1rem', textAlign: 'right', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.4rem'
-            }}>
+          <div style={{ paddingLeft: '0.75rem' }}>
+            <div style={{ fontSize: '0.65rem', fontWeight: 800, letterSpacing: '1px', textTransform: 'uppercase', color: stato === 'chiusa' && isVittoriaB ? '#00d4ff' : 'rgba(255,255,255,0.4)', marginBottom: '0.6rem', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.3rem' }}>
               Squadra B
               {stato === 'chiusa' && isVittoriaB && <span style={{ color: '#ffd700' }}>👑</span>}
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
               {partita.squadra_b.map((id) => (
-                <div key={id} style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexDirection: 'row-reverse' }}>
-                  {/* Mini avatar */}
-                  <div style={{
-                    width: '28px', height: '28px', borderRadius: '50%', overflow: 'hidden', flexShrink: 0,
-                    background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem'
-                  }}>
-                    {getFoto(id)
-                      ? <img src={getFoto(id)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top' }} />
-                      : '👤'
-                    }
+                <div key={id} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexDirection: 'row-reverse' }}>
+                  <div style={{ width: '24px', height: '24px', borderRadius: '50%', overflow: 'hidden', flexShrink: 0, background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.6rem' }}>
+                    {getFoto(id) ? <img src={getFoto(id)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top' }} /> : '👤'}
                   </div>
                   <div style={{ flex: 1, minWidth: 0, textAlign: 'right' }}>
-                    <div style={{ fontSize: 'clamp(0.7rem, 2.5vw, 0.85rem)', fontWeight: 600, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {mvp?.playerId === id && <span style={{ marginRight: '0.3rem', fontSize: '0.7rem', color: '#ffd700' }}>⭐</span>}
-                      {getNome(id)}
+                    <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {mvp?.playerId === id && <span style={{ marginRight: '0.2rem', fontSize: '0.65rem', color: '#ffd700' }}>⭐</span>}
+                      {getNome(id).replace(/\s*\(.*?\)/g, '').trim()}
                     </div>
                     {(partita.eventi?.[id]?.gol > 0 || partita.eventi?.[id]?.assist > 0) && (
                       <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)' }}>
