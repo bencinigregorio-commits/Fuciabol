@@ -112,7 +112,7 @@ function Dashboard({ currentUser }) {
   const scommessePerse = scommesse.filter(s => s.esito === 'persa').length
   const guadagniTotali = scommesse.filter(s => s.esito === 'vinta').reduce((sum, s) => sum + s.vincita, 0)
 
-  const nomeParti = giocatore.nome.split(' ')
+  const nomeParti = giocatore.nome.replace(/\s*\(.*?\)/g, '').trim().split(' ')
   const cognome = nomeParti.length > 1 ? nomeParti[nomeParti.length - 1].toUpperCase() : giocatore.nome.toUpperCase()
 
   return (
@@ -146,11 +146,13 @@ function Dashboard({ currentUser }) {
 
       {/* TOP SECTION: Card FUT + Info */}
       <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'auto 1fr',
-        gap: '2rem',
+        display: 'flex',
+        flexWrap: 'wrap',
+        gap: '1.5rem',
         marginBottom: '2rem',
-        animation: 'fadeInUp 0.5s ease'
+        animation: 'fadeInUp 0.5s ease',
+        alignItems: 'flex-start',
+        justifyContent: 'center',
       }}>
 
         {/* CARD FUT del giocatore */}
@@ -163,6 +165,7 @@ function Dashboard({ currentUser }) {
           position: 'relative',
           overflow: 'hidden',
           flexShrink: 0,
+          margin: '0 auto',
           animation: 'glowCard 2.5s ease-in-out infinite, floatCard 4s ease-in-out infinite',
         }}>
           {/* Bordo interno */}
@@ -220,9 +223,9 @@ function Dashboard({ currentUser }) {
         </div>
 
         {/* Info destra */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', justifyContent: 'center' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', justifyContent: 'center', flex: '1', minWidth: '280px', width: '100%' }}>
           <div>
-            <h1 style={{ fontSize: '2.2rem', fontWeight: 900, marginBottom: '0.25rem', lineHeight: 1.1 }}>{giocatore.nome}</h1>
+            <h1 style={{ fontSize: 'clamp(1.5rem, 5vw, 2.2rem)', fontWeight: 900, marginBottom: '0.25rem', lineHeight: 1.1 }}>{giocatore.nome}</h1>
             <div style={{ fontSize: '1rem', color: cfg.accentColor, fontWeight: 700, marginBottom: '1rem' }}>{giocatore.ruolo}</div>
           </div>
 
