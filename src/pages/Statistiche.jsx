@@ -163,6 +163,112 @@ function Statistiche() {
         .card-bronze { animation: glowBronze 4s ease-in-out infinite; }
         .stat-card:hover { transform: translateY(-8px) scale(1.02) !important; }
         .stat-card { transition: transform 0.3s ease !important; }
+
+        .photo-frame {
+          position: absolute;
+          top: 34px;
+          left: 50%;
+          transform: translateX(-50%);
+          width: min(112px, 58%);
+          height: min(132px, 46%);
+          z-index: 3;
+          border-radius: 18px;
+          overflow: hidden;
+          background:
+            radial-gradient(circle at 50% 15%, rgba(255,255,255,0.28), transparent 34%),
+            linear-gradient(180deg, rgba(10,16,30,0.18), rgba(10,16,30,0.72));
+          border: 1px solid rgba(255,255,255,0.22);
+          box-shadow:
+            inset 0 1px 0 rgba(255,255,255,0.22),
+            inset 0 -28px 35px rgba(0,0,0,0.28),
+            0 9px 18px rgba(0,0,0,0.36);
+        }
+
+        .photo-frame::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          z-index: 2;
+          pointer-events: none;
+          background:
+            linear-gradient(180deg, transparent 48%, rgba(0,0,0,0.42) 100%),
+            radial-gradient(circle at 50% 10%, rgba(255,255,255,0.18), transparent 36%);
+        }
+
+        .photo-frame::after {
+          content: '';
+          position: absolute;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          height: 38%;
+          z-index: 3;
+          pointer-events: none;
+          background: linear-gradient(180deg, transparent, rgba(0,0,0,0.45));
+        }
+
+        .photo-frame img {
+          position: relative;
+          z-index: 1;
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          object-position: top center;
+          filter: saturate(1.08) contrast(1.04);
+          transform: scale(1.04);
+        }
+
+        .photo-placeholder {
+          width: 100%;
+          height: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 3.2rem;
+          color: rgba(255,255,255,0.68);
+          background:
+            radial-gradient(circle at 50% 20%, rgba(0,212,255,0.22), transparent 38%),
+            rgba(0,0,0,0.2);
+        }
+
+        .modal-photo-frame {
+          width: 86px;
+          height: 112px;
+          border-radius: 18px;
+          overflow: hidden;
+          background:
+            radial-gradient(circle at 50% 12%, rgba(255,255,255,0.18), transparent 36%),
+            rgba(0,0,0,0.34);
+          border: 1px solid rgba(255,255,255,0.16);
+          box-shadow: 0 12px 26px rgba(0,0,0,0.35);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+          position: relative;
+        }
+
+        .modal-photo-frame::after {
+          content: '';
+          position: absolute;
+          inset: 0;
+          pointer-events: none;
+          background: linear-gradient(180deg, transparent 52%, rgba(0,0,0,0.42));
+        }
+
+        .modal-photo-frame img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          object-position: top center;
+          transform: scale(1.03);
+          filter: saturate(1.08) contrast(1.04);
+        }
+
+        .modal-photo-placeholder {
+          font-size: 3rem;
+          opacity: 0.75;
+        }
       `}</style>
 
       {/* Header */}
@@ -216,10 +322,10 @@ function Statistiche() {
           <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, backdropFilter: 'blur(4px)' }} onClick={() => setSelected(null)}>
             <div style={{ background: 'rgba(15, 23, 41, 0.98)', border: `1px solid ${cfg.border}`, borderRadius: '20px', padding: '2rem', maxWidth: '500px', width: '90%', animation: 'fadeInUp 0.3s ease', boxShadow: `0 0 30px ${cfg.glowColor}` }} onClick={e => e.stopPropagation()}>
               <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
-                <div style={{ width: '80px', height: '105px', borderRadius: '8px', overflow: 'hidden', background: cfg.bg, border: `2px solid ${cfg.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <div className="modal-photo-frame" style={{ border: `1px solid ${cfg.border}`, background: cfg.bg }}>
                   {g.foto_url
-                    ? <img src={g.foto_url} alt={g.nome} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top center' }} />
-                    : <span style={{ fontSize: '3rem' }}>👤</span>}
+                    ? <img src={g.foto_url} alt={g.nome} />
+                    : <span className="modal-photo-placeholder">👤</span>}
                 </div>
                 <div>
                   <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
@@ -345,34 +451,12 @@ function FutStatCard({ giocatore, onClick }) {
         </div>
       </div>
 
-      {/* Foto - rettangolare, occupa il centro */}
-      <div style={{
-        position: 'absolute',
-        top: '8px',
-        left: '50%',
-        transform: 'translateX(-50%)',
-        width: '95px',
-        height: '120px',
-        zIndex: 3,
-        display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
-        overflow: 'hidden',
-      }}>
+      {/* Foto integrata nella card */}
+      <div className="photo-frame">
         {giocatore.foto_url ? (
-          <img
-            src={giocatore.foto_url}
-            alt={giocatore.nome}
-            style={{
-              width: '100%',
-              height: '100%',
-              objectFit: 'cover',
-              objectPosition: 'top center',
-              filter: 'drop-shadow(0 6px 10px rgba(0,0,0,0.5))',
-            }}
-          />
+          <img src={giocatore.foto_url} alt={giocatore.nome} />
         ) : (
-          <div style={{ fontSize: '4.5rem', opacity: 0.55, filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.4))' }}>
-            👤
-          </div>
+          <div className="photo-placeholder">👤</div>
         )}
       </div>
 
