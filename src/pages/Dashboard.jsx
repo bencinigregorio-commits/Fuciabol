@@ -3,46 +3,28 @@ import { supabase } from '../supabase'
 
 const CARD_CONFIGS = {
   gold: {
-    bg: 'linear-gradient(160deg, #b8800a 0%, #e8c040 20%, #f8e060 40%, #e0a820 55%, #f0c838 70%, #b8800a 100%)',
-    foil: 'linear-gradient(135deg, rgba(255,255,220,0.5) 0%, transparent 40%, rgba(255,230,100,0.3) 60%, transparent 80%, rgba(255,255,200,0.4) 100%)',
-    border: 'rgba(255,235,80,0.9)',
-    innerBorder: 'rgba(255,220,50,0.5)',
-    textDark: '#2a1800',
-    statsBar: 'rgba(0,0,0,0.5)',
-    statsText: '#fff5cc',
-    labelText: 'rgba(42,24,0,0.6)',
-    glowColor: 'rgba(255,215,0,0.35)',
-    progressColor: 'linear-gradient(90deg, #ffd700, #ffa500)',
-    progressGlow: 'rgba(255,215,0,0.55)',
-    accentColor: '#ffd700',
+    bg: 'linear-gradient(155deg, #9f6b05 0%, #d59b18 22%, #ffe26c 42%, #d59b18 62%, #8a5d04 100%)',
+    border: 'rgba(255, 215, 0, 0.85)',
+    accent: '#ffd700',
+    text: '#211500',
+    muted: 'rgba(33,21,0,0.62)',
+    glow: 'rgba(255,215,0,0.28)'
   },
   silver: {
-    bg: 'linear-gradient(160deg, #787878 0%, #c8c8c8 20%, #ebebeb 40%, #a0a0a0 55%, #d0d0d0 70%, #787878 100%)',
-    foil: 'linear-gradient(135deg, rgba(255,255,255,0.6) 0%, transparent 40%, rgba(220,220,220,0.4) 60%, transparent 80%, rgba(255,255,255,0.5) 100%)',
-    border: 'rgba(230,230,230,0.9)',
-    innerBorder: 'rgba(200,200,200,0.5)',
-    textDark: '#1a1a1a',
-    statsBar: 'rgba(0,0,0,0.4)',
-    statsText: '#f0f0f0',
-    labelText: 'rgba(26,26,26,0.55)',
-    glowColor: 'rgba(192,192,192,0.3)',
-    progressColor: 'linear-gradient(90deg, #c0c0c0, #a0a0a0)',
-    progressGlow: 'rgba(192,192,192,0.42)',
-    accentColor: '#c0c0c0',
+    bg: 'linear-gradient(155deg, #747474 0%, #c9c9c9 24%, #f2f2f2 45%, #a4a4a4 64%, #777 100%)',
+    border: 'rgba(230, 230, 230, 0.8)',
+    accent: '#d8d8d8',
+    text: '#171717',
+    muted: 'rgba(23,23,23,0.6)',
+    glow: 'rgba(210,220,230,0.22)'
   },
   bronze: {
-    bg: 'linear-gradient(160deg, #6a3810 0%, #b86828 20%, #d88840 40%, #885018 55%, #c07030 70%, #6a3810 100%)',
-    foil: 'linear-gradient(135deg, rgba(255,210,150,0.5) 0%, transparent 40%, rgba(200,140,80,0.3) 60%, transparent 80%, rgba(255,200,130,0.4) 100%)',
-    border: 'rgba(220,150,70,0.9)',
-    innerBorder: 'rgba(190,120,50,0.5)',
-    textDark: '#200e00',
-    statsBar: 'rgba(0,0,0,0.45)',
-    statsText: '#ffe8c8',
-    labelText: 'rgba(32,14,0,0.6)',
-    glowColor: 'rgba(205,127,50,0.32)',
-    progressColor: 'linear-gradient(90deg, #cd7f32, #a05a20)',
-    progressGlow: 'rgba(205,127,50,0.42)',
-    accentColor: '#cd7f32',
+    bg: 'linear-gradient(155deg, #5d2e08 0%, #a95f22 24%, #dc9149 44%, #7a3f10 64%, #5d2e08 100%)',
+    border: 'rgba(220, 150, 70, 0.8)',
+    accent: '#cd7f32',
+    text: '#1f0d00',
+    muted: 'rgba(31,13,0,0.62)',
+    glow: 'rgba(205,127,50,0.24)'
   }
 }
 
@@ -50,17 +32,6 @@ function getCardType(overall) {
   if (overall >= 75) return 'gold'
   if (overall >= 65) return 'silver'
   return 'bronze'
-}
-
-function getCleanName(nome = '') {
-  return nome.replace(/\s*\(.*?\)/g, '').trim()
-}
-
-function formatDate(dateValue) {
-  if (!dateValue) return 'Data da definire'
-  const d = new Date(dateValue)
-  if (Number.isNaN(d.getTime())) return 'Data da definire'
-  return d.toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' })
 }
 
 function Dashboard({ currentUser }) {
@@ -95,13 +66,14 @@ function Dashboard({ currentUser }) {
 
     if (giocatoreData) setGiocatore(giocatoreData)
     if (scommesseData) setScommesse(scommesseData)
-
     if (partiteData) {
-      setPartite(partiteData.filter(p => {
-        const squadraA = p.squadra_a || []
-        const squadraB = p.squadra_b || []
-        return [...squadraA, ...squadraB].includes(currentUser.id)
-      }))
+      setPartite(
+        partiteData.filter(p => {
+          const squadraA = Array.isArray(p.squadra_a) ? p.squadra_a : []
+          const squadraB = Array.isArray(p.squadra_b) ? p.squadra_b : []
+          return [...squadraA, ...squadraB].includes(currentUser.id)
+        })
+      )
     }
 
     setLoading(false)
@@ -114,28 +86,31 @@ function Dashboard({ currentUser }) {
     </div>
   )
 
-  const cleanName = getCleanName(giocatore.nome)
-  const nomeParti = cleanName.split(' ').filter(Boolean)
-  const cognome = nomeParti.length > 1 ? nomeParti[nomeParti.length - 1].toUpperCase() : cleanName.toUpperCase()
-
-  const cardType = getCardType(giocatore.overall)
+  const cardType = getCardType(giocatore.overall || 65)
   const cfg = CARD_CONFIGS[cardType]
+  const nomePulito = cleanName(giocatore.nome)
+  const nome = nomePulito.split(' ')[0] || nomePulito || 'Giocatore'
+  const cognome = getSurname(nomePulito)
   const currentOvr = giocatore.overall || 65
-
-  let soglia
-  if (currentOvr >= 95) soglia = 15
-  else if (currentOvr >= 90) soglia = 10
-  else if (currentOvr >= 85) soglia = 7
-  else if (currentOvr >= 75) soglia = 5
-  else if (currentOvr >= 65) soglia = 3
-  else soglia = 2
-
-  const puntiForma = giocatore.forma_punti || 0
+  const nextOvr = currentOvr + 1
+  const soglia = getSoglia(currentOvr)
+  const puntiForma = Number(giocatore.forma_punti || 0)
   const progressoPercentuale = Math.min(100, Math.max(0, (puntiForma / soglia) * 100))
   const puntiMancanti = Math.max(0, soglia - puntiForma)
 
-  const votiStorico = giocatore.voti_storico || []
-  const ultimi5Voti = votiStorico.slice(-5).reverse().map(v => v.votoFinale).filter(v => typeof v === 'number')
+  const partiteOrdinate = [...partite].sort((a, b) => new Date(b.data || 0) - new Date(a.data || 0))
+  const partiteChiuse = partiteOrdinate.filter(p => p.stato === 'chiusa' || typeof p.punteggio_a === 'number')
+  const prossimaPartita = [...partite]
+    .filter(p => p.stato !== 'chiusa')
+    .sort((a, b) => new Date(a.data || 0) - new Date(b.data || 0))[0]
+    || [...partite].sort((a, b) => new Date(a.data || 0) - new Date(b.data || 0))[0]
+
+  const ultimi5Voti = (giocatore.voti_storico || [])
+    .slice(-5)
+    .reverse()
+    .map(v => Number(v.votoFinale))
+    .filter(v => !Number.isNaN(v))
+
   const mediaVoti = ultimi5Voti.length > 0
     ? (ultimi5Voti.reduce((s, v) => s + v, 0) / ultimi5Voti.length).toFixed(2)
     : '-'
@@ -147,8 +122,8 @@ function Dashboard({ currentUser }) {
   let sconfitte = 0
 
   partite.forEach(p => {
-    const squadraA = p.squadra_a || []
-    const squadraB = p.squadra_b || []
+    const squadraA = Array.isArray(p.squadra_a) ? p.squadra_a : []
+    const squadraB = Array.isArray(p.squadra_b) ? p.squadra_b : []
     const inA = squadraA.includes(currentUser.id)
     const inB = squadraB.includes(currentUser.id)
     const e = p.eventi?.[currentUser.id] || {}
@@ -167,757 +142,1024 @@ function Dashboard({ currentUser }) {
   const scommessePerse = scommesse.filter(s => s.esito === 'persa').length
   const guadagniTotali = scommesse
     .filter(s => s.esito === 'vinta')
-    .reduce((sum, s) => sum + (s.vincita || 0), 0)
-
-  const prossimaPartita = [...partite]
-    .filter(p => p.stato !== 'chiusa')
-    .sort((a, b) => new Date(a.data || 0) - new Date(b.data || 0))[0]
-
-  const ultimePartite = [...partite]
-    .filter(p => p.stato === 'chiusa' || (typeof p.punteggio_a === 'number' && typeof p.punteggio_b === 'number'))
-    .sort((a, b) => new Date(b.data || 0) - new Date(a.data || 0))
-    .slice(0, 4)
-
-  const formTrend = puntiForma > 0 ? 'In crescita' : puntiForma < 0 ? 'Da rilanciare' : 'Stabile'
-  const formColor = puntiForma > 0 ? '#00ff88' : puntiForma < 0 ? '#ef4444' : '#ffd700'
+    .reduce((sum, s) => sum + Number(s.vincita || 0), 0)
 
   return (
-    <div className="dashboard-page">
+    <div className="dash-app">
       <style>{`
-        @keyframes fadeInUp {
-          from { opacity: 0; transform: translateY(22px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-
-        @keyframes shimmerDash {
-          0% { transform: translateX(-120%) rotate(20deg); }
-          100% { transform: translateX(320%) rotate(20deg); }
-        }
-
-        @keyframes floatCard {
-          0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-7px); }
-        }
-
-        @keyframes glowCard {
-          0%, 100% { box-shadow: 0 0 20px ${cfg.glowColor}, 0 22px 44px rgba(0,0,0,0.55); }
-          50% { box-shadow: 0 0 36px ${cfg.glowColor}, 0 26px 56px rgba(0,0,0,0.68); }
-        }
-
-        @keyframes progressBar {
-          from { width: 0%; }
-          to { width: ${progressoPercentuale}%; }
-        }
-
-        .dashboard-page {
+        .dash-app {
+          --cyan: #00d4ff;
+          --cyan-soft: rgba(0, 212, 255, 0.14);
+          --border: rgba(255,255,255,0.08);
+          --panel: rgba(8, 14, 28, 0.72);
+          --panel-2: rgba(15, 23, 41, 0.58);
           width: 100%;
           max-width: 100%;
           overflow-x: hidden;
-          padding-bottom: 1rem;
+          padding-bottom: 1.25rem;
           font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
         }
 
-        .dash-hero {
+        .dash-app * { box-sizing: border-box; }
+
+        @keyframes fadeInUp {
+          from { opacity: 0; transform: translateY(18px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes cardGlow {
+          0%, 100% { box-shadow: 0 0 24px ${cfg.glow}, 0 22px 50px rgba(0,0,0,0.34); }
+          50% { box-shadow: 0 0 36px ${cfg.glow}, 0 26px 60px rgba(0,0,0,0.44); }
+        }
+
+        .hero-panel {
           position: relative;
           overflow: hidden;
-          border-radius: 20px;
-          border: 1px solid rgba(0,212,255,0.16);
+          border-radius: 30px;
+          border: 1px solid rgba(0,212,255,0.26);
           background:
-            radial-gradient(circle at 86% 12%, rgba(0,212,255,0.19), transparent 28%),
-            radial-gradient(circle at 16% 90%, rgba(255,215,0,0.10), transparent 30%),
-            linear-gradient(135deg, rgba(15,23,41,0.86), rgba(5,10,23,0.72));
-          box-shadow: 0 26px 70px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.06);
+            radial-gradient(circle at 82% 18%, rgba(0,212,255,0.18), transparent 28%),
+            radial-gradient(circle at 10% 0%, rgba(0,212,255,0.12), transparent 34%),
+            linear-gradient(145deg, rgba(15,23,41,0.88), rgba(6,11,24,0.72));
+          box-shadow: 0 24px 70px rgba(0,0,0,0.32), inset 0 1px 0 rgba(255,255,255,0.04);
           padding: 1rem;
-          margin-bottom: 0.9rem;
-          animation: fadeInUp 0.45s ease both;
+          animation: fadeInUp 0.42s ease both;
         }
 
-        .dash-hero::before {
-          content: "";
-          position: absolute;
-          inset: 0;
-          background:
-            linear-gradient(90deg, transparent, rgba(0,212,255,0.055), transparent),
-            radial-gradient(circle at 75% 20%, rgba(0,212,255,0.12), transparent 22%);
-          pointer-events: none;
-        }
-
-        .dash-hero-content {
-          position: relative;
-          z-index: 1;
+        .hero-grid {
           display: grid;
-          grid-template-columns: 155px minmax(0, 1fr);
+          grid-template-columns: 122px minmax(0, 1fr);
           gap: 1rem;
           align-items: center;
         }
 
-        .dash-greeting {
-          margin-bottom: 1rem;
-        }
-
-        .dash-kicker {
-          color: rgba(255,255,255,0.52);
-          font-size: 0.72rem;
-          font-weight: 800;
-          text-transform: uppercase;
-          letter-spacing: 0.55px;
-          margin-bottom: 0.2rem;
-        }
-
-        .dash-title {
-          margin: 0;
-          font-size: clamp(1.7rem, 6vw, 2.6rem);
-          line-height: 1;
-          letter-spacing: -0.8px;
-          font-weight: 950;
-        }
-
-        .dash-title span {
-          background: linear-gradient(135deg, #ffffff 0%, #dff8ff 40%, #00d4ff 100%);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
-        }
-
-        .dash-subtitle {
-          margin: 0.45rem 0 0 0;
-          color: rgba(255,255,255,0.58);
-          font-size: clamp(0.82rem, 3vw, 0.95rem);
-          font-weight: 600;
-        }
-
-        .dash-main-grid {
-          display: grid;
-          grid-template-columns: 1.05fr 0.95fr;
-          gap: 1rem;
-          margin-bottom: 1rem;
-        }
-
-        .dash-card {
+        .mini-card {
+          width: 122px;
+          height: 168px;
+          border-radius: 22px;
           position: relative;
           overflow: hidden;
-          border-radius: 24px;
-          border: 1px solid rgba(255,255,255,0.075);
-          background:
-            radial-gradient(circle at 0% 0%, rgba(0,212,255,0.10), transparent 30%),
-            linear-gradient(135deg, rgba(255,255,255,0.055), rgba(255,255,255,0.02)),
-            rgba(5, 10, 23, 0.36);
-          box-shadow: 0 18px 48px rgba(0,0,0,0.20);
-          padding: 0.85rem;
-          animation: fadeInUp 0.5s ease both;
-        }
-
-        .dash-card-title {
-          display: flex;
-          align-items: center;
-          gap: 0.55rem;
-          margin-bottom: 0.85rem;
-          color: rgba(255,255,255,0.84);
-          font-size: 0.82rem;
-          font-weight: 850;
-          text-transform: uppercase;
-          letter-spacing: 0.35px;
-        }
-
-        .metric-grid {
-          display: grid;
-          grid-template-columns: repeat(3, minmax(0, 1fr));
-          gap: 0.48rem;
-        }
-
-        .metric-tile {
-          min-width: 0;
-          border-radius: 15px;
-          padding: 0.68rem 0.45rem;
-          text-align: center;
-          border: 1px solid rgba(255,255,255,0.07);
-          background: rgba(255,255,255,0.035);
-        }
-
-        .metric-value {
-          font-size: clamp(1rem, 4.5vw, 1.55rem);
-          font-weight: 950;
-          line-height: 0.95;
-        }
-
-        .metric-label {
-          margin-top: 0.32rem;
-          font-size: 0.56rem;
-          color: rgba(255,255,255,0.46);
-          font-weight: 800;
-          letter-spacing: 0.25px;
-          text-transform: uppercase;
-        }
-
-        .fut-card {
-          width: 150px;
-          height: 216px;
-          border-radius: 14px;
-          background: ${cfg.bg};
           border: 2px solid ${cfg.border};
-          position: relative;
-          overflow: hidden;
+          background: ${cfg.bg};
+          animation: cardGlow 3s ease-in-out infinite;
           flex-shrink: 0;
-          margin: 0 auto;
-          animation: glowCard 2.6s ease-in-out infinite, floatCard 4s ease-in-out infinite;
         }
 
-        .fut-inner-border {
+        .mini-card::after {
+          content: '';
           position: absolute;
-          top: 4px;
-          left: 4px;
-          right: 4px;
-          bottom: 4px;
-          border: 1px solid ${cfg.innerBorder};
-          border-radius: 12px;
+          inset: 5px;
+          border-radius: 17px;
+          border: 1px solid rgba(255,255,255,0.28);
           pointer-events: none;
           z-index: 4;
         }
 
-        .fut-foil {
-          position: absolute;
-          inset: 0;
-          background: ${cfg.foil};
-          pointer-events: none;
-          z-index: 1;
-        }
-
-        .fut-shimmer {
-          position: absolute;
-          top: -55%;
-          left: -22%;
-          width: 40%;
-          height: 215%;
-          background: linear-gradient(90deg, transparent, rgba(255,255,255,0.22), transparent);
-          animation: shimmerDash 3.6s ease-in-out infinite;
-          pointer-events: none;
-          z-index: 2;
-        }
-
-        .fut-top-left {
+        .mini-card-top {
           position: absolute;
           top: 10px;
-          left: 12px;
+          left: 10px;
           z-index: 5;
+          color: ${cfg.text};
           line-height: 1;
         }
 
-        .fut-overall {
-          font-size: 1.62rem;
+        .mini-ovr {
+          font-size: 1.75rem;
           font-weight: 950;
-          color: ${cfg.textDark};
-          line-height: 1;
+          letter-spacing: -1px;
         }
 
-        .fut-role {
-          font-size: 0.5rem;
+        .mini-role {
+          margin-top: 0.22rem;
+          font-size: 0.57rem;
           font-weight: 850;
-          color: ${cfg.labelText};
-          letter-spacing: 0.5px;
-          margin-top: 2px;
+          color: ${cfg.muted};
+          letter-spacing: 0.4px;
         }
 
-        .fut-badge {
+        .mini-photo {
           position: absolute;
-          top: 10px;
-          right: 10px;
-          z-index: 5;
-          background: rgba(0,0,0,0.32);
-          border-radius: 8px;
-          padding: 3px 6px;
-          font-size: 0.58rem;
-          font-weight: 900;
-          color: ${cfg.statsText};
-        }
-
-        .fut-photo {
-          position: absolute;
-          top: 8px;
-          left: 50%;
-          transform: translateX(-50%);
-          width: 80px;
-          height: 96px;
+          top: 15px;
+          left: 48px;
+          right: 9px;
+          height: 75px;
           z-index: 3;
-          display: flex;
-          align-items: flex-end;
-          justify-content: center;
           overflow: hidden;
-          border-radius: 10px;
-          background:
-            linear-gradient(180deg, rgba(0,0,0,0.04), rgba(0,0,0,0.20)),
-            rgba(255,255,255,0.08);
+          border-radius: 11px;
+          background: rgba(255,255,255,0.18);
         }
 
-        .fut-photo img {
+        .mini-photo img {
           width: 100%;
           height: 100%;
           object-fit: cover;
           object-position: top center;
-          filter: drop-shadow(0 8px 12px rgba(0,0,0,0.5));
         }
 
-        .fut-name {
+        .mini-placeholder {
+          width: 100%;
+          height: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: rgba(0,0,0,0.38);
+          font-size: 2rem;
+        }
+
+        .mini-name {
           position: absolute;
-          bottom: 54px;
-          left: 0;
-          right: 0;
+          left: 8px;
+          right: 8px;
+          bottom: 42px;
           text-align: center;
           z-index: 5;
-          padding: 0 8px;
-        }
-
-        .fut-name div {
-          font-size: 0.66rem;
-          font-weight: 900;
-          color: ${cfg.textDark};
-          letter-spacing: 0.7px;
+          color: ${cfg.text};
+          font-size: 0.72rem;
+          font-weight: 950;
+          letter-spacing: 1px;
           text-transform: uppercase;
-          text-shadow: 0 1px 0 rgba(255,255,255,0.32);
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
         }
 
-        .fut-stats {
+        .mini-stats {
           position: absolute;
-          bottom: 0;
           left: 0;
           right: 0;
-          background: ${cfg.statsBar};
-          border-top: 1px solid ${cfg.innerBorder};
-          padding: 5px 6px;
+          bottom: 0;
           z-index: 5;
-        }
-
-        .fut-stats-grid {
           display: grid;
-          grid-template-columns: repeat(3, minmax(0, 1fr));
-          gap: 2px;
+          grid-template-columns: repeat(3, 1fr);
+          background: rgba(0,0,0,0.45);
+          padding: 0.38rem 0.25rem;
+          color: #fff;
         }
 
-        .fut-stat {
+        .mini-stat {
           text-align: center;
           min-width: 0;
         }
 
-        .fut-stat-value {
-          font-size: 0.68rem;
-          font-weight: 950;
-          color: ${cfg.statsText};
+        .mini-stat strong {
+          display: block;
+          font-size: 0.72rem;
           line-height: 1;
         }
 
-        .fut-stat-label {
-          font-size: 0.38rem;
+        .mini-stat span {
+          display: block;
+          margin-top: 0.1rem;
+          font-size: 0.43rem;
+          color: rgba(255,255,255,0.5);
           font-weight: 800;
-          color: rgba(255,255,255,0.46);
-          text-transform: uppercase;
-          margin-top: 1px;
+          letter-spacing: 0.3px;
         }
 
-        .progress-track {
-          width: 100%;
-          height: 16px;
-          background: rgba(0,0,0,0.36);
-          border-radius: 999px;
-          overflow: hidden;
-          border: 1px solid rgba(255,255,255,0.08);
-          position: relative;
-        }
+        .hero-copy { min-width: 0; }
 
-        .progress-fill {
-          width: ${progressoPercentuale}%;
-          height: 100%;
-          background: ${cfg.progressColor};
-          border-radius: 999px;
-          box-shadow: 0 0 14px ${cfg.progressGlow};
-          animation: progressBar 1s ease-out;
-          position: relative;
-          overflow: hidden;
-        }
-
-        .progress-fill::after {
-          content: "";
-          position: absolute;
-          inset: 0;
-          background: linear-gradient(180deg, rgba(255,255,255,0.25), transparent);
-        }
-
-        .list-row {
-          display: grid;
-          grid-template-columns: auto minmax(0, 1fr) auto;
-          gap: 0.75rem;
+        .eyebrow {
+          display: inline-flex;
           align-items: center;
-          border-radius: 16px;
-          background: rgba(255,255,255,0.035);
-          border: 1px solid rgba(255,255,255,0.055);
-          padding: 0.75rem;
+          gap: 0.35rem;
+          color: rgba(255,255,255,0.48);
+          font-size: 0.72rem;
+          font-weight: 800;
+          letter-spacing: 0.8px;
+          text-transform: uppercase;
+          margin-bottom: 0.36rem;
         }
 
-        .status-pill {
+        .hero-title {
+          margin: 0;
+          font-size: clamp(1.75rem, 8vw, 2.7rem);
+          font-weight: 950;
+          line-height: 0.96;
+          letter-spacing: -1.2px;
+        }
+
+        .hero-title span {
+          color: var(--cyan);
+          text-shadow: 0 0 18px rgba(0,212,255,0.34);
+        }
+
+        .hero-subtitle {
+          margin: 0.55rem 0 0 0;
+          color: rgba(255,255,255,0.62);
+          font-size: 0.92rem;
+          font-weight: 620;
+          line-height: 1.35;
+        }
+
+        .hero-meta {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 0.45rem;
+          margin-top: 0.9rem;
+        }
+
+        .meta-chip {
+          border: 1px solid rgba(0,212,255,0.18);
+          background: rgba(0,212,255,0.08);
+          color: rgba(255,255,255,0.82);
+          border-radius: 999px;
+          padding: 0.35rem 0.55rem;
+          font-size: 0.72rem;
+          font-weight: 760;
+        }
+
+        .card-grid {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 0.85rem;
+          margin-top: 0.9rem;
+        }
+
+        .panel-card {
+          border-radius: 22px;
+          border: 1px solid var(--border);
+          background:
+            radial-gradient(circle at 15% 0%, rgba(0,212,255,0.1), transparent 35%),
+            linear-gradient(145deg, rgba(15,23,41,0.76), rgba(8,13,26,0.66));
+          box-shadow: 0 18px 46px rgba(0,0,0,0.22), inset 0 1px 0 rgba(255,255,255,0.035);
+          padding: 0.95rem;
+          animation: fadeInUp 0.42s ease both;
+        }
+
+        .panel-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 0.75rem;
+          margin-bottom: 0.8rem;
+        }
+
+        .panel-title {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          margin: 0;
+          font-size: 0.88rem;
+          font-weight: 880;
+          color: rgba(255,255,255,0.9);
+          letter-spacing: 0.1px;
+        }
+
+        .panel-title .icon {
           width: 32px;
           height: 32px;
           border-radius: 12px;
           display: flex;
           align-items: center;
           justify-content: center;
+          background: rgba(0,212,255,0.1);
+          border: 1px solid rgba(0,212,255,0.18);
+        }
+
+        .credits-card {
+          grid-column: span 1;
+        }
+
+        .mission-card {
+          grid-column: span 1;
+        }
+
+        .big-number {
+          font-size: clamp(2rem, 10vw, 3rem);
           font-weight: 950;
-          font-size: 0.76rem;
+          line-height: 0.95;
+          letter-spacing: -1.6px;
         }
 
-        @media (max-width: 780px) {
-          .dash-hero {
-            padding: 0.85rem;
-            border-radius: 22px;
+        .credits-row {
+          display: grid;
+          grid-template-columns: 1.2fr 0.8fr 0.8fr;
+          gap: 0.55rem;
+          align-items: stretch;
+        }
+
+        .mini-metric {
+          border-radius: 16px;
+          padding: 0.68rem 0.48rem;
+          text-align: center;
+          background: rgba(255,255,255,0.045);
+          border: 1px solid rgba(255,255,255,0.055);
+        }
+
+        .mini-metric strong {
+          display: block;
+          font-size: 1.15rem;
+          font-weight: 950;
+          line-height: 1;
+        }
+
+        .mini-metric span {
+          display: block;
+          margin-top: 0.25rem;
+          color: rgba(255,255,255,0.42);
+          font-size: 0.62rem;
+          font-weight: 780;
+        }
+
+        .progress-top {
+          display: flex;
+          align-items: flex-start;
+          justify-content: space-between;
+          gap: 1rem;
+        }
+
+        .ovr-next {
+          display: flex;
+          align-items: center;
+          gap: 0.45rem;
+          font-size: 1.65rem;
+          font-weight: 950;
+          line-height: 1;
+        }
+
+        .ovr-next .current { color: rgba(255,255,255,0.62); }
+        .ovr-next .next { color: var(--cyan); text-shadow: 0 0 18px rgba(0,212,255,0.34); }
+        .ovr-next .arrow { color: rgba(255,255,255,0.25); font-size: 1rem; }
+
+        .form-label {
+          margin-top: 0.35rem;
+          font-size: 0.78rem;
+          font-weight: 850;
+          color: ${puntiForma < 0 ? '#ef4444' : '#00ff88'};
+        }
+
+        .progress-track {
+          width: 100%;
+          height: 12px;
+          margin: 0.85rem 0 0.45rem 0;
+          background: rgba(0,0,0,0.46);
+          border-radius: 999px;
+          overflow: hidden;
+          border: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .progress-fill {
+          width: ${progressoPercentuale}%;
+          min-width: ${progressoPercentuale > 0 ? '10px' : '0'};
+          height: 100%;
+          background: linear-gradient(90deg, #00d4ff, #00f0ff);
+          box-shadow: 0 0 18px rgba(0,212,255,0.45);
+          border-radius: 999px;
+          transition: width 0.5s ease;
+        }
+
+        .progress-footer {
+          display: flex;
+          justify-content: space-between;
+          gap: 0.75rem;
+          color: rgba(255,255,255,0.52);
+          font-size: 0.72rem;
+          font-weight: 720;
+        }
+
+        .season-grid {
+          display: grid;
+          grid-template-columns: repeat(6, minmax(0, 1fr));
+          gap: 0.48rem;
+        }
+
+        .season-stat {
+          border-radius: 15px;
+          background: rgba(255,255,255,0.045);
+          border: 1px solid rgba(255,255,255,0.055);
+          padding: 0.62rem 0.3rem;
+          text-align: center;
+        }
+
+        .season-stat strong {
+          display: block;
+          font-size: 1.15rem;
+          font-weight: 950;
+          line-height: 1;
+        }
+
+        .season-stat span {
+          display: block;
+          margin-top: 0.24rem;
+          color: rgba(255,255,255,0.42);
+          font-size: 0.54rem;
+          font-weight: 830;
+          text-transform: uppercase;
+          letter-spacing: 0.35px;
+        }
+
+        .wide-card { grid-column: 1 / -1; }
+
+        .match-card {
+          position: relative;
+          overflow: hidden;
+          min-height: 172px;
+        }
+
+        .match-card::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          background:
+            radial-gradient(circle at 50% 100%, rgba(0,212,255,0.12), transparent 45%),
+            linear-gradient(180deg, transparent, rgba(0,0,0,0.18));
+          pointer-events: none;
+        }
+
+        .match-content { position: relative; z-index: 1; }
+
+        .match-vs {
+          display: grid;
+          grid-template-columns: 1fr auto 1fr;
+          gap: 0.7rem;
+          align-items: center;
+          margin-top: 0.6rem;
+        }
+
+        .team-box {
+          min-width: 0;
+          text-align: center;
+        }
+
+        .team-logo {
+          width: 54px;
+          height: 54px;
+          margin: 0 auto 0.38rem auto;
+          border-radius: 50%;
+          background: radial-gradient(circle, rgba(0,212,255,0.22), rgba(0,0,0,0.55));
+          border: 1px solid rgba(0,212,255,0.3);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          box-shadow: 0 0 22px rgba(0,212,255,0.16);
+          overflow: hidden;
+        }
+
+        .team-logo img {
+          width: 100%;
+          height: 100%;
+          object-fit: contain;
+        }
+
+        .team-name {
+          color: rgba(255,255,255,0.9);
+          font-weight: 850;
+          font-size: 0.82rem;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        .team-sub {
+          margin-top: 0.14rem;
+          color: rgba(255,255,255,0.46);
+          font-size: 0.68rem;
+          font-weight: 700;
+        }
+
+        .vs-label {
+          font-size: 1.55rem;
+          font-weight: 950;
+          color: var(--cyan);
+          text-shadow: 0 0 18px rgba(0,212,255,0.42);
+        }
+
+        .match-date {
+          margin-top: 0.75rem;
+          text-align: center;
+          color: rgba(255,255,255,0.68);
+          font-weight: 760;
+          font-size: 0.84rem;
+        }
+
+        .horizontal-list {
+          display: flex;
+          gap: 0.62rem;
+          overflow-x: auto;
+          padding-bottom: 0.2rem;
+          scrollbar-width: none;
+        }
+        .horizontal-list::-webkit-scrollbar { display: none; }
+
+        .performance-chip {
+          min-width: 76px;
+          border-radius: 17px;
+          padding: 0.72rem 0.58rem;
+          text-align: center;
+          border: 1px solid rgba(0,212,255,0.28);
+          background: rgba(0,212,255,0.08);
+        }
+
+        .performance-chip strong {
+          display: block;
+          color: var(--cyan);
+          font-size: 1.35rem;
+          font-weight: 950;
+          line-height: 1;
+        }
+
+        .performance-chip span {
+          display: block;
+          margin-top: 0.25rem;
+          color: rgba(255,255,255,0.42);
+          font-size: 0.62rem;
+          font-weight: 760;
+        }
+
+        .list-row {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 0.75rem;
+          border-radius: 17px;
+          padding: 0.78rem;
+          background: rgba(255,255,255,0.04);
+          border: 1px solid rgba(255,255,255,0.055);
+        }
+
+        .list-main {
+          min-width: 0;
+        }
+
+        .list-title {
+          font-size: 0.92rem;
+          font-weight: 850;
+          color: rgba(255,255,255,0.92);
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        .list-subtitle {
+          margin-top: 0.16rem;
+          font-size: 0.72rem;
+          color: rgba(255,255,255,0.44);
+          font-weight: 690;
+        }
+
+        .status-pill {
+          flex-shrink: 0;
+          min-width: 44px;
+          height: 36px;
+          border-radius: 14px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-weight: 950;
+          border: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .empty-box {
+          border: 1px dashed rgba(255,255,255,0.13);
+          background: rgba(255,255,255,0.025);
+          border-radius: 18px;
+          padding: 1rem;
+          text-align: center;
+          color: rgba(255,255,255,0.38);
+          font-weight: 750;
+          font-size: 0.88rem;
+        }
+
+        @media (max-width: 760px) {
+          .dash-app {
+            padding-bottom: 1rem;
           }
 
-          .dash-hero-content {
+          .hero-panel {
+            border-radius: 24px;
+            padding: 0.82rem;
+          }
+
+          .hero-grid {
+            grid-template-columns: 108px minmax(0, 1fr);
+            gap: 0.82rem;
+          }
+
+          .mini-card {
+            width: 108px;
+            height: 150px;
+            border-radius: 19px;
+          }
+
+          .mini-card::after {
+            border-radius: 15px;
+          }
+
+          .mini-ovr { font-size: 1.55rem; }
+          .mini-role { font-size: 0.5rem; }
+          .mini-photo { top: 13px; left: 43px; right: 8px; height: 65px; }
+          .mini-name { bottom: 38px; font-size: 0.64rem; }
+          .mini-stat strong { font-size: 0.65rem; }
+          .mini-stat span { font-size: 0.38rem; }
+
+          .hero-subtitle {
+            font-size: 0.84rem;
+          }
+
+          .hero-meta {
+            margin-top: 0.7rem;
+          }
+
+          .meta-chip {
+            font-size: 0.66rem;
+            padding: 0.3rem 0.46rem;
+          }
+
+          .card-grid {
             grid-template-columns: 1fr;
-            gap: 1rem;
+            gap: 0.72rem;
+            margin-top: 0.72rem;
           }
 
-          .fut-card {
-            width: min(158px, 46vw);
-            height: calc(min(158px, 46vw) * 1.44);
+          .credits-row {
+            grid-template-columns: repeat(3, 1fr);
           }
 
-          .dash-main-grid {
-            grid-template-columns: 1fr;
+          .panel-card {
+            border-radius: 20px;
+            padding: 0.78rem;
           }
 
-          .metric-grid {
+          .panel-header {
+            margin-bottom: 0.65rem;
+          }
+
+          .panel-title {
+            font-size: 0.83rem;
+          }
+
+          .panel-title .icon {
+            width: 29px;
+            height: 29px;
+            border-radius: 11px;
+          }
+
+          .season-grid {
             grid-template-columns: repeat(3, minmax(0, 1fr));
-          }
-        }
-
-        @media (max-width: 420px) {
-          .dash-hero {
-            padding: 0.85rem;
-          }
-
-          .dash-card {
-            border-radius: 21px;
-            padding: 0.85rem;
-          }
-
-          .metric-grid {
             gap: 0.42rem;
           }
 
-          .metric-tile {
-            border-radius: 16px;
-            padding: 0.75rem 0.45rem;
+          .season-stat {
+            border-radius: 13px;
+            padding: 0.58rem 0.25rem;
           }
 
-          .list-row {
-            gap: 0.55rem;
-            padding: 0.68rem;
+          .match-vs {
+            gap: 0.45rem;
+          }
+
+          .team-logo {
+            width: 48px;
+            height: 48px;
+          }
+        }
+
+        @media (max-width: 380px) {
+          .hero-grid {
+            grid-template-columns: 96px minmax(0, 1fr);
+            gap: 0.68rem;
+          }
+
+          .mini-card {
+            width: 96px;
+            height: 136px;
+          }
+
+          .mini-ovr { font-size: 1.35rem; }
+          .mini-photo { left: 38px; height: 58px; }
+          .mini-name { bottom: 35px; font-size: 0.58rem; }
+
+          .hero-title {
+            font-size: 1.55rem;
+          }
+
+          .hero-subtitle {
+            font-size: 0.78rem;
           }
         }
       `}</style>
 
-      <section className="dash-hero">
-        <div className="dash-hero-content">
-          <PlayerCard
+      <section className="hero-panel">
+        <div className="hero-grid">
+          <MiniPlayerCard
             giocatore={giocatore}
             cfg={cfg}
             cardType={cardType}
             cognome={cognome}
-            partite={partite}
+            partiteCount={partite.length}
             golTotali={golTotali}
-            assistTotali={assistTotali}
             mediaVoti={mediaVoti}
           />
 
-          <div>
-            <div className="dash-greeting">
-              <div className="dash-kicker">Dashboard giocatore</div>
-              <h1 className="dash-title">Ciao, <span>{nomeParti[0] || cleanName}!</span></h1>
-              <p className="dash-subtitle">Pronto a conquistare la vetta?</p>
+          <div className="hero-copy">
+            <div className="eyebrow">Dashboard giocatore</div>
+            <h1 className="hero-title">Ciao,<br /><span>{nome}!</span></h1>
+            <p className="hero-subtitle">Pronto a conquistare la vetta?</p>
+            <div className="hero-meta">
+              <span className="meta-chip">{giocatore.ruolo || 'Ruolo'} · OVR {currentOvr}</span>
+              <span className="meta-chip">Media {mediaVoti}</span>
+              <span className="meta-chip">{giocatore.crediti ?? 500} crediti</span>
             </div>
-
-            <div className="dash-card" style={{ marginBottom: '0.65rem', animationDelay: '0.05s' }}>
-              <div className="dash-card-title">💰 Crediti disponibili</div>
-              <div className="metric-grid">
-                <MetricTile label="Crediti" value={giocatore.crediti ?? 500} color="#ffd700" />
-                <MetricTile label="Vinte" value={scommesseVinte} color="#00d4ff" />
-                <MetricTile label="Guadagnati" value={`+${guadagniTotali}`} color="#00ff88" />
-              </div>
-            </div>
-
-            <ProgressCard
-              cfg={cfg}
-              currentOvr={currentOvr}
-              puntiForma={puntiForma}
-              puntiMancanti={puntiMancanti}
-              formTrend={formTrend}
-              formColor={formColor}
-            />
           </div>
         </div>
       </section>
 
-      <div className="dash-main-grid">
-        <section className="dash-card" style={{ animationDelay: '0.08s' }}>
-          <div className="dash-card-title">📊 Riepilogo stagione</div>
-          <div className="metric-grid">
-            <MetricTile label="Partite" value={partite.length} color="#00d4ff" />
-            <MetricTile label="Gol" value={golTotali} color="#00ff88" />
-            <MetricTile label="Assist" value={assistTotali} color="#a78bfa" />
-            <MetricTile label="Vittorie" value={vittorie} color="#00d4ff" />
-            <MetricTile label="Pareggi" value={pareggi} color="#ffd700" />
-            <MetricTile label="Sconfitte" value={sconfitte} color="#ef4444" />
+      <div className="card-grid">
+        <section className="panel-card credits-card" style={{ animationDelay: '0.05s' }}>
+          <div className="panel-header">
+            <h2 className="panel-title"><span className="icon">💰</span>Crediti disponibili</h2>
+          </div>
+          <div className="credits-row">
+            <div className="mini-metric">
+              <strong style={{ color: '#ffd700' }}>{giocatore.crediti ?? 500}</strong>
+              <span>Crediti</span>
+            </div>
+            <div className="mini-metric">
+              <strong style={{ color: '#00d4ff' }}>{scommesseVinte}</strong>
+              <span>Vinte</span>
+            </div>
+            <div className="mini-metric">
+              <strong style={{ color: '#00ff88' }}>+{guadagniTotali}</strong>
+              <span>Guadagnati</span>
+            </div>
           </div>
         </section>
 
-        <section className="dash-card" style={{ animationDelay: '0.12s' }}>
-          <div className="dash-card-title">⭐ Ultime prestazioni</div>
+        <section className="panel-card mission-card" style={{ animationDelay: '0.1s' }}>
+          <div className="progress-top">
+            <div>
+              <h2 className="panel-title"><span className="icon">📈</span>Missione OVR {nextOvr}</h2>
+              <div className="form-label">Forma attuale: {puntiForma >= 0 ? '+' : ''}{puntiForma}</div>
+            </div>
+            <div className="ovr-next">
+              <span className="current">{currentOvr}</span>
+              <span className="arrow">→</span>
+              <span className="next">{nextOvr}</span>
+            </div>
+          </div>
+          <div className="progress-track"><div className="progress-fill" /></div>
+          <div className="progress-footer">
+            <span>{getFormaLabel(puntiForma)}</span>
+            <span>{puntiMancanti} punti mancanti</span>
+          </div>
+        </section>
+
+        <section className="panel-card wide-card" style={{ animationDelay: '0.15s' }}>
+          <div className="panel-header">
+            <h2 className="panel-title"><span className="icon">📊</span>Riepilogo stagione</h2>
+          </div>
+          <div className="season-grid">
+            <SeasonStat label="Partite" value={partite.length} color="#00d4ff" />
+            <SeasonStat label="Gol" value={golTotali} color="#00ff88" />
+            <SeasonStat label="Assist" value={assistTotali} color="#a78bfa" />
+            <SeasonStat label="Vittorie" value={vittorie} color="#00d4ff" />
+            <SeasonStat label="Pareggi" value={pareggi} color="#ffd700" />
+            <SeasonStat label="Sconfitte" value={sconfitte} color="#ef4444" />
+          </div>
+        </section>
+
+        <section className="panel-card wide-card match-card" style={{ animationDelay: '0.2s' }}>
+          <div className="match-content">
+            <div className="panel-header">
+              <h2 className="panel-title"><span className="icon">📅</span>Prossima partita</h2>
+              {prossimaPartita && <span className="meta-chip">{formatStatus(prossimaPartita.stato)}</span>}
+            </div>
+            {prossimaPartita ? (
+              <>
+                <div className="match-vs">
+                  <TeamBox name="Fuciabol A" sub={getTeamSub(prossimaPartita, 'a')} />
+                  <div className="vs-label">VS</div>
+                  <TeamBox name="Fuciabol B" sub={getTeamSub(prossimaPartita, 'b')} />
+                </div>
+                <div className="match-date">📅 {formatDate(prossimaPartita.data)} {prossimaPartita.ora ? `· ${prossimaPartita.ora}` : ''}</div>
+              </>
+            ) : (
+              <div className="empty-box">Nessuna partita in programma.</div>
+            )}
+          </div>
+        </section>
+
+        <section className="panel-card wide-card" style={{ animationDelay: '0.25s' }}>
+          <div className="panel-header">
+            <h2 className="panel-title"><span className="icon">⭐</span>Ultime prestazioni</h2>
+          </div>
           {ultimi5Voti.length > 0 ? (
-            <div style={{ display: 'flex', gap: '0.55rem', overflowX: 'auto', paddingBottom: '0.15rem' }}>
-              {ultimi5Voti.map((voto, i) => {
-                const color = voto >= 7.5 ? '#00d4ff' : voto >= 6 ? '#ffd700' : '#ef4444'
-                return (
-                  <div key={i} style={{
-                    minWidth: '70px',
-                    borderRadius: '18px',
-                    padding: '0.85rem 0.55rem',
-                    textAlign: 'center',
-                    background: 'rgba(255,255,255,0.04)',
-                    border: `1px solid ${color}`,
-                  }}>
-                    <div style={{ fontSize: '1.45rem', fontWeight: 950, color, lineHeight: 1 }}>{voto.toFixed(1)}</div>
-                    <div style={{ fontSize: '0.62rem', color: 'rgba(255,255,255,0.38)', marginTop: '0.35rem', fontWeight: 800 }}>
-                      P.{ultimi5Voti.length - i}
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          ) : (
-            <EmptyState text="Nessuna prestazione registrata." />
-          )}
-        </section>
-      </div>
-
-      <div className="dash-main-grid">
-        <section className="dash-card" style={{ animationDelay: '0.16s' }}>
-          <div className="dash-card-title">⚽ Prossima partita</div>
-          {prossimaPartita ? (
-            <div className="list-row">
-              <div style={{ fontSize: '2rem' }}>📅</div>
-              <div style={{ minWidth: 0 }}>
-                <div style={{ fontWeight: 950, fontSize: '1rem', marginBottom: '0.2rem' }}>
-                  {formatDate(prossimaPartita.data)}
+            <div className="horizontal-list">
+              {ultimi5Voti.map((voto, index) => (
+                <div className="performance-chip" key={`${voto}-${index}`}>
+                  <strong>{voto.toFixed(1)}</strong>
+                  <span>P.{ultimi5Voti.length - index}</span>
                 </div>
-                <div style={{ color: 'rgba(255,255,255,0.48)', fontSize: '0.82rem', fontWeight: 650 }}>
-                  {prossimaPartita.stato === 'pre_partita' ? 'In programma' : (prossimaPartita.stato || 'In programma')}
-                </div>
-              </div>
-              <div style={{ color: '#00d4ff', fontSize: '1.6rem', fontWeight: 950 }}>›</div>
-            </div>
-          ) : (
-            <EmptyState text="Nessuna prossima partita trovata." />
-          )}
-        </section>
-
-        <section className="dash-card" style={{ animationDelay: '0.20s' }}>
-          <div className="dash-card-title">🎰 Ultime scommesse</div>
-          {scommesse.length > 0 ? (
-            <div style={{ display: 'grid', gap: '0.55rem' }}>
-              {scommesse.slice(0, 4).map(s => (
-                <BetRow key={s.id} bet={s} />
               ))}
             </div>
           ) : (
-            <EmptyState text="Non hai ancora piazzato scommesse." />
+            <div className="empty-box">Non ci sono ancora voti registrati.</div>
+          )}
+        </section>
+
+        <section className="panel-card wide-card" style={{ animationDelay: '0.3s' }}>
+          <div className="panel-header">
+            <h2 className="panel-title"><span className="icon">🎰</span>Ultime scommesse</h2>
+          </div>
+          {scommesse.length > 0 ? (
+            <div style={{ display: 'grid', gap: '0.52rem' }}>
+              {scommesse.slice(0, 4).map(s => (
+                <BetRow key={s.id} scommessa={s} />
+              ))}
+            </div>
+          ) : (
+            <div className="empty-box">Non hai ancora piazzato scommesse.</div>
+          )}
+        </section>
+
+        <section className="panel-card wide-card" style={{ animationDelay: '0.35s' }}>
+          <div className="panel-header">
+            <h2 className="panel-title"><span className="icon">📅</span>Ultime partite</h2>
+          </div>
+          {partiteChiuse.length > 0 ? (
+            <div style={{ display: 'grid', gap: '0.52rem' }}>
+              {partiteChiuse.slice(0, 4).map(p => (
+                <MatchRow key={p.id} partita={p} currentUserId={currentUser.id} />
+              ))}
+            </div>
+          ) : (
+            <div className="empty-box">Nessuna partita chiusa al momento.</div>
           )}
         </section>
       </div>
-
-      <section className="dash-card" style={{ animationDelay: '0.24s' }}>
-        <div className="dash-card-title">📅 Ultime partite</div>
-        {ultimePartite.length > 0 ? (
-          <div style={{ display: 'grid', gap: '0.55rem' }}>
-            {ultimePartite.map(p => (
-              <MatchRow key={p.id} partita={p} currentUser={currentUser} />
-            ))}
-          </div>
-        ) : (
-          <EmptyState text="Nessuna partita chiusa ancora disponibile." />
-        )}
-      </section>
     </div>
   )
 }
 
-function PlayerCard({ giocatore, cfg, cardType, cognome, partite, golTotali, assistTotali, mediaVoti }) {
+function MiniPlayerCard({ giocatore, cfg, cardType, cognome, partiteCount, golTotali, mediaVoti }) {
   return (
-    <div className="fut-card">
-      <div className="fut-inner-border" />
-      <div className="fut-foil" />
-      <div className="fut-shimmer" />
-
-      <div className="fut-top-left">
-        <div className="fut-overall">{giocatore.overall}</div>
-        <div className="fut-role">{giocatore.ruolo}</div>
+    <div className="mini-card">
+      <div className="mini-card-top">
+        <div className="mini-ovr">{giocatore.overall || 65}</div>
+        <div className="mini-role">{giocatore.ruolo || 'RUOLO'}</div>
       </div>
 
-      <div className="fut-badge">
-        {cardType === 'gold' ? '🥇' : cardType === 'silver' ? '🥈' : '🥉'}
-      </div>
-
-      <div className="fut-photo">
+      <div className="mini-photo">
         {giocatore.foto_url ? (
           <img src={giocatore.foto_url} alt={giocatore.nome} />
         ) : (
-          <div style={{ fontSize: '4rem', opacity: 0.55, filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.4))' }}>👤</div>
+          <div className="mini-placeholder">👤</div>
         )}
       </div>
 
-      <div className="fut-name">
-        <div>{cognome}</div>
+      <div
+        style={{
+          position: 'absolute',
+          top: '10px',
+          right: '10px',
+          zIndex: 5,
+          borderRadius: '8px',
+          background: 'rgba(0,0,0,0.28)',
+          color: cfg.accent,
+          fontSize: '0.48rem',
+          fontWeight: 950,
+          padding: '0.2rem 0.3rem',
+          letterSpacing: '0.3px'
+        }}
+      >
+        {cardType.toUpperCase()}
       </div>
 
-      <div className="fut-stats">
-        <div className="fut-stats-grid">
-          {[
-            { val: partite.length, label: 'PG' },
-            { val: golTotali, label: 'GOL' },
-            { val: assistTotali, label: 'ASS' },
-            { val: giocatore.overall, label: 'OVR' },
-            { val: mediaVoti, label: 'MEDIA' },
-            { val: giocatore.crediti ?? 500, label: 'CR' },
-          ].map((s, i) => (
-            <div key={i} className="fut-stat">
-              <div className="fut-stat-value">{s.val}</div>
-              <div className="fut-stat-label">{s.label}</div>
-            </div>
-          ))}
-        </div>
+      <div className="mini-name">{cognome}</div>
+
+      <div className="mini-stats">
+        <div className="mini-stat"><strong>{partiteCount}</strong><span>PG</span></div>
+        <div className="mini-stat"><strong>{golTotali}</strong><span>GOL</span></div>
+        <div className="mini-stat"><strong>{mediaVoti}</strong><span>MED</span></div>
       </div>
     </div>
   )
 }
 
-function ProgressCard({ cfg, currentOvr, puntiForma, puntiMancanti, formTrend, formColor }) {
+function SeasonStat({ label, value, color }) {
   return (
-    <div className="dash-card" style={{ animationDelay: '0.08s' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem', marginBottom: '0.9rem' }}>
-        <div>
-          <div className="dash-card-title" style={{ marginBottom: '0.2rem' }}>📈 Missione OVR {currentOvr + 1}</div>
-          <div style={{ color: formColor, fontSize: '0.78rem', fontWeight: 800 }}>Forma attuale: {puntiForma >= 0 ? '+' : ''}{puntiForma}</div>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <div style={{ fontSize: '1.55rem', fontWeight: 950, color: cfg.accentColor }}>{currentOvr}</div>
-          <div style={{ color: 'rgba(255,255,255,0.35)' }}>→</div>
-          <div style={{ fontSize: '1.55rem', fontWeight: 950, color: '#00d4ff' }}>{currentOvr + 1}</div>
-        </div>
-      </div>
-
-      <div className="progress-track">
-        <div className="progress-fill" />
-      </div>
-
-      <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', marginTop: '0.58rem', fontSize: '0.76rem', fontWeight: 750 }}>
-        <span style={{ color: formColor }}>{formTrend}</span>
-        <span style={{ color: 'rgba(255,255,255,0.45)' }}>{puntiMancanti} punti mancanti</span>
-      </div>
+    <div className="season-stat">
+      <strong style={{ color }}>{value ?? 0}</strong>
+      <span>{label}</span>
     </div>
   )
 }
 
-function MetricTile({ label, value, color }) {
+function TeamBox({ name, sub }) {
   return (
-    <div className="metric-tile">
-      <div className="metric-value" style={{ color }}>{value}</div>
-      <div className="metric-label">{label}</div>
+    <div className="team-box">
+      <div className="team-logo">
+        <img src="/pwa-192x192.png" alt="FUCIABOL" onError={(e) => { e.currentTarget.style.display = 'none' }} />
+      </div>
+      <div className="team-name">{name}</div>
+      <div className="team-sub">{sub}</div>
     </div>
   )
 }
 
-function BetRow({ bet }) {
-  const isWin = bet.esito === 'vinta'
-  const isLoss = bet.esito === 'persa'
-  const color = isWin ? '#00ff88' : isLoss ? '#ef4444' : '#ffd700'
-  const label = bet.tipo === 'risultato' ? 'Risultato' : bet.tipo === 'migliore_in_campo' ? 'MVP' : 'Capocannoniere'
+function BetRow({ scommessa }) {
+  const isWin = scommessa.esito === 'vinta'
+  const isLost = scommessa.esito === 'persa'
+  const color = isWin ? '#00ff88' : isLost ? '#ef4444' : '#ffd700'
+  const label = scommessa.tipo === 'risultato'
+    ? 'Risultato'
+    : scommessa.tipo === 'migliore_in_campo'
+    ? 'MVP'
+    : 'Capocannoniere'
 
   return (
     <div className="list-row">
-      <div className="status-pill" style={{
-        background: isWin ? 'rgba(0,255,136,0.12)' : isLoss ? 'rgba(239,68,68,0.12)' : 'rgba(255,215,0,0.12)',
-        color,
-        border: `1px solid ${color}`,
-      }}>
-        {isWin ? 'V' : isLoss ? 'P' : '…'}
+      <div className="list-main">
+        <div className="list-title">{label}</div>
+        <div className="list-subtitle">{scommessa.importo} crediti · quota {scommessa.quota}x</div>
       </div>
-      <div style={{ minWidth: 0 }}>
-        <div style={{ fontWeight: 900, fontSize: '0.88rem' }}>{label}</div>
-        <div style={{ color: 'rgba(255,255,255,0.42)', fontSize: '0.74rem', fontWeight: 650 }}>
-          {bet.importo} cr • quota {bet.quota}x
-        </div>
-      </div>
-      <div style={{ color, fontWeight: 950, whiteSpace: 'nowrap' }}>
-        {isWin ? `+${bet.vincita}` : isLoss ? `-${bet.importo}` : 'Attesa'}
+      <div className="status-pill" style={{ color, background: `${hexToRgba(color, 0.1)}`, borderColor: `${hexToRgba(color, 0.26)}` }}>
+        {isWin ? `+${scommessa.vincita}` : isLost ? `-${scommessa.importo}` : '⏳'}
       </div>
     </div>
   )
 }
 
-function MatchRow({ partita, currentUser }) {
-  const squadraA = partita.squadra_a || []
-  const squadraB = partita.squadra_b || []
-  const inA = squadraA.includes(currentUser.id)
-  const inB = squadraB.includes(currentUser.id)
+function MatchRow({ partita, currentUserId }) {
+  const squadraA = Array.isArray(partita.squadra_a) ? partita.squadra_a : []
+  const squadraB = Array.isArray(partita.squadra_b) ? partita.squadra_b : []
+  const inA = squadraA.includes(currentUserId)
+  const risultato = typeof partita.punteggio_a === 'number' && typeof partita.punteggio_b === 'number'
+    ? `${partita.punteggio_a} - ${partita.punteggio_b}`
+    : '—'
 
-  let result = '—'
-  let resultColor = 'rgba(255,255,255,0.55)'
-
+  let esito = 'P'
   if (typeof partita.punteggio_a === 'number' && typeof partita.punteggio_b === 'number') {
-    const won = (inA && partita.punteggio_a > partita.punteggio_b) || (inB && partita.punteggio_b > partita.punteggio_a)
-    const draw = partita.punteggio_a === partita.punteggio_b
-    result = draw ? 'P' : won ? 'V' : 'S'
-    resultColor = draw ? '#ffd700' : won ? '#00ff88' : '#ef4444'
+    if (partita.punteggio_a === partita.punteggio_b) esito = 'P'
+    else if ((inA && partita.punteggio_a > partita.punteggio_b) || (!inA && partita.punteggio_b > partita.punteggio_a)) esito = 'V'
+    else esito = 'S'
   }
 
+  const color = esito === 'V' ? '#00ff88' : esito === 'S' ? '#ef4444' : '#ffd700'
+
   return (
     <div className="list-row">
-      <div className="status-pill" style={{
-        background: result === 'V' ? 'rgba(0,255,136,0.12)' : result === 'S' ? 'rgba(239,68,68,0.12)' : 'rgba(255,215,0,0.12)',
-        color: resultColor,
-        border: `1px solid ${resultColor}`,
-      }}>
-        {result}
-      </div>
-      <div style={{ minWidth: 0 }}>
-        <div style={{ fontWeight: 900, fontSize: '0.88rem' }}>
-          {typeof partita.punteggio_a === 'number' && typeof partita.punteggio_b === 'number'
-            ? `${partita.punteggio_a} - ${partita.punteggio_b}`
-            : 'Risultato non disponibile'}
-        </div>
-        <div style={{ color: 'rgba(255,255,255,0.42)', fontSize: '0.74rem', fontWeight: 650 }}>
-          {formatDate(partita.data)}
-        </div>
+      <div className="status-pill" style={{ color, borderColor: hexToRgba(color, 0.35), background: hexToRgba(color, 0.08) }}>{esito}</div>
+      <div className="list-main" style={{ flex: 1 }}>
+        <div className="list-title">{risultato}</div>
+        <div className="list-subtitle">{formatDate(partita.data)}</div>
       </div>
       <div style={{ color: '#00d4ff', fontWeight: 950 }}>›</div>
     </div>
   )
 }
 
-function EmptyState({ text }) {
-  return (
-    <div style={{
-      borderRadius: '18px',
-      padding: '1rem',
-      border: '1px dashed rgba(255,255,255,0.12)',
-      color: 'rgba(255,255,255,0.42)',
-      fontWeight: 700,
-      fontSize: '0.86rem',
-      textAlign: 'center',
-      background: 'rgba(255,255,255,0.025)',
-    }}>
-      {text}
-    </div>
-  )
+function getSoglia(overall) {
+  if (overall >= 95) return 15
+  if (overall >= 90) return 10
+  if (overall >= 85) return 7
+  if (overall >= 75) return 5
+  if (overall >= 65) return 3
+  return 2
+}
+
+function getFormaLabel(puntiForma) {
+  if (puntiForma >= 5) return 'In grande crescita'
+  if (puntiForma >= 1) return 'In crescita'
+  if (puntiForma === 0) return 'Stabile'
+  if (puntiForma <= -10) return 'Da rilanciare'
+  return 'Momento complicato'
+}
+
+function cleanName(nome = '') {
+  return nome.replace(/\s*\(.*?\)/g, '').trim()
+}
+
+function getSurname(nome = '') {
+  const parts = cleanName(nome).split(' ').filter(Boolean)
+  return parts.length > 1 ? parts[parts.length - 1].toUpperCase() : cleanName(nome).toUpperCase()
+}
+
+function formatDate(dateString) {
+  if (!dateString) return 'Data da definire'
+  const d = new Date(dateString)
+  if (Number.isNaN(d.getTime())) return dateString
+  return d.toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' })
+}
+
+function formatStatus(status) {
+  if (!status) return 'In programma'
+  return String(status).replaceAll('_', ' ')
+}
+
+function getTeamSub(partita, side) {
+  const squadra = side === 'a' ? partita.squadra_a : partita.squadra_b
+  const count = Array.isArray(squadra) ? squadra.length : 0
+  return count > 0 ? `${count} giocatori` : 'Da definire'
+}
+
+function hexToRgba(hex, alpha) {
+  const clean = hex.replace('#', '')
+  const r = parseInt(clean.substring(0, 2), 16)
+  const g = parseInt(clean.substring(2, 4), 16)
+  const b = parseInt(clean.substring(4, 6), 16)
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`
 }
 
 export default Dashboard
