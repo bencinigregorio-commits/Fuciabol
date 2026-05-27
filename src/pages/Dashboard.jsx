@@ -182,20 +182,20 @@ function Dashboard({ currentUser }) {
             radial-gradient(circle at 10% 0%, rgba(0,212,255,0.12), transparent 34%),
             linear-gradient(145deg, rgba(15,23,41,0.88), rgba(6,11,24,0.72));
           box-shadow: 0 24px 70px rgba(0,0,0,0.32), inset 0 1px 0 rgba(255,255,255,0.04);
-          padding: 0.88rem;
+          padding: 1rem;
           animation: fadeInUp 0.42s ease both;
         }
 
         .hero-grid {
           display: grid;
-          grid-template-columns: 106px minmax(0, 1fr);
+          grid-template-columns: 122px minmax(0, 1fr);
           gap: 1rem;
           align-items: center;
         }
 
         .mini-card {
-          width: 106px;
-          height: 148px;
+          width: 122px;
+          height: 168px;
           border-radius: 22px;
           position: relative;
           overflow: hidden;
@@ -240,14 +240,14 @@ function Dashboard({ currentUser }) {
 
         .mini-photo {
           position: absolute;
-          top: 20px;
-          left: 39px;
-          right: 8px;
-          height: 72px;
+          top: 13px;
+          left: 42px;
+          right: 7px;
+          height: 82px;
           z-index: 3;
           overflow: hidden;
-          border-radius: 11px;
-          background: rgba(255,255,255,0.18);
+          border-radius: 12px;
+          background: linear-gradient(180deg, rgba(255,255,255,0.22), rgba(0,0,0,0.08));
         }
 
         .mini-photo img {
@@ -255,6 +255,7 @@ function Dashboard({ currentUser }) {
           height: 100%;
           object-fit: cover;
           object-position: top center;
+          filter: saturate(1.05) contrast(1.03);
         }
 
         .mini-placeholder {
@@ -271,13 +272,13 @@ function Dashboard({ currentUser }) {
           position: absolute;
           left: 8px;
           right: 8px;
-          bottom: 38px;
+          bottom: 42px;
           text-align: center;
           z-index: 5;
           color: ${cfg.text};
-          font-size: 0.66rem;
+          font-size: 0.72rem;
           font-weight: 950;
-          letter-spacing: 0.7px;
+          letter-spacing: 1px;
           text-transform: uppercase;
           white-space: nowrap;
           overflow: hidden;
@@ -484,9 +485,9 @@ function Dashboard({ currentUser }) {
 
         .form-label {
           margin-top: 0.35rem;
-          font-size: 0.78rem;
-          font-weight: 850;
-          color: ${puntiForma < 0 ? '#ef4444' : '#00ff88'};
+          font-size: 0.74rem;
+          font-weight: 800;
+          color: ${puntiForma < 0 ? 'rgba(239,68,68,0.82)' : '#00ff88'};
         }
 
         .progress-track {
@@ -640,6 +641,14 @@ function Dashboard({ currentUser }) {
           padding-bottom: 0.2rem;
           scrollbar-width: none;
         }
+
+        .performance-card.single-vote {
+          padding-bottom: 0.72rem;
+        }
+
+        .performance-card.single-vote .panel-header {
+          margin-bottom: 0.5rem;
+        }
         .horizontal-list::-webkit-scrollbar { display: none; }
 
         .performance-chip {
@@ -732,13 +741,13 @@ function Dashboard({ currentUser }) {
           }
 
           .hero-grid {
-            grid-template-columns: 96px minmax(0, 1fr);
-            gap: 0.74rem;
+            grid-template-columns: 108px minmax(0, 1fr);
+            gap: 0.82rem;
           }
 
           .mini-card {
-            width: 96px;
-            height: 134px;
+            width: 108px;
+            height: 150px;
             border-radius: 19px;
           }
 
@@ -748,8 +757,8 @@ function Dashboard({ currentUser }) {
 
           .mini-ovr { font-size: 1.55rem; }
           .mini-role { font-size: 0.5rem; }
-          .mini-photo { top: 17px; left: 35px; right: 7px; height: 64px; }
-          .mini-name { bottom: 34px; font-size: 0.58rem; letter-spacing: 0.45px; }
+          .mini-photo { top: 11px; left: 38px; right: 6px; height: 72px; }
+          .mini-name { bottom: 38px; font-size: 0.64rem; }
           .mini-stat strong { font-size: 0.65rem; }
           .mini-stat span { font-size: 0.38rem; }
 
@@ -817,18 +826,18 @@ function Dashboard({ currentUser }) {
 
         @media (max-width: 380px) {
           .hero-grid {
-            grid-template-columns: 88px minmax(0, 1fr);
-            gap: 0.62rem;
+            grid-template-columns: 96px minmax(0, 1fr);
+            gap: 0.68rem;
           }
 
           .mini-card {
-            width: 88px;
-            height: 124px;
+            width: 96px;
+            height: 136px;
           }
 
           .mini-ovr { font-size: 1.35rem; }
-          .mini-photo { left: 32px; height: 56px; }
-          .mini-name { bottom: 31px; font-size: 0.52rem; }
+          .mini-photo { left: 34px; height: 63px; }
+          .mini-name { bottom: 35px; font-size: 0.58rem; }
 
           .hero-title {
             font-size: 1.55rem;
@@ -845,6 +854,7 @@ function Dashboard({ currentUser }) {
           <MiniPlayerCard
             giocatore={giocatore}
             cfg={cfg}
+            cardType={cardType}
             cognome={cognome}
             partiteCount={partite.length}
             golTotali={golTotali}
@@ -889,7 +899,7 @@ function Dashboard({ currentUser }) {
           <div className="progress-top">
             <div>
               <h2 className="panel-title"><span className="icon">📈</span>Missione OVR {nextOvr}</h2>
-              <div className="form-label">Forma attuale: {puntiForma >= 0 ? '+' : ''}{puntiForma}</div>
+              <div className="form-label">Forma: {puntiForma >= 0 ? '+' : ''}{puntiForma}</div>
             </div>
             <div className="ovr-next">
               <span className="current">{currentOvr}</span>
@@ -939,7 +949,7 @@ function Dashboard({ currentUser }) {
           </div>
         </section>
 
-        <section className="panel-card wide-card" style={{ animationDelay: '0.25s' }}>
+        <section className={`panel-card wide-card performance-card ${ultimi5Voti.length === 1 ? 'single-vote' : ''}`} style={{ animationDelay: '0.25s' }}>
           <div className="panel-header">
             <h2 className="panel-title"><span className="icon">⭐</span>Ultime prestazioni</h2>
           </div>
@@ -991,7 +1001,7 @@ function Dashboard({ currentUser }) {
   )
 }
 
-function MiniPlayerCard({ giocatore, cfg, cognome, partiteCount, golTotali, mediaVoti }) {
+function MiniPlayerCard({ giocatore, cfg, cardType, cognome, partiteCount, golTotali, mediaVoti }) {
   return (
     <div className="mini-card">
       <div className="mini-card-top">
@@ -1127,6 +1137,10 @@ function formatDate(dateString) {
 
 function formatStatus(status) {
   if (!status) return 'In programma'
+  const normalized = String(status).toLowerCase()
+  if (normalized === 'pre_partita') return 'In programma'
+  if (normalized === 'in_votazione') return 'Votazioni aperte'
+  if (normalized === 'chiusa') return 'Chiusa'
   return String(status).replaceAll('_', ' ')
 }
 
