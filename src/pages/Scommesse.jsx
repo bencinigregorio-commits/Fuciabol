@@ -10,6 +10,7 @@ const FRASI = [
   "I crediti sono solo numeri. I rimpianti durano per sempre.",
   "Fidati dell'istinto. O almeno fidati delle quote.",
   "La fortuna aiuta gli audaci. E a volte anche i disperati.",
+  "Il 99% dei giocatori smette prima della grande vincita.",
 ]
 
 function Scommesse() {

@@ -5,6 +5,7 @@ function Classifica() {
   const [giocatori, setGiocatori] = useState([])
   const [partite, setPartite] = useState([])
   const [loading, setLoading] = useState(true)
+  const [activeFilter, setActiveFilter] = useState('punti')
 
   useEffect(() => { caricaDati() }, [])
 
@@ -74,6 +75,9 @@ function Classifica() {
       }
     })
 
+    const winRate = pg > 0 ? (v / pg) * 100 : 0
+    const mediaGol = pg > 0 ? gf / pg : 0
+
     return {
       ...g,
       punti,
@@ -84,10 +88,67 @@ function Classifica() {
       gf,
       gs,
       dr: gf - gs,
+      winRate,
+      mediaGol,
+      sampleRidotto: pg > 0 && pg < 2,
     }
   })
 
+  const filterOptions = [
+    {
+      id: 'punti',
+      label: 'Punti',
+      shortLabel: 'PTS',
+      title: 'Ranking generale',
+      description: 'Ordinata per punti, differenza reti e gol fatti',
+    },
+    {
+      id: 'winRate',
+      label: 'Win rate',
+      shortLabel: 'WR',
+      title: 'Classifica win rate',
+      description: 'Percentuale vittorie su partite giocate',
+    },
+    {
+      id: 'mediaGol',
+      label: 'Media gol',
+      shortLabel: 'G/P',
+      title: 'Classifica media gol',
+      description: 'Gol segnati in media per partita giocata',
+    },
+    {
+      id: 'golTotali',
+      label: 'Gol totali',
+      shortLabel: 'GOL',
+      title: 'Classifica bomber',
+      description: 'Ordinata per gol assoluti segnati',
+    },
+  ]
+
+  const activeFilterInfo = filterOptions.find(option => option.id === activeFilter) || filterOptions[0]
+
   const classifica = [...giocatoriConPunti].sort((a, b) => {
+    if (activeFilter === 'winRate') {
+      if (b.winRate !== a.winRate) return b.winRate - a.winRate
+      if (b.pg !== a.pg) return b.pg - a.pg
+      if (b.punti !== a.punti) return b.punti - a.punti
+      return b.gf - a.gf
+    }
+
+    if (activeFilter === 'mediaGol') {
+      if (b.mediaGol !== a.mediaGol) return b.mediaGol - a.mediaGol
+      if (b.gf !== a.gf) return b.gf - a.gf
+      if (b.punti !== a.punti) return b.punti - a.punti
+      return b.pg - a.pg
+    }
+
+    if (activeFilter === 'golTotali') {
+      if (b.gf !== a.gf) return b.gf - a.gf
+      if (b.mediaGol !== a.mediaGol) return b.mediaGol - a.mediaGol
+      if (b.punti !== a.punti) return b.punti - a.punti
+      return b.dr - a.dr
+    }
+
     if (b.punti !== a.punti) return b.punti - a.punti
     if (b.dr !== a.dr) return b.dr - a.dr
     return b.gf - a.gf
@@ -416,6 +477,66 @@ function Classifica() {
           text-transform: uppercase;
         }
 
+        .filter-tabs {
+          display: grid;
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+          gap: 0.55rem;
+          margin: -0.4rem 0 1.35rem 0;
+          animation: fadeInUp 0.45s ease 0.05s both;
+        }
+
+        .filter-tab {
+          border: 1px solid rgba(255,255,255,0.075);
+          background:
+            linear-gradient(135deg, rgba(255,255,255,0.055), rgba(255,255,255,0.018)),
+            rgba(5, 10, 23, 0.38);
+          color: rgba(255,255,255,0.58);
+          border-radius: 18px;
+          padding: 0.72rem 0.42rem;
+          cursor: pointer;
+          min-width: 0;
+          transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease, color 0.18s ease;
+          box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+        }
+
+        .filter-tab:hover {
+          transform: translateY(-2px);
+          border-color: rgba(0,212,255,0.22);
+          background:
+            linear-gradient(135deg, rgba(0,212,255,0.08), rgba(255,255,255,0.02)),
+            rgba(5, 10, 23, 0.46);
+          color: rgba(255,255,255,0.82);
+        }
+
+        .filter-tab.active {
+          border-color: rgba(0,212,255,0.42);
+          background:
+            radial-gradient(circle at 50% 0%, rgba(0,212,255,0.22), transparent 52%),
+            linear-gradient(135deg, rgba(0,212,255,0.14), rgba(0,153,255,0.07)),
+            rgba(5, 10, 23, 0.56);
+          color: #ffffff;
+          box-shadow: 0 0 22px rgba(0,212,255,0.14), inset 0 1px 0 rgba(255,255,255,0.08);
+        }
+
+        .filter-tab-label {
+          display: block;
+          font-size: 0.78rem;
+          font-weight: 900;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        .filter-tab-sub {
+          display: block;
+          margin-top: 0.22rem;
+          font-size: 0.56rem;
+          font-weight: 900;
+          letter-spacing: 0.45px;
+          color: rgba(0,212,255,0.72);
+          text-transform: uppercase;
+        }
+
         .ranking-section {
           border-radius: 26px;
           padding: 1rem;
@@ -681,9 +802,84 @@ function Classifica() {
           }
 
           .podio-section,
-          .ranking-section {
+          .filter-tabs {
+          display: grid;
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+          gap: 0.55rem;
+          margin: -0.4rem 0 1.35rem 0;
+          animation: fadeInUp 0.45s ease 0.05s both;
+        }
+
+        .filter-tab {
+          border: 1px solid rgba(255,255,255,0.075);
+          background:
+            linear-gradient(135deg, rgba(255,255,255,0.055), rgba(255,255,255,0.018)),
+            rgba(5, 10, 23, 0.38);
+          color: rgba(255,255,255,0.58);
+          border-radius: 18px;
+          padding: 0.72rem 0.42rem;
+          cursor: pointer;
+          min-width: 0;
+          transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease, color 0.18s ease;
+          box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+        }
+
+        .filter-tab:hover {
+          transform: translateY(-2px);
+          border-color: rgba(0,212,255,0.22);
+          background:
+            linear-gradient(135deg, rgba(0,212,255,0.08), rgba(255,255,255,0.02)),
+            rgba(5, 10, 23, 0.46);
+          color: rgba(255,255,255,0.82);
+        }
+
+        .filter-tab.active {
+          border-color: rgba(0,212,255,0.42);
+          background:
+            radial-gradient(circle at 50% 0%, rgba(0,212,255,0.22), transparent 52%),
+            linear-gradient(135deg, rgba(0,212,255,0.14), rgba(0,153,255,0.07)),
+            rgba(5, 10, 23, 0.56);
+          color: #ffffff;
+          box-shadow: 0 0 22px rgba(0,212,255,0.14), inset 0 1px 0 rgba(255,255,255,0.08);
+        }
+
+        .filter-tab-label {
+          display: block;
+          font-size: 0.78rem;
+          font-weight: 900;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        .filter-tab-sub {
+          display: block;
+          margin-top: 0.22rem;
+          font-size: 0.56rem;
+          font-weight: 900;
+          letter-spacing: 0.45px;
+          color: rgba(0,212,255,0.72);
+          text-transform: uppercase;
+        }
+
+        .ranking-section {
             border-radius: 22px;
             padding: 0.82rem;
+          }
+
+          .filter-tabs {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.45rem;
+            margin-bottom: 1rem;
+          }
+
+          .filter-tab {
+            border-radius: 16px;
+            padding: 0.64rem 0.38rem;
+          }
+
+          .filter-tab-label {
+            font-size: 0.74rem;
           }
 
           .podio-label {
@@ -805,11 +1001,25 @@ function Classifica() {
         </div>
       </div>
 
+      <div className="filter-tabs">
+        {filterOptions.map(option => (
+          <button
+            key={option.id}
+            type="button"
+            className={`filter-tab ${activeFilter === option.id ? 'active' : ''}`}
+            onClick={() => setActiveFilter(option.id)}
+          >
+            <span className="filter-tab-label">{option.label}</span>
+            <span className="filter-tab-sub">{option.shortLabel}</span>
+          </button>
+        ))}
+      </div>
+
       {top3.length >= 3 && (
         <section className="podio-section">
           <div className="podio-label">
             <h2>Podio Fuciabol</h2>
-            <span>Top 3</span>
+            <span>{activeFilterInfo.shortLabel} Top 3</span>
           </div>
 
           <div className="podio-grid">
@@ -831,15 +1041,15 @@ function Classifica() {
       <section className="ranking-section">
         <div className="ranking-header">
           <div>
-            <h2>Ranking generale</h2>
-            <p>Ordinata per punti, differenza reti e gol fatti</p>
+            <h2>{activeFilterInfo.title}</h2>
+            <p>{activeFilterInfo.description}</p>
           </div>
           <div className="ranking-total">{classifica.length} giocatori</div>
         </div>
 
         <div className="rank-list">
           {classifica.map((g, index) => (
-            <RankCard key={g.id} giocatore={g} position={index + 1} index={index} />
+            <RankCard key={g.id} giocatore={g} position={index + 1} index={index} activeFilter={activeFilter} />
           ))}
         </div>
       </section>
@@ -943,8 +1153,9 @@ function FutCard({ giocatore, position }) {
   )
 }
 
-function RankCard({ giocatore, position, index }) {
+function RankCard({ giocatore, position, index, activeFilter }) {
   const cleanName = getCleanName(giocatore.nome)
+  const mainMetric = getMainMetric(giocatore, activeFilter)
 
   const rankClass =
     position === 1 ? 'gold' :
@@ -978,12 +1189,13 @@ function RankCard({ giocatore, position, index }) {
           <div className="rank-name">{cleanName}</div>
           <div className="rank-meta">
             {giocatore.ruolo || '—'} • OVR {giocatore.overall || 65}
+            {activeFilter === 'winRate' && giocatore.pg > 0 && giocatore.pg < 2 ? ' • campione ridotto' : ''}
           </div>
         </div>
 
         <div className="rank-points">
-          <div className="rank-points-value">{giocatore.punti}</div>
-          <div className="rank-points-label">PTS</div>
+          <div className="rank-points-value">{mainMetric.value}</div>
+          <div className="rank-points-label">{mainMetric.label}</div>
         </div>
       </div>
 
@@ -1006,6 +1218,35 @@ function StatChip({ label, value, type = '' }) {
       <span className="rank-stat-label">{label}</span>
     </div>
   )
+}
+
+
+function getMainMetric(giocatore, activeFilter) {
+  if (activeFilter === 'winRate') {
+    return {
+      value: `${Math.round(giocatore.winRate || 0)}%`,
+      label: 'WR',
+    }
+  }
+
+  if (activeFilter === 'mediaGol') {
+    return {
+      value: (giocatore.mediaGol || 0).toFixed(2),
+      label: 'G/P',
+    }
+  }
+
+  if (activeFilter === 'golTotali') {
+    return {
+      value: giocatore.gf || 0,
+      label: 'GOL',
+    }
+  }
+
+  return {
+    value: giocatore.punti || 0,
+    label: 'PTS',
+  }
 }
 
 function getCleanName(nome = '') {
