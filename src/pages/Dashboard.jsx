@@ -11,9 +11,9 @@ const CARD_CONFIGS = {
     statsBar: 'rgba(0,0,0,0.5)',
     statsText: '#fff5cc',
     labelText: 'rgba(42,24,0,0.6)',
-    glowColor: 'rgba(255,215,0,0.5)',
+    glowColor: 'rgba(255,215,0,0.35)',
     progressColor: 'linear-gradient(90deg, #ffd700, #ffa500)',
-    progressGlow: 'rgba(255,215,0,0.6)',
+    progressGlow: 'rgba(255,215,0,0.55)',
     accentColor: '#ffd700',
   },
   silver: {
@@ -25,9 +25,9 @@ const CARD_CONFIGS = {
     statsBar: 'rgba(0,0,0,0.4)',
     statsText: '#f0f0f0',
     labelText: 'rgba(26,26,26,0.55)',
-    glowColor: 'rgba(192,192,192,0.5)',
+    glowColor: 'rgba(192,192,192,0.3)',
     progressColor: 'linear-gradient(90deg, #c0c0c0, #a0a0a0)',
-    progressGlow: 'rgba(192,192,192,0.5)',
+    progressGlow: 'rgba(192,192,192,0.42)',
     accentColor: '#c0c0c0',
   },
   bronze: {
@@ -39,9 +39,9 @@ const CARD_CONFIGS = {
     statsBar: 'rgba(0,0,0,0.45)',
     statsText: '#ffe8c8',
     labelText: 'rgba(32,14,0,0.6)',
-    glowColor: 'rgba(205,127,50,0.5)',
+    glowColor: 'rgba(205,127,50,0.32)',
     progressColor: 'linear-gradient(90deg, #cd7f32, #a05a20)',
-    progressGlow: 'rgba(205,127,50,0.5)',
+    progressGlow: 'rgba(205,127,50,0.42)',
     accentColor: '#cd7f32',
   }
 }
@@ -50,6 +50,17 @@ function getCardType(overall) {
   if (overall >= 75) return 'gold'
   if (overall >= 65) return 'silver'
   return 'bronze'
+}
+
+function getCleanName(nome = '') {
+  return nome.replace(/\s*\(.*?\)/g, '').trim()
+}
+
+function formatDate(dateValue) {
+  if (!dateValue) return 'Data da definire'
+  const d = new Date(dateValue)
+  if (Number.isNaN(d.getTime())) return 'Data da definire'
+  return d.toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' })
 }
 
 function Dashboard({ currentUser }) {
@@ -63,27 +74,54 @@ function Dashboard({ currentUser }) {
   }, [currentUser])
 
   async function caricaDati() {
-    const { data: giocatoreData } = await supabase.from('giocatori').select('*').eq('id', currentUser.id).single()
-    const { data: partiteData } = await supabase.from('partite').select('*').eq('votazioni_aperte', false)
-    const { data: scommesseData } = await supabase.from('scommesse').select('*').eq('giocatore_id', currentUser.id).order('created_at', { ascending: false })
+    setLoading(true)
+
+    const { data: giocatoreData } = await supabase
+      .from('giocatori')
+      .select('*')
+      .eq('id', currentUser.id)
+      .single()
+
+    const { data: partiteData } = await supabase
+      .from('partite')
+      .select('*')
+      .eq('votazioni_aperte', false)
+
+    const { data: scommesseData } = await supabase
+      .from('scommesse')
+      .select('*')
+      .eq('giocatore_id', currentUser.id)
+      .order('created_at', { ascending: false })
+
     if (giocatoreData) setGiocatore(giocatoreData)
     if (scommesseData) setScommesse(scommesseData)
+
     if (partiteData) {
-      setPartite(partiteData.filter(p => [...p.squadra_a, ...p.squadra_b].includes(currentUser.id)))
+      setPartite(partiteData.filter(p => {
+        const squadraA = p.squadra_a || []
+        const squadraB = p.squadra_b || []
+        return [...squadraA, ...squadraB].includes(currentUser.id)
+      }))
     }
+
     setLoading(false)
   }
 
   if (loading || !giocatore) return (
-    <div style={{ textAlign: 'center', padding: '4rem', color: 'rgba(255,255,255,0.5)' }}>
+    <div style={{ textAlign: 'center', padding: '4rem 1rem', color: 'rgba(255,255,255,0.5)' }}>
       <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>⚡</div>
       <div>Caricamento...</div>
     </div>
   )
 
+  const cleanName = getCleanName(giocatore.nome)
+  const nomeParti = cleanName.split(' ').filter(Boolean)
+  const cognome = nomeParti.length > 1 ? nomeParti[nomeParti.length - 1].toUpperCase() : cleanName.toUpperCase()
+
   const cardType = getCardType(giocatore.overall)
   const cfg = CARD_CONFIGS[cardType]
-  const currentOvr = giocatore.overall
+  const currentOvr = giocatore.overall || 65
+
   let soglia
   if (currentOvr >= 95) soglia = 15
   else if (currentOvr >= 90) soglia = 10
@@ -94,313 +132,789 @@ function Dashboard({ currentUser }) {
 
   const puntiForma = giocatore.forma_punti || 0
   const progressoPercentuale = Math.min(100, Math.max(0, (puntiForma / soglia) * 100))
-  const puntiMancanti = soglia - puntiForma
+  const puntiMancanti = Math.max(0, soglia - puntiForma)
 
-  const ultimi5Voti = (giocatore.voti_storico || []).slice(-5).reverse().map(v => v.votoFinale)
+  const votiStorico = giocatore.voti_storico || []
+  const ultimi5Voti = votiStorico.slice(-5).reverse().map(v => v.votoFinale).filter(v => typeof v === 'number')
   const mediaVoti = ultimi5Voti.length > 0
     ? (ultimi5Voti.reduce((s, v) => s + v, 0) / ultimi5Voti.length).toFixed(2)
     : '-'
 
-  let golTotali = 0, assistTotali = 0
+  let golTotali = 0
+  let assistTotali = 0
+  let vittorie = 0
+  let pareggi = 0
+  let sconfitte = 0
+
   partite.forEach(p => {
+    const squadraA = p.squadra_a || []
+    const squadraB = p.squadra_b || []
+    const inA = squadraA.includes(currentUser.id)
+    const inB = squadraB.includes(currentUser.id)
     const e = p.eventi?.[currentUser.id] || {}
+
     golTotali += e.gol || 0
     assistTotali += e.assist || 0
+
+    if (typeof p.punteggio_a === 'number' && typeof p.punteggio_b === 'number') {
+      if (p.punteggio_a === p.punteggio_b) pareggi++
+      else if ((inA && p.punteggio_a > p.punteggio_b) || (inB && p.punteggio_b > p.punteggio_a)) vittorie++
+      else sconfitte++
+    }
   })
 
   const scommesseVinte = scommesse.filter(s => s.esito === 'vinta').length
   const scommessePerse = scommesse.filter(s => s.esito === 'persa').length
-  const guadagniTotali = scommesse.filter(s => s.esito === 'vinta').reduce((sum, s) => sum + s.vincita, 0)
+  const guadagniTotali = scommesse
+    .filter(s => s.esito === 'vinta')
+    .reduce((sum, s) => sum + (s.vincita || 0), 0)
 
-  const nomeParti = giocatore.nome.replace(/\s*\(.*?\)/g, '').trim().split(' ')
-  const cognome = nomeParti.length > 1 ? nomeParti[nomeParti.length - 1].toUpperCase() : giocatore.nome.toUpperCase()
+  const prossimaPartita = [...partite]
+    .filter(p => p.stato !== 'chiusa')
+    .sort((a, b) => new Date(a.data || 0) - new Date(b.data || 0))[0]
+
+  const ultimePartite = [...partite]
+    .filter(p => p.stato === 'chiusa' || (typeof p.punteggio_a === 'number' && typeof p.punteggio_b === 'number'))
+    .sort((a, b) => new Date(b.data || 0) - new Date(a.data || 0))
+    .slice(0, 4)
+
+  const formTrend = puntiForma > 0 ? 'In crescita' : puntiForma < 0 ? 'Da rilanciare' : 'Stabile'
+  const formColor = puntiForma > 0 ? '#00ff88' : puntiForma < 0 ? '#ef4444' : '#ffd700'
 
   return (
-    <div>
+    <div className="dashboard-page">
       <style>{`
         @keyframes fadeInUp {
-          from { opacity: 0; transform: translateY(25px); }
+          from { opacity: 0; transform: translateY(22px); }
           to { opacity: 1; transform: translateY(0); }
         }
+
         @keyframes shimmerDash {
-          0% { transform: translateX(-100%) rotate(20deg); }
-          100% { transform: translateX(300%) rotate(20deg); }
+          0% { transform: translateX(-120%) rotate(20deg); }
+          100% { transform: translateX(320%) rotate(20deg); }
         }
+
         @keyframes floatCard {
           0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-6px); }
+          50% { transform: translateY(-7px); }
         }
+
         @keyframes glowCard {
-          0%, 100% { box-shadow: 0 0 20px ${cfg.glowColor}, 0 20px 40px rgba(0,0,0,0.6); }
-          50% { box-shadow: 0 0 40px ${cfg.glowColor}, 0 20px 50px rgba(0,0,0,0.7); }
+          0%, 100% { box-shadow: 0 0 20px ${cfg.glowColor}, 0 22px 44px rgba(0,0,0,0.55); }
+          50% { box-shadow: 0 0 36px ${cfg.glowColor}, 0 26px 56px rgba(0,0,0,0.68); }
         }
+
         @keyframes progressBar {
           from { width: 0%; }
           to { width: ${progressoPercentuale}%; }
         }
-        @keyframes pulseGlow {
-          0%, 100% { opacity: 0.6; }
-          50% { opacity: 1; }
+
+        .dashboard-page {
+          width: 100%;
+          max-width: 100%;
+          overflow-x: hidden;
+          padding-bottom: 1rem;
+        }
+
+        .dash-hero {
+          position: relative;
+          overflow: hidden;
+          border-radius: 30px;
+          border: 1px solid rgba(0,212,255,0.16);
+          background:
+            radial-gradient(circle at 86% 12%, rgba(0,212,255,0.19), transparent 28%),
+            radial-gradient(circle at 16% 90%, rgba(255,215,0,0.10), transparent 30%),
+            linear-gradient(135deg, rgba(15,23,41,0.86), rgba(5,10,23,0.72));
+          box-shadow: 0 26px 70px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.06);
+          padding: 1.2rem;
+          margin-bottom: 1.1rem;
+          animation: fadeInUp 0.45s ease both;
+        }
+
+        .dash-hero::before {
+          content: "";
+          position: absolute;
+          inset: 0;
+          background:
+            linear-gradient(90deg, transparent, rgba(0,212,255,0.055), transparent),
+            radial-gradient(circle at 75% 20%, rgba(0,212,255,0.12), transparent 22%);
+          pointer-events: none;
+        }
+
+        .dash-hero-content {
+          position: relative;
+          z-index: 1;
+          display: grid;
+          grid-template-columns: 185px minmax(0, 1fr);
+          gap: 1.3rem;
+          align-items: center;
+        }
+
+        .dash-greeting {
+          margin-bottom: 1rem;
+        }
+
+        .dash-kicker {
+          color: rgba(255,255,255,0.52);
+          font-size: 0.82rem;
+          font-weight: 800;
+          text-transform: uppercase;
+          letter-spacing: 1px;
+          margin-bottom: 0.2rem;
+        }
+
+        .dash-title {
+          margin: 0;
+          font-size: clamp(2rem, 8vw, 3.2rem);
+          line-height: 0.95;
+          letter-spacing: -1.2px;
+          font-weight: 950;
+        }
+
+        .dash-title span {
+          background: linear-gradient(135deg, #ffffff 0%, #dff8ff 40%, #00d4ff 100%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+        }
+
+        .dash-subtitle {
+          margin: 0.45rem 0 0 0;
+          color: rgba(255,255,255,0.58);
+          font-size: clamp(0.88rem, 3.2vw, 1rem);
+          font-weight: 600;
+        }
+
+        .dash-main-grid {
+          display: grid;
+          grid-template-columns: 1.05fr 0.95fr;
+          gap: 1rem;
+          margin-bottom: 1rem;
+        }
+
+        .dash-card {
+          position: relative;
+          overflow: hidden;
+          border-radius: 24px;
+          border: 1px solid rgba(255,255,255,0.075);
+          background:
+            radial-gradient(circle at 0% 0%, rgba(0,212,255,0.10), transparent 30%),
+            linear-gradient(135deg, rgba(255,255,255,0.055), rgba(255,255,255,0.02)),
+            rgba(5, 10, 23, 0.36);
+          box-shadow: 0 18px 48px rgba(0,0,0,0.20);
+          padding: 1rem;
+          animation: fadeInUp 0.5s ease both;
+        }
+
+        .dash-card-title {
+          display: flex;
+          align-items: center;
+          gap: 0.55rem;
+          margin-bottom: 0.85rem;
+          color: rgba(255,255,255,0.84);
+          font-size: 0.9rem;
+          font-weight: 900;
+          text-transform: uppercase;
+          letter-spacing: 0.8px;
+        }
+
+        .metric-grid {
+          display: grid;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 0.58rem;
+        }
+
+        .metric-tile {
+          min-width: 0;
+          border-radius: 18px;
+          padding: 0.85rem 0.65rem;
+          text-align: center;
+          border: 1px solid rgba(255,255,255,0.07);
+          background: rgba(255,255,255,0.035);
+        }
+
+        .metric-value {
+          font-size: clamp(1.15rem, 5vw, 1.8rem);
+          font-weight: 950;
+          line-height: 0.95;
+        }
+
+        .metric-label {
+          margin-top: 0.32rem;
+          font-size: 0.64rem;
+          color: rgba(255,255,255,0.42);
+          font-weight: 850;
+          letter-spacing: 0.45px;
+          text-transform: uppercase;
+        }
+
+        .fut-card {
+          width: 180px;
+          height: 260px;
+          border-radius: 16px;
+          background: ${cfg.bg};
+          border: 2px solid ${cfg.border};
+          position: relative;
+          overflow: hidden;
+          flex-shrink: 0;
+          margin: 0 auto;
+          animation: glowCard 2.6s ease-in-out infinite, floatCard 4s ease-in-out infinite;
+        }
+
+        .fut-inner-border {
+          position: absolute;
+          top: 4px;
+          left: 4px;
+          right: 4px;
+          bottom: 4px;
+          border: 1px solid ${cfg.innerBorder};
+          border-radius: 12px;
+          pointer-events: none;
+          z-index: 4;
+        }
+
+        .fut-foil {
+          position: absolute;
+          inset: 0;
+          background: ${cfg.foil};
+          pointer-events: none;
+          z-index: 1;
+        }
+
+        .fut-shimmer {
+          position: absolute;
+          top: -55%;
+          left: -22%;
+          width: 40%;
+          height: 215%;
+          background: linear-gradient(90deg, transparent, rgba(255,255,255,0.22), transparent);
+          animation: shimmerDash 3.6s ease-in-out infinite;
+          pointer-events: none;
+          z-index: 2;
+        }
+
+        .fut-top-left {
+          position: absolute;
+          top: 10px;
+          left: 12px;
+          z-index: 5;
+          line-height: 1;
+        }
+
+        .fut-overall {
+          font-size: 2rem;
+          font-weight: 950;
+          color: ${cfg.textDark};
+          line-height: 1;
+        }
+
+        .fut-role {
+          font-size: 0.58rem;
+          font-weight: 850;
+          color: ${cfg.labelText};
+          letter-spacing: 0.5px;
+          margin-top: 2px;
+        }
+
+        .fut-badge {
+          position: absolute;
+          top: 10px;
+          right: 10px;
+          z-index: 5;
+          background: rgba(0,0,0,0.32);
+          border-radius: 8px;
+          padding: 3px 6px;
+          font-size: 0.58rem;
+          font-weight: 900;
+          color: ${cfg.statsText};
+        }
+
+        .fut-photo {
+          position: absolute;
+          top: 8px;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 92px;
+          height: 112px;
+          z-index: 3;
+          display: flex;
+          align-items: flex-end;
+          justify-content: center;
+          overflow: hidden;
+          border-radius: 10px;
+          background:
+            linear-gradient(180deg, rgba(0,0,0,0.04), rgba(0,0,0,0.20)),
+            rgba(255,255,255,0.08);
+        }
+
+        .fut-photo img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          object-position: top center;
+          filter: drop-shadow(0 8px 12px rgba(0,0,0,0.5));
+        }
+
+        .fut-name {
+          position: absolute;
+          bottom: 66px;
+          left: 0;
+          right: 0;
+          text-align: center;
+          z-index: 5;
+          padding: 0 8px;
+        }
+
+        .fut-name div {
+          font-size: 0.78rem;
+          font-weight: 950;
+          color: ${cfg.textDark};
+          letter-spacing: 1.4px;
+          text-transform: uppercase;
+          text-shadow: 0 1px 0 rgba(255,255,255,0.32);
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        .fut-stats {
+          position: absolute;
+          bottom: 0;
+          left: 0;
+          right: 0;
+          background: ${cfg.statsBar};
+          border-top: 1px solid ${cfg.innerBorder};
+          padding: 6px 8px;
+          z-index: 5;
+        }
+
+        .fut-stats-grid {
+          display: grid;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 2px;
+        }
+
+        .fut-stat {
+          text-align: center;
+          min-width: 0;
+        }
+
+        .fut-stat-value {
+          font-size: 0.78rem;
+          font-weight: 950;
+          color: ${cfg.statsText};
+          line-height: 1;
+        }
+
+        .fut-stat-label {
+          font-size: 0.45rem;
+          font-weight: 800;
+          color: rgba(255,255,255,0.46);
+          text-transform: uppercase;
+          margin-top: 1px;
+        }
+
+        .progress-track {
+          width: 100%;
+          height: 16px;
+          background: rgba(0,0,0,0.36);
+          border-radius: 999px;
+          overflow: hidden;
+          border: 1px solid rgba(255,255,255,0.08);
+          position: relative;
+        }
+
+        .progress-fill {
+          width: ${progressoPercentuale}%;
+          height: 100%;
+          background: ${cfg.progressColor};
+          border-radius: 999px;
+          box-shadow: 0 0 14px ${cfg.progressGlow};
+          animation: progressBar 1s ease-out;
+          position: relative;
+          overflow: hidden;
+        }
+
+        .progress-fill::after {
+          content: "";
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(180deg, rgba(255,255,255,0.25), transparent);
+        }
+
+        .list-row {
+          display: grid;
+          grid-template-columns: auto minmax(0, 1fr) auto;
+          gap: 0.75rem;
+          align-items: center;
+          border-radius: 16px;
+          background: rgba(255,255,255,0.035);
+          border: 1px solid rgba(255,255,255,0.055);
+          padding: 0.75rem;
+        }
+
+        .status-pill {
+          width: 32px;
+          height: 32px;
+          border-radius: 12px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-weight: 950;
+          font-size: 0.76rem;
+        }
+
+        @media (max-width: 780px) {
+          .dash-hero {
+            padding: 1rem;
+            border-radius: 26px;
+          }
+
+          .dash-hero-content {
+            grid-template-columns: 1fr;
+            gap: 1rem;
+          }
+
+          .fut-card {
+            width: min(190px, 58vw);
+            height: calc(min(190px, 58vw) * 1.44);
+          }
+
+          .dash-main-grid {
+            grid-template-columns: 1fr;
+          }
+
+          .metric-grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+          }
+        }
+
+        @media (max-width: 420px) {
+          .dash-hero {
+            padding: 0.85rem;
+          }
+
+          .dash-card {
+            border-radius: 21px;
+            padding: 0.85rem;
+          }
+
+          .metric-grid {
+            gap: 0.42rem;
+          }
+
+          .metric-tile {
+            border-radius: 16px;
+            padding: 0.75rem 0.45rem;
+          }
+
+          .list-row {
+            gap: 0.55rem;
+            padding: 0.68rem;
+          }
         }
       `}</style>
 
-      {/* TOP SECTION: Card FUT + Info */}
-      <div style={{
-        display: 'flex',
-        flexWrap: 'wrap',
-        gap: '1.5rem',
-        marginBottom: '2rem',
-        animation: 'fadeInUp 0.5s ease',
-        alignItems: 'flex-start',
-        justifyContent: 'center',
-      }}>
+      <section className="dash-hero">
+        <div className="dash-hero-content">
+          <PlayerCard
+            giocatore={giocatore}
+            cfg={cfg}
+            cardType={cardType}
+            cognome={cognome}
+            partite={partite}
+            golTotali={golTotali}
+            assistTotali={assistTotali}
+            mediaVoti={mediaVoti}
+          />
 
-        {/* CARD FUT del giocatore */}
-        <div style={{
-          width: '180px',
-          height: '260px',
-          borderRadius: '14px',
-          background: cfg.bg,
-          border: `2px solid ${cfg.border}`,
-          position: 'relative',
-          overflow: 'hidden',
-          flexShrink: 0,
-          margin: '0 auto',
-          animation: 'glowCard 2.5s ease-in-out infinite, floatCard 4s ease-in-out infinite',
-        }}>
-          {/* Bordo interno */}
-          <div style={{ position: 'absolute', top: '4px', left: '4px', right: '4px', bottom: '4px', border: `1px solid ${cfg.innerBorder}`, borderRadius: '11px', pointerEvents: 'none', zIndex: 3 }} />
-          {/* Foil */}
-          <div style={{ position: 'absolute', inset: 0, background: cfg.foil, pointerEvents: 'none', zIndex: 1 }} />
-          {/* Shimmer */}
-          <div style={{ position: 'absolute', top: '-50%', left: '-20%', width: '35%', height: '200%', background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent)', animation: 'shimmerDash 3s ease-in-out infinite', pointerEvents: 'none', zIndex: 2 }} />
-
-          {/* Overall + Ruolo */}
-          <div style={{ position: 'absolute', top: '10px', left: '12px', zIndex: 4, lineHeight: 1 }}>
-            <div style={{ fontSize: '2rem', fontWeight: 900, color: cfg.textDark, lineHeight: 1 }}>{giocatore.overall}</div>
-            <div style={{ fontSize: '0.58rem', fontWeight: 800, color: cfg.labelText, letterSpacing: '0.5px', marginTop: '2px' }}>{giocatore.ruolo}</div>
-          </div>
-
-          {/* Tipo card badge */}
-          <div style={{ position: 'absolute', top: '10px', right: '10px', zIndex: 4, background: 'rgba(0,0,0,0.3)', borderRadius: '5px', padding: '2px 5px', fontSize: '0.5rem', fontWeight: 800, color: cfg.statsText, letterSpacing: '0.5px' }}>
-            {cardType === 'gold' ? '🥇' : cardType === 'silver' ? '🥈' : '🥉'}
-          </div>
-
-          {/* Foto */}
-          <div style={{ position: 'absolute', top: '8px', left: '50%', transform: 'translateX(-50%)', width: '85px', height: '110px', zIndex: 3, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', overflow: 'hidden' }}>
-            {giocatore.foto_url ? (
-              <img src={giocatore.foto_url} alt={giocatore.nome} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top center', filter: 'drop-shadow(0 6px 10px rgba(0,0,0,0.5))' }} />
-            ) : (
-              <div style={{ fontSize: '4rem', opacity: 0.55, filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.4))' }}>👤</div>
-            )}
-          </div>
-
-          {/* Nome */}
-          <div style={{ position: 'absolute', bottom: '65px', left: 0, right: 0, textAlign: 'center', zIndex: 4, padding: '0 8px' }}>
-            <div style={{ fontSize: '0.78rem', fontWeight: 900, color: cfg.textDark, letterSpacing: '1.5px', textTransform: 'uppercase', textShadow: '0 1px 0 rgba(255,255,255,0.3)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {cognome}
+          <div>
+            <div className="dash-greeting">
+              <div className="dash-kicker">Dashboard giocatore</div>
+              <h1 className="dash-title">Ciao, <span>{nomeParti[0] || cleanName}!</span></h1>
+              <p className="dash-subtitle">Pronto a conquistare la vetta?</p>
             </div>
-          </div>
 
-          {/* Stats bar */}
-          <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: cfg.statsBar, borderTop: `1px solid ${cfg.innerBorder}`, padding: '6px 8px', zIndex: 4 }}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '2px' }}>
-              {[
-                { val: partite.length, label: 'PG' },
-                { val: golTotali, label: 'GOL' },
-                { val: assistTotali, label: 'ASS' },
-                { val: giocatore.overall, label: 'OVR' },
-                { val: mediaVoti, label: 'MEDIA' },
-                { val: giocatore.crediti ?? 500, label: 'CR' },
-              ].map((s, i) => (
-                <div key={i} style={{ textAlign: 'center' }}>
-                  <div style={{ fontSize: '0.78rem', fontWeight: 900, color: cfg.statsText, lineHeight: 1 }}>{s.val}</div>
-                  <div style={{ fontSize: '0.45rem', fontWeight: 700, color: 'rgba(255,255,255,0.45)', textTransform: 'uppercase' }}>{s.label}</div>
+            <div className="dash-card" style={{ marginBottom: '0.85rem', animationDelay: '0.05s' }}>
+              <div className="dash-card-title">💰 Crediti disponibili</div>
+              <div className="metric-grid">
+                <MetricTile label="Crediti" value={giocatore.crediti ?? 500} color="#ffd700" />
+                <MetricTile label="Vinte" value={scommesseVinte} color="#00d4ff" />
+                <MetricTile label="Guadagnati" value={`+${guadagniTotali}`} color="#00ff88" />
+              </div>
+            </div>
+
+            <ProgressCard
+              cfg={cfg}
+              currentOvr={currentOvr}
+              puntiForma={puntiForma}
+              puntiMancanti={puntiMancanti}
+              formTrend={formTrend}
+              formColor={formColor}
+            />
+          </div>
+        </div>
+      </section>
+
+      <div className="dash-main-grid">
+        <section className="dash-card" style={{ animationDelay: '0.08s' }}>
+          <div className="dash-card-title">📊 Riepilogo stagione</div>
+          <div className="metric-grid">
+            <MetricTile label="Partite" value={partite.length} color="#00d4ff" />
+            <MetricTile label="Gol" value={golTotali} color="#00ff88" />
+            <MetricTile label="Assist" value={assistTotali} color="#a78bfa" />
+            <MetricTile label="Vittorie" value={vittorie} color="#00d4ff" />
+            <MetricTile label="Pareggi" value={pareggi} color="#ffd700" />
+            <MetricTile label="Sconfitte" value={sconfitte} color="#ef4444" />
+          </div>
+        </section>
+
+        <section className="dash-card" style={{ animationDelay: '0.12s' }}>
+          <div className="dash-card-title">⭐ Ultime prestazioni</div>
+          {ultimi5Voti.length > 0 ? (
+            <div style={{ display: 'flex', gap: '0.55rem', overflowX: 'auto', paddingBottom: '0.15rem' }}>
+              {ultimi5Voti.map((voto, i) => {
+                const color = voto >= 7.5 ? '#00d4ff' : voto >= 6 ? '#ffd700' : '#ef4444'
+                return (
+                  <div key={i} style={{
+                    minWidth: '70px',
+                    borderRadius: '18px',
+                    padding: '0.85rem 0.55rem',
+                    textAlign: 'center',
+                    background: 'rgba(255,255,255,0.04)',
+                    border: `1px solid ${color}`,
+                  }}>
+                    <div style={{ fontSize: '1.45rem', fontWeight: 950, color, lineHeight: 1 }}>{voto.toFixed(1)}</div>
+                    <div style={{ fontSize: '0.62rem', color: 'rgba(255,255,255,0.38)', marginTop: '0.35rem', fontWeight: 800 }}>
+                      P.{ultimi5Voti.length - i}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          ) : (
+            <EmptyState text="Nessuna prestazione registrata." />
+          )}
+        </section>
+      </div>
+
+      <div className="dash-main-grid">
+        <section className="dash-card" style={{ animationDelay: '0.16s' }}>
+          <div className="dash-card-title">⚽ Prossima partita</div>
+          {prossimaPartita ? (
+            <div className="list-row">
+              <div style={{ fontSize: '2rem' }}>📅</div>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontWeight: 950, fontSize: '1rem', marginBottom: '0.2rem' }}>
+                  {formatDate(prossimaPartita.data)}
                 </div>
+                <div style={{ color: 'rgba(255,255,255,0.48)', fontSize: '0.82rem', fontWeight: 650 }}>
+                  Stato: {prossimaPartita.stato || 'pre_partita'}
+                </div>
+              </div>
+              <div style={{ color: '#00d4ff', fontSize: '1.6rem', fontWeight: 950 }}>›</div>
+            </div>
+          ) : (
+            <EmptyState text="Nessuna prossima partita trovata." />
+          )}
+        </section>
+
+        <section className="dash-card" style={{ animationDelay: '0.20s' }}>
+          <div className="dash-card-title">🎰 Ultime scommesse</div>
+          {scommesse.length > 0 ? (
+            <div style={{ display: 'grid', gap: '0.55rem' }}>
+              {scommesse.slice(0, 4).map(s => (
+                <BetRow key={s.id} bet={s} />
               ))}
             </div>
-          </div>
-        </div>
-
-        {/* Info destra */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', justifyContent: 'center', flex: '1', minWidth: '280px', width: '100%' }}>
-          <div>
-            <h1 style={{ fontSize: 'clamp(1.5rem, 5vw, 2.2rem)', fontWeight: 900, marginBottom: '0.25rem', lineHeight: 1.1 }}>{giocatore.nome}</h1>
-            <div style={{ fontSize: '1rem', color: cfg.accentColor, fontWeight: 700, marginBottom: '1rem' }}>{giocatore.ruolo}</div>
-          </div>
-
-          {/* Crediti */}
-          <div style={{
-            background: 'linear-gradient(135deg, rgba(255,215,0,0.12), rgba(255,165,0,0.08))',
-            border: '1px solid rgba(255,215,0,0.35)',
-            borderRadius: '14px',
-            padding: '1rem 1.5rem',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            flexWrap: 'wrap',
-            gap: '1rem'
-          }}>
-            <div>
-              <div style={{ fontSize: '0.75rem', color: 'rgba(255,215,0,0.7)', fontWeight: 600, marginBottom: '0.15rem', letterSpacing: '0.5px' }}>💰 CREDITI</div>
-              <div style={{ fontSize: '2.5rem', fontWeight: 900, color: '#ffd700', lineHeight: 1 }}>{giocatore.crediti ?? 500}</div>
-            </div>
-            <div style={{ display: 'flex', gap: '1.5rem' }}>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: '1.3rem', fontWeight: 900, color: '#00d4ff' }}>{scommesseVinte}</div>
-                <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)' }}>Vinte</div>
-              </div>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: '1.3rem', fontWeight: 900, color: '#ef4444' }}>{scommessePerse}</div>
-                <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)' }}>Perse</div>
-              </div>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: '1.3rem', fontWeight: 900, color: '#ffd700' }}>+{guadagniTotali}</div>
-                <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)' }}>Guadagnati</div>
-              </div>
-            </div>
-          </div>
-
-          {/* Progresso Overall */}
-          <div style={{
-            background: 'rgba(15,23,41,0.7)',
-            border: `1px solid ${cfg.border}`,
-            borderRadius: '14px',
-            padding: '1rem 1.5rem',
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-              <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'rgba(255,255,255,0.6)', letterSpacing: '0.5px' }}>
-                📊 PROGRESSO OVERALL
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <div style={{ fontSize: '1.4rem', fontWeight: 900, color: cfg.accentColor }}>{currentOvr}</div>
-                <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.4)' }}>→</div>
-                <div style={{ fontSize: '1.4rem', fontWeight: 900, color: 'rgba(255,255,255,0.5)' }}>{currentOvr + 1}</div>
-              </div>
-            </div>
-
-            {/* Barra */}
-            <div style={{ width: '100%', height: '16px', background: 'rgba(0,0,0,0.4)', borderRadius: '8px', overflow: 'hidden', border: `1px solid ${cfg.innerBorder}`, position: 'relative', marginBottom: '0.5rem' }}>
-              <div style={{
-                width: `${progressoPercentuale}%`,
-                height: '100%',
-                background: cfg.progressColor,
-                borderRadius: '8px',
-                boxShadow: `0 0 12px ${cfg.progressGlow}`,
-                animation: 'progressBar 1s ease-out',
-                transition: 'width 0.5s ease',
-                position: 'relative',
-                overflow: 'hidden'
-              }}>
-                {/* Shine sulla barra */}
-                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '50%', background: 'rgba(255,255,255,0.2)', borderRadius: '8px 8px 0 0' }} />
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem' }}>
-              <span style={{ color: puntiForma >= 0 ? cfg.accentColor : '#ef4444', fontWeight: 700 }}>
-                {puntiForma >= 0 ? '+' : ''}{puntiForma} punti forma
-              </span>
-              <span style={{ color: 'rgba(255,255,255,0.4)' }}>
-                mancano {Math.max(0, puntiMancanti)} punti
-              </span>
-            </div>
-          </div>
-        </div>
+          ) : (
+            <EmptyState text="Non hai ancora piazzato scommesse." />
+          )}
+        </section>
       </div>
 
-      {/* STATS GRID */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '1rem', marginBottom: '2rem', animation: 'fadeInUp 0.5s ease 0.1s both' }}>
-        {[
-          { icon: '⚽', label: 'Gol Totali', value: golTotali, color: '#00d4ff', bg: 'rgba(0,212,255,0.08)', border: 'rgba(0,212,255,0.2)' },
-          { icon: '🎯', label: 'Assist Totali', value: assistTotali, color: '#a78bfa', bg: 'rgba(167,139,250,0.08)', border: 'rgba(167,139,250,0.2)' },
-          { icon: '📅', label: 'Partite', value: partite.length, color: '#00ff88', bg: 'rgba(0,255,136,0.08)', border: 'rgba(0,255,136,0.2)' },
-          { icon: '⭐', label: 'Media Ultimi 5', value: mediaVoti, color: '#ffd700', bg: 'rgba(255,215,0,0.08)', border: 'rgba(255,215,0,0.2)' },
-        ].map((s, i) => (
-          <div key={i} style={{
-            background: s.bg,
-            border: `1px solid ${s.border}`,
-            borderRadius: '14px',
-            padding: '1.25rem',
-            textAlign: 'center',
-            transition: 'all 0.2s',
-            cursor: 'default',
-            animation: `fadeInUp 0.4s ease ${0.1 + i * 0.05}s both`
-          }}
-            onMouseOver={e => e.currentTarget.style.transform = 'translateY(-4px)'}
-            onMouseOut={e => e.currentTarget.style.transform = 'translateY(0)'}
-          >
-            <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>{s.icon}</div>
-            <div style={{ fontSize: '2rem', fontWeight: 900, color: s.color, lineHeight: 1, marginBottom: '0.25rem' }}>{s.value}</div>
-            <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.45)', fontWeight: 600 }}>{s.label}</div>
-          </div>
-        ))}
-      </div>
-
-      {/* ULTIMI VOTI */}
-      {ultimi5Voti.length > 0 && (
-        <div style={{ background: 'rgba(15,23,41,0.6)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '20px', padding: '1.5rem 2rem', marginBottom: '2rem', animation: 'fadeInUp 0.5s ease 0.2s both' }}>
-          <h2 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            📈 Ultime Prestazioni
-          </h2>
-          <div style={{ display: 'flex', gap: '0.75rem', overflowX: 'auto' }}>
-            {ultimi5Voti.map((voto, i) => {
-              const isTop = voto >= 7.5
-              const isMid = voto >= 6
-              const color = isTop ? '#00d4ff' : isMid ? '#ffd700' : '#ef4444'
-              const bg = isTop ? 'rgba(0,212,255,0.1)' : isMid ? 'rgba(255,215,0,0.1)' : 'rgba(239,68,68,0.1)'
-              return (
-                <div key={i} style={{ minWidth: '75px', padding: '1rem 0.75rem', background: bg, border: `2px solid ${color}`, borderRadius: '12px', textAlign: 'center', transition: 'all 0.2s' }}
-                  onMouseOver={e => e.currentTarget.style.transform = 'translateY(-4px)'}
-                  onMouseOut={e => e.currentTarget.style.transform = 'translateY(0)'}
-                >
-                  <div style={{ fontSize: '1.8rem', fontWeight: 900, color, lineHeight: 1 }}>{voto.toFixed(1)}</div>
-                  <div style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.4)', marginTop: '0.4rem' }}>P.{ultimi5Voti.length - i}</div>
-                </div>
-              )
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* ULTIME SCOMMESSE */}
-      {scommesse.length > 0 && (
-        <div style={{ background: 'rgba(15,23,41,0.6)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '20px', padding: '1.5rem 2rem', animation: 'fadeInUp 0.5s ease 0.3s both' }}>
-          <h2 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            🎰 Ultime Scommesse
-          </h2>
-          <div style={{ display: 'grid', gap: '0.6rem' }}>
-            {scommesse.slice(0, 5).map(s => (
-              <div key={s.id} style={{
-                background: 'rgba(0,0,0,0.25)',
-                borderRadius: '12px',
-                padding: '0.85rem 1rem',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                border: `1px solid ${s.esito === 'vinta' ? 'rgba(0,212,255,0.25)' : s.esito === 'persa' ? 'rgba(239,68,68,0.25)' : 'rgba(255,255,255,0.05)'}`
-              }}>
-                <div>
-                  <div style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: '0.2rem' }}>
-                    {s.tipo === 'risultato' ? '🏆 Risultato' : s.tipo === 'migliore_in_campo' ? '⭐ MVP' : '⚽ Capocannoniere'}
-                  </div>
-                  <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)' }}>
-                    {s.importo} cr • quota {s.quota}x
-                  </div>
-                </div>
-                <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontWeight: 900, fontSize: '1rem', color: s.esito === 'vinta' ? '#00d4ff' : s.esito === 'persa' ? '#ef4444' : '#ffd700' }}>
-                    {s.esito === 'vinta' ? `+${s.vincita}` : s.esito === 'persa' ? `-${s.importo}` : '⏳'}
-                  </div>
-                  <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)' }}>
-                    {s.esito === 'pending' ? 'In attesa' : s.esito}
-                  </div>
-                </div>
-              </div>
+      <section className="dash-card" style={{ animationDelay: '0.24s' }}>
+        <div className="dash-card-title">📅 Ultime partite</div>
+        {ultimePartite.length > 0 ? (
+          <div style={{ display: 'grid', gap: '0.55rem' }}>
+            {ultimePartite.map(p => (
+              <MatchRow key={p.id} partita={p} currentUser={currentUser} />
             ))}
           </div>
+        ) : (
+          <EmptyState text="Nessuna partita chiusa ancora disponibile." />
+        )}
+      </section>
+    </div>
+  )
+}
+
+function PlayerCard({ giocatore, cfg, cardType, cognome, partite, golTotali, assistTotali, mediaVoti }) {
+  return (
+    <div className="fut-card">
+      <div className="fut-inner-border" />
+      <div className="fut-foil" />
+      <div className="fut-shimmer" />
+
+      <div className="fut-top-left">
+        <div className="fut-overall">{giocatore.overall}</div>
+        <div className="fut-role">{giocatore.ruolo}</div>
+      </div>
+
+      <div className="fut-badge">
+        {cardType === 'gold' ? '🥇' : cardType === 'silver' ? '🥈' : '🥉'}
+      </div>
+
+      <div className="fut-photo">
+        {giocatore.foto_url ? (
+          <img src={giocatore.foto_url} alt={giocatore.nome} />
+        ) : (
+          <div style={{ fontSize: '4rem', opacity: 0.55, filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.4))' }}>👤</div>
+        )}
+      </div>
+
+      <div className="fut-name">
+        <div>{cognome}</div>
+      </div>
+
+      <div className="fut-stats">
+        <div className="fut-stats-grid">
+          {[
+            { val: partite.length, label: 'PG' },
+            { val: golTotali, label: 'GOL' },
+            { val: assistTotali, label: 'ASS' },
+            { val: giocatore.overall, label: 'OVR' },
+            { val: mediaVoti, label: 'MEDIA' },
+            { val: giocatore.crediti ?? 500, label: 'CR' },
+          ].map((s, i) => (
+            <div key={i} className="fut-stat">
+              <div className="fut-stat-value">{s.val}</div>
+              <div className="fut-stat-label">{s.label}</div>
+            </div>
+          ))}
         </div>
-      )}
+      </div>
+    </div>
+  )
+}
+
+function ProgressCard({ cfg, currentOvr, puntiForma, puntiMancanti, formTrend, formColor }) {
+  return (
+    <div className="dash-card" style={{ animationDelay: '0.08s' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem', marginBottom: '0.9rem' }}>
+        <div>
+          <div className="dash-card-title" style={{ marginBottom: '0.25rem' }}>📈 Progresso overall</div>
+          <div style={{ color: formColor, fontSize: '0.82rem', fontWeight: 850 }}>{formTrend}</div>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <div style={{ fontSize: '1.55rem', fontWeight: 950, color: cfg.accentColor }}>{currentOvr}</div>
+          <div style={{ color: 'rgba(255,255,255,0.35)' }}>→</div>
+          <div style={{ fontSize: '1.55rem', fontWeight: 950, color: '#00d4ff' }}>{currentOvr + 1}</div>
+        </div>
+      </div>
+
+      <div className="progress-track">
+        <div className="progress-fill" />
+      </div>
+
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', marginTop: '0.58rem', fontSize: '0.76rem', fontWeight: 750 }}>
+        <span style={{ color: formColor }}>{puntiForma >= 0 ? '+' : ''}{puntiForma} punti forma</span>
+        <span style={{ color: 'rgba(255,255,255,0.45)' }}>mancano {puntiMancanti} punti</span>
+      </div>
+    </div>
+  )
+}
+
+function MetricTile({ label, value, color }) {
+  return (
+    <div className="metric-tile">
+      <div className="metric-value" style={{ color }}>{value}</div>
+      <div className="metric-label">{label}</div>
+    </div>
+  )
+}
+
+function BetRow({ bet }) {
+  const isWin = bet.esito === 'vinta'
+  const isLoss = bet.esito === 'persa'
+  const color = isWin ? '#00ff88' : isLoss ? '#ef4444' : '#ffd700'
+  const label = bet.tipo === 'risultato' ? 'Risultato' : bet.tipo === 'migliore_in_campo' ? 'MVP' : 'Capocannoniere'
+
+  return (
+    <div className="list-row">
+      <div className="status-pill" style={{
+        background: isWin ? 'rgba(0,255,136,0.12)' : isLoss ? 'rgba(239,68,68,0.12)' : 'rgba(255,215,0,0.12)',
+        color,
+        border: `1px solid ${color}`,
+      }}>
+        {isWin ? 'V' : isLoss ? 'P' : '…'}
+      </div>
+      <div style={{ minWidth: 0 }}>
+        <div style={{ fontWeight: 900, fontSize: '0.88rem' }}>{label}</div>
+        <div style={{ color: 'rgba(255,255,255,0.42)', fontSize: '0.74rem', fontWeight: 650 }}>
+          {bet.importo} cr • quota {bet.quota}x
+        </div>
+      </div>
+      <div style={{ color, fontWeight: 950, whiteSpace: 'nowrap' }}>
+        {isWin ? `+${bet.vincita}` : isLoss ? `-${bet.importo}` : 'Attesa'}
+      </div>
+    </div>
+  )
+}
+
+function MatchRow({ partita, currentUser }) {
+  const squadraA = partita.squadra_a || []
+  const squadraB = partita.squadra_b || []
+  const inA = squadraA.includes(currentUser.id)
+  const inB = squadraB.includes(currentUser.id)
+
+  let result = '—'
+  let resultColor = 'rgba(255,255,255,0.55)'
+
+  if (typeof partita.punteggio_a === 'number' && typeof partita.punteggio_b === 'number') {
+    const won = (inA && partita.punteggio_a > partita.punteggio_b) || (inB && partita.punteggio_b > partita.punteggio_a)
+    const draw = partita.punteggio_a === partita.punteggio_b
+    result = draw ? 'P' : won ? 'V' : 'S'
+    resultColor = draw ? '#ffd700' : won ? '#00ff88' : '#ef4444'
+  }
+
+  return (
+    <div className="list-row">
+      <div className="status-pill" style={{
+        background: result === 'V' ? 'rgba(0,255,136,0.12)' : result === 'S' ? 'rgba(239,68,68,0.12)' : 'rgba(255,215,0,0.12)',
+        color: resultColor,
+        border: `1px solid ${resultColor}`,
+      }}>
+        {result}
+      </div>
+      <div style={{ minWidth: 0 }}>
+        <div style={{ fontWeight: 900, fontSize: '0.88rem' }}>
+          {typeof partita.punteggio_a === 'number' && typeof partita.punteggio_b === 'number'
+            ? `${partita.punteggio_a} - ${partita.punteggio_b}`
+            : 'Risultato non disponibile'}
+        </div>
+        <div style={{ color: 'rgba(255,255,255,0.42)', fontSize: '0.74rem', fontWeight: 650 }}>
+          {formatDate(partita.data)}
+        </div>
+      </div>
+      <div style={{ color: '#00d4ff', fontWeight: 950 }}>›</div>
+    </div>
+  )
+}
+
+function EmptyState({ text }) {
+  return (
+    <div style={{
+      borderRadius: '18px',
+      padding: '1rem',
+      border: '1px dashed rgba(255,255,255,0.12)',
+      color: 'rgba(255,255,255,0.42)',
+      fontWeight: 700,
+      fontSize: '0.86rem',
+      textAlign: 'center',
+      background: 'rgba(255,255,255,0.025)',
+    }}>
+      {text}
     </div>
   )
 }
