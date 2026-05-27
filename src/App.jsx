@@ -330,32 +330,13 @@ function App() {
   ]
 
   return (
-    <Layout currentUser={currentUser} onLogout={handleLogout}>
-      {/* NAV BAR stile app */}
-      <div style={{
-        background: 'rgba(10, 16, 30, 0.95)',
-        backdropFilter: 'blur(20px)',
-        borderRadius: '20px',
-        padding: '0.25rem 0.5rem',
-        marginBottom: '2rem',
-        display: 'flex',
-        gap: '0.25rem',
-        border: '1px solid rgba(255,255,255,0.06)',
-        boxShadow: '0 4px 24px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05)',
-        overflowX: 'auto',
-        scrollbarWidth: 'none',
-      }}>
-        {tabs.map(tab => (
-          <TabButton
-            key={tab.id}
-            active={activeTab === tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            icon={tab.icon}
-            label={tab.label}
-          />
-        ))}
-      </div>
-
+    <Layout
+      currentUser={currentUser}
+      onLogout={handleLogout}
+      tabs={tabs}
+      activeTab={activeTab}
+      onTabChange={setActiveTab}
+    >
       {activeTab === 'dashboard' && <Dashboard currentUser={currentUser} />}
       {activeTab === 'calendario' && <Calendario currentUser={currentUser} />}
       {activeTab === 'statistiche' && <Statistiche />}
