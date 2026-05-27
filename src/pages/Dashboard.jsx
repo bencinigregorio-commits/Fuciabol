@@ -214,20 +214,21 @@ function Dashboard({ currentUser }) {
           max-width: 100%;
           overflow-x: hidden;
           padding-bottom: 1rem;
+          font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
         }
 
         .dash-hero {
           position: relative;
           overflow: hidden;
-          border-radius: 30px;
+          border-radius: 20px;
           border: 1px solid rgba(0,212,255,0.16);
           background:
             radial-gradient(circle at 86% 12%, rgba(0,212,255,0.19), transparent 28%),
             radial-gradient(circle at 16% 90%, rgba(255,215,0,0.10), transparent 30%),
             linear-gradient(135deg, rgba(15,23,41,0.86), rgba(5,10,23,0.72));
           box-shadow: 0 26px 70px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.06);
-          padding: 1.2rem;
-          margin-bottom: 1.1rem;
+          padding: 1rem;
+          margin-bottom: 0.9rem;
           animation: fadeInUp 0.45s ease both;
         }
 
@@ -245,8 +246,8 @@ function Dashboard({ currentUser }) {
           position: relative;
           z-index: 1;
           display: grid;
-          grid-template-columns: 185px minmax(0, 1fr);
-          gap: 1.3rem;
+          grid-template-columns: 155px minmax(0, 1fr);
+          gap: 1rem;
           align-items: center;
         }
 
@@ -256,18 +257,18 @@ function Dashboard({ currentUser }) {
 
         .dash-kicker {
           color: rgba(255,255,255,0.52);
-          font-size: 0.82rem;
+          font-size: 0.72rem;
           font-weight: 800;
           text-transform: uppercase;
-          letter-spacing: 1px;
+          letter-spacing: 0.55px;
           margin-bottom: 0.2rem;
         }
 
         .dash-title {
           margin: 0;
-          font-size: clamp(2rem, 8vw, 3.2rem);
-          line-height: 0.95;
-          letter-spacing: -1.2px;
+          font-size: clamp(1.7rem, 6vw, 2.6rem);
+          line-height: 1;
+          letter-spacing: -0.8px;
           font-weight: 950;
         }
 
@@ -281,7 +282,7 @@ function Dashboard({ currentUser }) {
         .dash-subtitle {
           margin: 0.45rem 0 0 0;
           color: rgba(255,255,255,0.58);
-          font-size: clamp(0.88rem, 3.2vw, 1rem);
+          font-size: clamp(0.82rem, 3vw, 0.95rem);
           font-weight: 600;
         }
 
@@ -302,7 +303,7 @@ function Dashboard({ currentUser }) {
             linear-gradient(135deg, rgba(255,255,255,0.055), rgba(255,255,255,0.02)),
             rgba(5, 10, 23, 0.36);
           box-shadow: 0 18px 48px rgba(0,0,0,0.20);
-          padding: 1rem;
+          padding: 0.85rem;
           animation: fadeInUp 0.5s ease both;
         }
 
@@ -312,46 +313,46 @@ function Dashboard({ currentUser }) {
           gap: 0.55rem;
           margin-bottom: 0.85rem;
           color: rgba(255,255,255,0.84);
-          font-size: 0.9rem;
-          font-weight: 900;
+          font-size: 0.82rem;
+          font-weight: 850;
           text-transform: uppercase;
-          letter-spacing: 0.8px;
+          letter-spacing: 0.35px;
         }
 
         .metric-grid {
           display: grid;
           grid-template-columns: repeat(3, minmax(0, 1fr));
-          gap: 0.58rem;
+          gap: 0.48rem;
         }
 
         .metric-tile {
           min-width: 0;
-          border-radius: 18px;
-          padding: 0.85rem 0.65rem;
+          border-radius: 15px;
+          padding: 0.68rem 0.45rem;
           text-align: center;
           border: 1px solid rgba(255,255,255,0.07);
           background: rgba(255,255,255,0.035);
         }
 
         .metric-value {
-          font-size: clamp(1.15rem, 5vw, 1.8rem);
+          font-size: clamp(1rem, 4.5vw, 1.55rem);
           font-weight: 950;
           line-height: 0.95;
         }
 
         .metric-label {
           margin-top: 0.32rem;
-          font-size: 0.64rem;
-          color: rgba(255,255,255,0.42);
-          font-weight: 850;
-          letter-spacing: 0.45px;
+          font-size: 0.56rem;
+          color: rgba(255,255,255,0.46);
+          font-weight: 800;
+          letter-spacing: 0.25px;
           text-transform: uppercase;
         }
 
         .fut-card {
-          width: 180px;
-          height: 260px;
-          border-radius: 16px;
+          width: 150px;
+          height: 216px;
+          border-radius: 14px;
           background: ${cfg.bg};
           border: 2px solid ${cfg.border};
           position: relative;
@@ -402,14 +403,14 @@ function Dashboard({ currentUser }) {
         }
 
         .fut-overall {
-          font-size: 2rem;
+          font-size: 1.62rem;
           font-weight: 950;
           color: ${cfg.textDark};
           line-height: 1;
         }
 
         .fut-role {
-          font-size: 0.58rem;
+          font-size: 0.5rem;
           font-weight: 850;
           color: ${cfg.labelText};
           letter-spacing: 0.5px;
@@ -434,8 +435,8 @@ function Dashboard({ currentUser }) {
           top: 8px;
           left: 50%;
           transform: translateX(-50%);
-          width: 92px;
-          height: 112px;
+          width: 80px;
+          height: 96px;
           z-index: 3;
           display: flex;
           align-items: flex-end;
@@ -457,7 +458,7 @@ function Dashboard({ currentUser }) {
 
         .fut-name {
           position: absolute;
-          bottom: 66px;
+          bottom: 54px;
           left: 0;
           right: 0;
           text-align: center;
@@ -466,10 +467,10 @@ function Dashboard({ currentUser }) {
         }
 
         .fut-name div {
-          font-size: 0.78rem;
-          font-weight: 950;
+          font-size: 0.66rem;
+          font-weight: 900;
           color: ${cfg.textDark};
-          letter-spacing: 1.4px;
+          letter-spacing: 0.7px;
           text-transform: uppercase;
           text-shadow: 0 1px 0 rgba(255,255,255,0.32);
           white-space: nowrap;
@@ -484,7 +485,7 @@ function Dashboard({ currentUser }) {
           right: 0;
           background: ${cfg.statsBar};
           border-top: 1px solid ${cfg.innerBorder};
-          padding: 6px 8px;
+          padding: 5px 6px;
           z-index: 5;
         }
 
@@ -500,14 +501,14 @@ function Dashboard({ currentUser }) {
         }
 
         .fut-stat-value {
-          font-size: 0.78rem;
+          font-size: 0.68rem;
           font-weight: 950;
           color: ${cfg.statsText};
           line-height: 1;
         }
 
         .fut-stat-label {
-          font-size: 0.45rem;
+          font-size: 0.38rem;
           font-weight: 800;
           color: rgba(255,255,255,0.46);
           text-transform: uppercase;
@@ -566,8 +567,8 @@ function Dashboard({ currentUser }) {
 
         @media (max-width: 780px) {
           .dash-hero {
-            padding: 1rem;
-            border-radius: 26px;
+            padding: 0.85rem;
+            border-radius: 22px;
           }
 
           .dash-hero-content {
@@ -576,8 +577,8 @@ function Dashboard({ currentUser }) {
           }
 
           .fut-card {
-            width: min(190px, 58vw);
-            height: calc(min(190px, 58vw) * 1.44);
+            width: min(158px, 46vw);
+            height: calc(min(158px, 46vw) * 1.44);
           }
 
           .dash-main-grid {
@@ -635,7 +636,7 @@ function Dashboard({ currentUser }) {
               <p className="dash-subtitle">Pronto a conquistare la vetta?</p>
             </div>
 
-            <div className="dash-card" style={{ marginBottom: '0.85rem', animationDelay: '0.05s' }}>
+            <div className="dash-card" style={{ marginBottom: '0.65rem', animationDelay: '0.05s' }}>
               <div className="dash-card-title">💰 Crediti disponibili</div>
               <div className="metric-grid">
                 <MetricTile label="Crediti" value={giocatore.crediti ?? 500} color="#ffd700" />
@@ -709,7 +710,7 @@ function Dashboard({ currentUser }) {
                   {formatDate(prossimaPartita.data)}
                 </div>
                 <div style={{ color: 'rgba(255,255,255,0.48)', fontSize: '0.82rem', fontWeight: 650 }}>
-                  Stato: {prossimaPartita.stato || 'pre_partita'}
+                  {prossimaPartita.stato === 'pre_partita' ? 'In programma' : (prossimaPartita.stato || 'In programma')}
                 </div>
               </div>
               <div style={{ color: '#00d4ff', fontSize: '1.6rem', fontWeight: 950 }}>›</div>
@@ -803,8 +804,8 @@ function ProgressCard({ cfg, currentOvr, puntiForma, puntiMancanti, formTrend, f
     <div className="dash-card" style={{ animationDelay: '0.08s' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem', marginBottom: '0.9rem' }}>
         <div>
-          <div className="dash-card-title" style={{ marginBottom: '0.25rem' }}>📈 Progresso overall</div>
-          <div style={{ color: formColor, fontSize: '0.82rem', fontWeight: 850 }}>{formTrend}</div>
+          <div className="dash-card-title" style={{ marginBottom: '0.2rem' }}>📈 Missione OVR {currentOvr + 1}</div>
+          <div style={{ color: formColor, fontSize: '0.78rem', fontWeight: 800 }}>Forma attuale: {puntiForma >= 0 ? '+' : ''}{puntiForma}</div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <div style={{ fontSize: '1.55rem', fontWeight: 950, color: cfg.accentColor }}>{currentOvr}</div>
@@ -818,8 +819,8 @@ function ProgressCard({ cfg, currentOvr, puntiForma, puntiMancanti, formTrend, f
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', marginTop: '0.58rem', fontSize: '0.76rem', fontWeight: 750 }}>
-        <span style={{ color: formColor }}>{puntiForma >= 0 ? '+' : ''}{puntiForma} punti forma</span>
-        <span style={{ color: 'rgba(255,255,255,0.45)' }}>mancano {puntiMancanti} punti</span>
+        <span style={{ color: formColor }}>{formTrend}</span>
+        <span style={{ color: 'rgba(255,255,255,0.45)' }}>{puntiMancanti} punti mancanti</span>
       </div>
     </div>
   )
