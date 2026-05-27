@@ -1,6 +1,13 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../supabase'
 
+const FILTERS = [
+  { id: 'punti', label: 'Punti', short: 'PTS', desc: 'Punti totali' },
+  { id: 'winrate', label: 'Win rate', short: 'WR', desc: 'Vittorie / partite' },
+  { id: 'mediagol', label: 'Media gol', short: 'G/P', desc: 'Gol per partita' },
+  { id: 'gol', label: 'Gol totali', short: 'GOL', desc: 'Classifica bomber' },
+]
+
 function Classifica() {
   const [giocatori, setGiocatori] = useState([])
   const [partite, setPartite] = useState([])
@@ -15,30 +22,22 @@ function Classifica() {
 
     if (giocatoriData) setGiocatori(giocatoriData)
     if (partiteData) setPartite(partiteData)
-
     setLoading(false)
   }
 
   if (loading) return (
-    <div style={{ textAlign: 'center', padding: '4rem 1rem', color: 'rgba(255, 255, 255, 0.5)' }}>
+    <div style={{ textAlign: 'center', padding: '4rem 1rem', color: 'rgba(255,255,255,0.5)' }}>
       <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🏆</div>
       <div>Caricamento...</div>
     </div>
   )
 
-  const giocatoriConPunti = giocatori.map(g => {
-    let punti = 0
-    let pg = 0
-    let v = 0
-    let p = 0
-    let s = 0
-    let gf = 0
-    let gs = 0
+  const giocatoriConStats = giocatori.map(g => {
+    let punti = 0, pg = 0, v = 0, p = 0, s = 0, gf = 0, gs = 0
 
     partite.forEach(partita => {
       const inA = partita.squadra_a?.includes(g.id)
       const inB = partita.squadra_b?.includes(g.id)
-
       if (!inA && !inB) return
 
       pg++
@@ -50,28 +49,14 @@ function Classifica() {
 
       if (inA) {
         gs += partita.punteggio_b || 0
-
-        if (isVittoriaA) {
-          punti += 3
-          v++
-        } else if (isPareggio) {
-          punti += 1
-          p++
-        } else {
-          s++
-        }
+        if (isVittoriaA) { punti += 3; v++ }
+        else if (isPareggio) { punti += 1; p++ }
+        else { s++ }
       } else {
         gs += partita.punteggio_a || 0
-
-        if (isVittoriaB) {
-          punti += 3
-          v++
-        } else if (isPareggio) {
-          punti += 1
-          p++
-        } else {
-          s++
-        }
+        if (isVittoriaB) { punti += 3; v++ }
+        else if (isPareggio) { punti += 1; p++ }
+        else { s++ }
       }
     })
 
@@ -90,113 +75,34 @@ function Classifica() {
       dr: gf - gs,
       winRate,
       mediaGol,
-      sampleRidotto: pg > 0 && pg < 2,
     }
   })
 
-  const filterOptions = [
-    {
-      id: 'punti',
-      label: 'Punti',
-      shortLabel: 'PTS',
-      title: 'Ranking generale',
-      description: 'Ordinata per punti, differenza reti e gol fatti',
-    },
-    {
-      id: 'winRate',
-      label: 'Win rate',
-      shortLabel: 'WR',
-      title: 'Classifica win rate',
-      description: 'Percentuale vittorie su partite giocate',
-    },
-    {
-      id: 'mediaGol',
-      label: 'Media gol',
-      shortLabel: 'G/P',
-      title: 'Classifica media gol',
-      description: 'Gol segnati in media per partita giocata',
-    },
-    {
-      id: 'golTotali',
-      label: 'Gol totali',
-      shortLabel: 'GOL',
-      title: 'Classifica bomber',
-      description: 'Ordinata per gol assoluti segnati',
-    },
-  ]
-
-  const activeFilterInfo = filterOptions.find(option => option.id === activeFilter) || filterOptions[0]
-
-  const classifica = [...giocatoriConPunti].sort((a, b) => {
-    if (activeFilter === 'winRate') {
-      if (b.winRate !== a.winRate) return b.winRate - a.winRate
-      if (b.pg !== a.pg) return b.pg - a.pg
-      if (b.punti !== a.punti) return b.punti - a.punti
-      return b.gf - a.gf
-    }
-
-    if (activeFilter === 'mediaGol') {
-      if (b.mediaGol !== a.mediaGol) return b.mediaGol - a.mediaGol
-      if (b.gf !== a.gf) return b.gf - a.gf
-      if (b.punti !== a.punti) return b.punti - a.punti
-      return b.pg - a.pg
-    }
-
-    if (activeFilter === 'golTotali') {
-      if (b.gf !== a.gf) return b.gf - a.gf
-      if (b.mediaGol !== a.mediaGol) return b.mediaGol - a.mediaGol
-      if (b.punti !== a.punti) return b.punti - a.punti
-      return b.dr - a.dr
-    }
-
-    if (b.punti !== a.punti) return b.punti - a.punti
-    if (b.dr !== a.dr) return b.dr - a.dr
-    return b.gf - a.gf
-  })
-
+  const classifica = [...giocatoriConStats].sort((a, b) => sortPlayers(a, b, activeFilter))
   const top3 = classifica.slice(0, 3)
+  const active = FILTERS.find(f => f.id === activeFilter)
 
   return (
     <div className="classifica-page">
       <style>{`
         @keyframes fadeInUp {
-          from { opacity: 0; transform: translateY(24px); }
+          from { opacity: 0; transform: translateY(22px); }
           to { opacity: 1; transform: translateY(0); }
-        }
-
-        @keyframes shimmer {
-          0% { transform: translateX(-130%) rotate(24deg); }
-          100% { transform: translateX(330%) rotate(24deg); }
-        }
-
-        @keyframes softPulseGold {
-          0%, 100% { box-shadow: 0 0 22px rgba(255, 215, 0, 0.35), 0 18px 34px rgba(0,0,0,0.45); }
-          50% { box-shadow: 0 0 38px rgba(255, 215, 0, 0.6), 0 20px 42px rgba(0,0,0,0.55); }
-        }
-
-        @keyframes softPulseSilver {
-          0%, 100% { box-shadow: 0 0 18px rgba(210, 220, 230, 0.28), 0 14px 30px rgba(0,0,0,0.42); }
-          50% { box-shadow: 0 0 30px rgba(210, 220, 230, 0.48), 0 18px 38px rgba(0,0,0,0.52); }
-        }
-
-        @keyframes softPulseBronze {
-          0%, 100% { box-shadow: 0 0 18px rgba(205, 127, 50, 0.28), 0 14px 30px rgba(0,0,0,0.42); }
-          50% { box-shadow: 0 0 30px rgba(205, 127, 50, 0.48), 0 18px 38px rgba(0,0,0,0.52); }
         }
 
         .classifica-page {
           width: 100%;
           max-width: 100%;
           overflow-x: hidden;
-          padding-bottom: 1rem;
+          padding-bottom: 1.5rem;
         }
 
         .classifica-hero {
           display: flex;
           align-items: center;
           gap: 1rem;
-          margin-bottom: 2rem;
-          animation: fadeInUp 0.4s ease both;
+          margin-bottom: 1.5rem;
+          animation: fadeInUp 0.35s ease both;
         }
 
         .classifica-icon {
@@ -207,19 +113,19 @@ function Classifica() {
           align-items: center;
           justify-content: center;
           font-size: 2rem;
-          background: radial-gradient(circle at 35% 25%, rgba(255,215,0,0.34), rgba(0,212,255,0.12) 42%, rgba(15,23,41,0.75) 100%);
+          background: radial-gradient(circle at 35% 25%, rgba(255,215,0,0.35), rgba(0,212,255,0.12) 44%, rgba(15,23,41,0.78) 100%);
           border: 1px solid rgba(255,255,255,0.1);
-          box-shadow: 0 18px 38px rgba(0,0,0,0.32);
+          box-shadow: 0 16px 35px rgba(0,0,0,0.35);
           flex-shrink: 0;
         }
 
         .classifica-title {
+          margin: 0 0 0.25rem 0;
           font-size: clamp(2rem, 7vw, 2.8rem);
           font-weight: 950;
-          margin: 0 0 0.2rem 0;
+          letter-spacing: -1px;
           line-height: 0.95;
-          letter-spacing: -1.2px;
-          background: linear-gradient(135deg, #ffffff 0%, #dff8ff 42%, #00d4ff 100%);
+          background: linear-gradient(135deg, #fff 0%, #e9fbff 45%, #00d4ff 100%);
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
           background-clip: text;
@@ -229,355 +135,226 @@ function Classifica() {
           margin: 0;
           color: rgba(255,255,255,0.48);
           font-size: clamp(0.78rem, 3vw, 0.95rem);
-          font-weight: 600;
+          font-weight: 650;
+        }
+
+        .filter-grid {
+          display: grid;
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+          gap: 0.7rem;
+          margin-bottom: 1.35rem;
+        }
+
+        .filter-button {
+          border: 1px solid rgba(255,255,255,0.08);
+          background: rgba(255,255,255,0.035);
+          color: rgba(255,255,255,0.64);
+          border-radius: 18px;
+          padding: 0.9rem 0.55rem;
+          cursor: pointer;
+          transition: all 0.18s ease;
+          font-family: inherit;
+          min-width: 0;
+        }
+
+        .filter-button.active {
+          background: linear-gradient(135deg, rgba(0,212,255,0.18), rgba(0,153,255,0.08));
+          border-color: rgba(0,212,255,0.42);
+          box-shadow: 0 0 24px rgba(0,212,255,0.14), inset 0 1px 0 rgba(255,255,255,0.08);
+          color: #fff;
+        }
+
+        .filter-label {
+          display: block;
+          font-size: 0.9rem;
+          font-weight: 900;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        .filter-short {
+          display: block;
+          margin-top: 0.28rem;
+          font-size: 0.64rem;
+          font-weight: 950;
+          color: #00d4ff;
+          letter-spacing: 2px;
+        }
+
+        .podio-section, .ranking-section {
+          border-radius: 26px;
+          background:
+            radial-gradient(circle at 5% 0%, rgba(0,212,255,0.13), transparent 30%),
+            linear-gradient(180deg, rgba(15,23,41,0.78), rgba(15,23,41,0.45));
+          border: 1px solid rgba(255,255,255,0.07);
+          box-shadow: 0 20px 55px rgba(0,0,0,0.24);
+          overflow: hidden;
+          animation: fadeInUp 0.45s ease both;
         }
 
         .podio-section {
-          margin-bottom: 2rem;
           padding: 1rem;
-          border-radius: 26px;
+          margin-bottom: 1.45rem;
           background:
-            radial-gradient(circle at 50% 0%, rgba(255,215,0,0.13), transparent 32%),
-            linear-gradient(180deg, rgba(15,23,41,0.72), rgba(15,23,41,0.34));
-          border: 1px solid rgba(255,255,255,0.07);
-          box-shadow: 0 20px 55px rgba(0,0,0,0.22);
-          overflow: hidden;
-          animation: fadeInUp 0.5s ease 0.08s both;
+            radial-gradient(circle at 50% 0%, rgba(255,215,0,0.13), transparent 34%),
+            linear-gradient(180deg, rgba(15,23,41,0.78), rgba(15,23,41,0.42));
         }
 
-        .podio-label {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 1rem;
-          margin-bottom: 1.1rem;
-        }
-
-        .podio-label h2 {
-          margin: 0;
-          font-size: 1rem;
-          text-transform: uppercase;
-          letter-spacing: 1.4px;
-          color: rgba(255,255,255,0.82);
-        }
-
-        .podio-label span {
-          font-size: 0.75rem;
-          font-weight: 800;
-          color: #0f1729;
-          background: linear-gradient(135deg, #ffd700, #ffa500);
-          padding: 0.38rem 0.68rem;
-          border-radius: 999px;
-          white-space: nowrap;
-        }
-
-        .podio-grid {
-          display: grid;
-          grid-template-columns: repeat(3, minmax(0, 1fr));
-          align-items: end;
-          gap: 0.75rem;
-          width: 100%;
-          max-width: 650px;
-          margin: 0 auto;
-        }
-
-        .podio-slot {
-          min-width: 0;
-          display: flex;
-          justify-content: center;
-          animation: fadeInUp 0.55s ease both;
-        }
-
-        .podio-slot.first {
-          transform: translateY(-12px);
-          animation-delay: 0.02s;
-        }
-
-        .podio-slot.second {
-          animation-delay: 0.12s;
-        }
-
-        .podio-slot.third {
-          animation-delay: 0.2s;
-        }
-
-        .fut-card {
-          width: 100%;
-          max-width: 198px;
-          aspect-ratio: 0.64;
-          border-radius: 18px;
-          position: relative;
-          overflow: hidden;
-          cursor: default;
-          display: flex;
-          flex-direction: column;
-          isolation: isolate;
-          transition: transform 0.22s ease, filter 0.22s ease;
-        }
-
-        .fut-card.first {
-          max-width: 218px;
-          animation: softPulseGold 2.4s ease-in-out infinite;
-        }
-
-        .fut-card.second {
-          max-width: 188px;
-          animation: softPulseSilver 2.8s ease-in-out infinite;
-        }
-
-        .fut-card.third {
-          max-width: 188px;
-          animation: softPulseBronze 3s ease-in-out infinite;
-        }
-
-        .fut-card:hover {
-          transform: translateY(-4px) scale(1.02);
-          filter: saturate(1.08);
-        }
-
-        .fut-inner-border {
-          position: absolute;
-          inset: 5px;
-          border-radius: 14px;
-          pointer-events: none;
-          z-index: 4;
-        }
-
-        .fut-foil {
-          position: absolute;
-          inset: 0;
-          pointer-events: none;
-          z-index: 1;
-        }
-
-        .fut-shimmer {
-          position: absolute;
-          top: -55%;
-          left: -25%;
-          width: 44%;
-          height: 220%;
-          background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent);
-          animation: shimmer 3.8s ease-in-out infinite;
-          pointer-events: none;
-          z-index: 2;
-        }
-
-        .fut-top-left {
-          position: absolute;
-          top: clamp(7px, 2.1vw, 14px);
-          left: clamp(7px, 2.1vw, 14px);
-          z-index: 5;
-          text-align: center;
-        }
-
-        .fut-overall {
-          font-size: clamp(1.05rem, 5vw, 2.35rem);
-          font-weight: 950;
-          line-height: 0.9;
-          text-shadow: 0 1px 0 rgba(255,255,255,0.42);
-        }
-
-        .fut-role {
-          margin-top: 0.18rem;
-          font-size: clamp(0.42rem, 1.7vw, 0.66rem);
-          font-weight: 900;
-          letter-spacing: 0.5px;
-        }
-
-        .fut-medal {
-          position: absolute;
-          top: clamp(6px, 1.9vw, 12px);
-          right: clamp(6px, 1.9vw, 12px);
-          z-index: 5;
-          font-size: clamp(1rem, 4.5vw, 1.8rem);
-          filter: drop-shadow(0 3px 8px rgba(0,0,0,0.35));
-        }
-
-        .fut-photo {
-          position: absolute;
-          top: 15%;
-          left: 50%;
-          transform: translateX(-50%);
-          width: 55%;
-          height: 39%;
-          z-index: 3;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-
-        .fut-photo img {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-          object-position: top;
-          border-radius: 10px;
-          filter: drop-shadow(0 8px 12px rgba(0,0,0,0.48));
-        }
-
-        .fut-placeholder {
-          font-size: clamp(2.2rem, 10vw, 5rem);
-          opacity: 0.62;
-          filter: drop-shadow(0 6px 12px rgba(0,0,0,0.42));
-        }
-
-        .fut-name {
-          position: absolute;
-          left: 6px;
-          right: 6px;
-          bottom: 30%;
-          z-index: 5;
-          text-align: center;
-        }
-
-        .fut-name-text {
-          font-size: clamp(0.5rem, 2.5vw, 0.9rem);
-          font-weight: 950;
-          letter-spacing: clamp(0.7px, 0.5vw, 2px);
-          text-transform: uppercase;
-          text-shadow: 0 1px 0 rgba(255,255,255,0.32);
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-        }
-
-        .fut-stats {
-          position: absolute;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          z-index: 5;
-          padding: clamp(0.34rem, 1.8vw, 0.62rem);
-          border-top: 1px solid rgba(255,255,255,0.18);
-        }
-
-        .fut-stats-grid {
-          display: grid;
-          grid-template-columns: repeat(3, minmax(0, 1fr));
-          gap: clamp(2px, 1vw, 5px);
-        }
-
-        .fut-stat {
-          min-width: 0;
-          text-align: center;
-        }
-
-        .fut-stat-value {
-          font-size: clamp(0.62rem, 2.5vw, 0.95rem);
-          font-weight: 950;
-          line-height: 1;
-        }
-
-        .fut-stat-label {
-          margin-top: 1px;
-          font-size: clamp(0.35rem, 1.4vw, 0.52rem);
-          font-weight: 850;
-          color: rgba(255,255,255,0.55);
-          letter-spacing: 0.2px;
-          text-transform: uppercase;
-        }
-
-        .filter-tabs {
-          display: grid;
-          grid-template-columns: repeat(4, minmax(0, 1fr));
-          gap: 0.55rem;
-          margin: -0.4rem 0 1.35rem 0;
-          animation: fadeInUp 0.45s ease 0.05s both;
-        }
-
-        .filter-tab {
-          border: 1px solid rgba(255,255,255,0.075);
-          background:
-            linear-gradient(135deg, rgba(255,255,255,0.055), rgba(255,255,255,0.018)),
-            rgba(5, 10, 23, 0.38);
-          color: rgba(255,255,255,0.58);
-          border-radius: 18px;
-          padding: 0.72rem 0.42rem;
-          cursor: pointer;
-          min-width: 0;
-          transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease, color 0.18s ease;
-          box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
-        }
-
-        .filter-tab:hover {
-          transform: translateY(-2px);
-          border-color: rgba(0,212,255,0.22);
-          background:
-            linear-gradient(135deg, rgba(0,212,255,0.08), rgba(255,255,255,0.02)),
-            rgba(5, 10, 23, 0.46);
-          color: rgba(255,255,255,0.82);
-        }
-
-        .filter-tab.active {
-          border-color: rgba(0,212,255,0.42);
-          background:
-            radial-gradient(circle at 50% 0%, rgba(0,212,255,0.22), transparent 52%),
-            linear-gradient(135deg, rgba(0,212,255,0.14), rgba(0,153,255,0.07)),
-            rgba(5, 10, 23, 0.56);
-          color: #ffffff;
-          box-shadow: 0 0 22px rgba(0,212,255,0.14), inset 0 1px 0 rgba(255,255,255,0.08);
-        }
-
-        .filter-tab-label {
-          display: block;
-          font-size: 0.78rem;
-          font-weight: 900;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-        }
-
-        .filter-tab-sub {
-          display: block;
-          margin-top: 0.22rem;
-          font-size: 0.56rem;
-          font-weight: 900;
-          letter-spacing: 0.45px;
-          color: rgba(0,212,255,0.72);
-          text-transform: uppercase;
-        }
-
-        .ranking-section {
-          border-radius: 26px;
-          padding: 1rem;
-          background:
-            radial-gradient(circle at 5% 0%, rgba(0,212,255,0.12), transparent 30%),
-            linear-gradient(180deg, rgba(15,23,41,0.74), rgba(15,23,41,0.44));
-          border: 1px solid rgba(255,255,255,0.07);
-          box-shadow: 0 20px 55px rgba(0,0,0,0.22);
-          animation: fadeInUp 0.55s ease 0.16s both;
-        }
-
-        .ranking-header {
+        .section-header {
           display: flex;
           align-items: flex-end;
           justify-content: space-between;
           gap: 1rem;
-          margin-bottom: 0.9rem;
+          margin-bottom: 0.95rem;
         }
 
-        .ranking-header h2 {
+        .section-header h2 {
           margin: 0;
           font-size: 1.05rem;
+          font-weight: 950;
           letter-spacing: -0.2px;
         }
 
-        .ranking-header p {
-          margin: 0.18rem 0 0 0;
+        .section-header p {
+          margin: 0.2rem 0 0 0;
           color: rgba(255,255,255,0.43);
           font-size: 0.76rem;
-          font-weight: 600;
+          font-weight: 650;
         }
 
-        .ranking-total {
+        .section-pill {
           flex-shrink: 0;
-          font-size: 0.72rem;
-          font-weight: 900;
-          color: rgba(255,255,255,0.68);
-          border: 1px solid rgba(255,255,255,0.09);
-          background: rgba(255,255,255,0.04);
-          padding: 0.42rem 0.62rem;
           border-radius: 999px;
+          padding: 0.42rem 0.7rem;
+          font-size: 0.72rem;
+          font-weight: 950;
+          background: rgba(255,255,255,0.05);
+          border: 1px solid rgba(255,255,255,0.09);
+          color: rgba(255,255,255,0.7);
+        }
+
+        .podio-list {
+          display: grid;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 0.75rem;
+        }
+
+        .podio-card {
+          min-width: 0;
+          border-radius: 22px;
+          padding: 0.9rem;
+          border: 1px solid rgba(255,255,255,0.08);
+          background: rgba(5,10,23,0.34);
+          position: relative;
+          overflow: hidden;
+        }
+
+        .podio-card.gold {
+          border-color: rgba(255,215,0,0.34);
+          background:
+            radial-gradient(circle at 0% 0%, rgba(255,215,0,0.22), transparent 42%),
+            rgba(5,10,23,0.42);
+        }
+
+        .podio-card.silver {
+          border-color: rgba(220,230,240,0.22);
+          background:
+            radial-gradient(circle at 0% 0%, rgba(220,230,240,0.16), transparent 42%),
+            rgba(5,10,23,0.40);
+        }
+
+        .podio-card.bronze {
+          border-color: rgba(205,127,50,0.24);
+          background:
+            radial-gradient(circle at 0% 0%, rgba(205,127,50,0.16), transparent 42%),
+            rgba(5,10,23,0.40);
+        }
+
+        .podio-top {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 0.6rem;
+          margin-bottom: 0.75rem;
+        }
+
+        .podio-medal {
+          width: 42px;
+          height: 42px;
+          border-radius: 16px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 1.35rem;
+          background: rgba(255,255,255,0.06);
+          border: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .podio-value {
+          text-align: right;
+          min-width: 0;
+        }
+
+        .podio-value strong {
+          display: block;
+          font-size: 1.3rem;
+          line-height: 1;
+          color: #00d4ff;
+          font-weight: 950;
+        }
+
+        .podio-value span {
+          display: block;
+          margin-top: 0.18rem;
+          color: rgba(255,255,255,0.4);
+          font-size: 0.58rem;
+          font-weight: 950;
+          letter-spacing: 1.5px;
+        }
+
+        .podio-avatar {
+          width: 56px;
+          height: 56px;
+          border-radius: 20px;
+          overflow: hidden;
+          background: rgba(0,212,255,0.08);
+          border: 1px solid rgba(0,212,255,0.18);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 1.5rem;
+          margin-bottom: 0.65rem;
+        }
+
+        .podio-avatar img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          object-position: top;
+        }
+
+        .podio-name {
+          font-size: 0.95rem;
+          font-weight: 950;
+          color: rgba(255,255,255,0.94);
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        .podio-meta {
+          margin-top: 0.24rem;
+          color: rgba(255,255,255,0.42);
+          font-size: 0.72rem;
+          font-weight: 700;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        .ranking-section {
+          padding: 1rem;
         }
 
         .rank-list {
@@ -593,42 +370,16 @@ function Classifica() {
           border: 1px solid rgba(255,255,255,0.075);
           background:
             linear-gradient(135deg, rgba(255,255,255,0.055), rgba(255,255,255,0.02)),
-            rgba(5, 10, 23, 0.34);
+            rgba(5,10,23,0.34);
           padding: 0.76rem;
-          animation: fadeInUp 0.35s ease both;
-          transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
-        }
-
-        .rank-card:hover {
-          transform: translateY(-2px);
-          border-color: rgba(0,212,255,0.22);
-          background:
-            linear-gradient(135deg, rgba(0,212,255,0.075), rgba(255,255,255,0.02)),
-            rgba(5, 10, 23, 0.42);
+          animation: fadeInUp 0.32s ease both;
         }
 
         .rank-card.gold {
-          border-color: rgba(255,215,0,0.26);
+          border-color: rgba(255,215,0,0.28);
           background:
-            radial-gradient(circle at 0% 0%, rgba(255,215,0,0.18), transparent 30%),
-            linear-gradient(135deg, rgba(255,215,0,0.08), rgba(255,255,255,0.02)),
-            rgba(5, 10, 23, 0.42);
-        }
-
-        .rank-card.silver {
-          border-color: rgba(215,225,235,0.20);
-          background:
-            radial-gradient(circle at 0% 0%, rgba(215,225,235,0.14), transparent 30%),
-            linear-gradient(135deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02)),
-            rgba(5, 10, 23, 0.4);
-        }
-
-        .rank-card.bronze {
-          border-color: rgba(205,127,50,0.22);
-          background:
-            radial-gradient(circle at 0% 0%, rgba(205,127,50,0.14), transparent 30%),
-            linear-gradient(135deg, rgba(205,127,50,0.06), rgba(255,255,255,0.02)),
-            rgba(5, 10, 23, 0.4);
+            radial-gradient(circle at 0% 0%, rgba(255,215,0,0.18), transparent 32%),
+            rgba(5,10,23,0.43);
         }
 
         .rank-main {
@@ -653,25 +404,14 @@ function Classifica() {
           flex-shrink: 0;
         }
 
-        .rank-position.gold,
-        .rank-position.silver,
-        .rank-position.bronze {
+        .rank-position.gold, .rank-position.silver, .rank-position.bronze {
           color: #0f1729;
           border: none;
         }
 
-        .rank-position.gold {
-          background: linear-gradient(135deg, #ffd700, #ffa500);
-          box-shadow: 0 0 20px rgba(255,215,0,0.28);
-        }
-
-        .rank-position.silver {
-          background: linear-gradient(135deg, #f3f4f6, #9ca3af);
-        }
-
-        .rank-position.bronze {
-          background: linear-gradient(135deg, #cd7f32, #8b4a18);
-        }
+        .rank-position.gold { background: linear-gradient(135deg, #ffd700, #ffa500); }
+        .rank-position.silver { background: linear-gradient(135deg, #f3f4f6, #9ca3af); }
+        .rank-position.bronze { background: linear-gradient(135deg, #cd7f32, #8b4a18); }
 
         .rank-avatar {
           width: 46px;
@@ -694,13 +434,11 @@ function Classifica() {
           object-position: top;
         }
 
-        .rank-identity {
-          min-width: 0;
-        }
+        .rank-identity { min-width: 0; }
 
         .rank-name {
           font-size: clamp(0.9rem, 3.7vw, 1rem);
-          font-weight: 900;
+          font-weight: 950;
           line-height: 1.08;
           color: rgba(255,255,255,0.94);
           white-space: nowrap;
@@ -718,8 +456,8 @@ function Classifica() {
           text-overflow: ellipsis;
         }
 
-        .rank-points {
-          min-width: 54px;
+        .rank-main-value {
+          min-width: 58px;
           height: 48px;
           border-radius: 18px;
           display: flex;
@@ -732,22 +470,36 @@ function Classifica() {
           flex-shrink: 0;
         }
 
-        .rank-card.gold .rank-points {
+        .rank-card.gold .rank-main-value {
           background: linear-gradient(135deg, #ffd700, #ffa500);
           box-shadow: 0 0 24px rgba(255,215,0,0.24);
         }
 
-        .rank-points-value {
+        .rank-value-number {
           font-size: 1rem;
           font-weight: 950;
           line-height: 0.95;
         }
 
-        .rank-points-label {
-          margin-top: 0.12rem;
-          font-size: 0.52rem;
+        .rank-value-label {
+          margin-top: 0.14rem;
+          font-size: 0.5rem;
           font-weight: 950;
           letter-spacing: 0.45px;
+        }
+
+        .rank-note {
+          margin-top: 0.5rem;
+          display: inline-flex;
+          align-items: center;
+          gap: 0.3rem;
+          font-size: 0.66rem;
+          font-weight: 800;
+          color: #ffd166;
+          background: rgba(255,209,102,0.08);
+          border: 1px solid rgba(255,209,102,0.15);
+          padding: 0.28rem 0.5rem;
+          border-radius: 999px;
         }
 
         .rank-stats {
@@ -784,14 +536,14 @@ function Classifica() {
           color: rgba(255,255,255,0.36);
         }
 
-        .rank-stat-chip.win .rank-stat-value { color: #00d4ff; }
-        .rank-stat-chip.draw .rank-stat-value { color: #ffd166; }
-        .rank-stat-chip.loss .rank-stat-value { color: #ef4444; }
+        .win .rank-stat-value { color: #00d4ff; }
+        .draw .rank-stat-value { color: #ffd166; }
+        .loss .rank-stat-value { color: #ef4444; }
 
-        @media (max-width: 620px) {
+        @media (max-width: 640px) {
           .classifica-hero {
             align-items: flex-start;
-            margin-bottom: 1.5rem;
+            margin-bottom: 1.2rem;
           }
 
           .classifica-icon {
@@ -801,126 +553,67 @@ function Classifica() {
             font-size: 1.65rem;
           }
 
-          .podio-section,
-          .filter-tabs {
-          display: grid;
-          grid-template-columns: repeat(4, minmax(0, 1fr));
-          gap: 0.55rem;
-          margin: -0.4rem 0 1.35rem 0;
-          animation: fadeInUp 0.45s ease 0.05s both;
-        }
+          .filter-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.62rem;
+          }
 
-        .filter-tab {
-          border: 1px solid rgba(255,255,255,0.075);
-          background:
-            linear-gradient(135deg, rgba(255,255,255,0.055), rgba(255,255,255,0.018)),
-            rgba(5, 10, 23, 0.38);
-          color: rgba(255,255,255,0.58);
-          border-radius: 18px;
-          padding: 0.72rem 0.42rem;
-          cursor: pointer;
-          min-width: 0;
-          transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease, color 0.18s ease;
-          box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
-        }
+          .filter-button {
+            padding: 0.8rem 0.45rem;
+            border-radius: 17px;
+          }
 
-        .filter-tab:hover {
-          transform: translateY(-2px);
-          border-color: rgba(0,212,255,0.22);
-          background:
-            linear-gradient(135deg, rgba(0,212,255,0.08), rgba(255,255,255,0.02)),
-            rgba(5, 10, 23, 0.46);
-          color: rgba(255,255,255,0.82);
-        }
-
-        .filter-tab.active {
-          border-color: rgba(0,212,255,0.42);
-          background:
-            radial-gradient(circle at 50% 0%, rgba(0,212,255,0.22), transparent 52%),
-            linear-gradient(135deg, rgba(0,212,255,0.14), rgba(0,153,255,0.07)),
-            rgba(5, 10, 23, 0.56);
-          color: #ffffff;
-          box-shadow: 0 0 22px rgba(0,212,255,0.14), inset 0 1px 0 rgba(255,255,255,0.08);
-        }
-
-        .filter-tab-label {
-          display: block;
-          font-size: 0.78rem;
-          font-weight: 900;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-        }
-
-        .filter-tab-sub {
-          display: block;
-          margin-top: 0.22rem;
-          font-size: 0.56rem;
-          font-weight: 900;
-          letter-spacing: 0.45px;
-          color: rgba(0,212,255,0.72);
-          text-transform: uppercase;
-        }
-
-        .ranking-section {
+          .podio-section, .ranking-section {
             border-radius: 22px;
             padding: 0.82rem;
           }
 
-          .filter-tabs {
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 0.45rem;
-            margin-bottom: 1rem;
+          .podio-list {
+            grid-template-columns: 1fr;
+            gap: 0.65rem;
           }
 
-          .filter-tab {
-            border-radius: 16px;
-            padding: 0.64rem 0.38rem;
+          .podio-card {
+            display: grid;
+            grid-template-columns: auto auto minmax(0, 1fr) auto;
+            align-items: center;
+            gap: 0.65rem;
+            padding: 0.75rem;
+            border-radius: 19px;
           }
 
-          .filter-tab-label {
-            font-size: 0.74rem;
+          .podio-top {
+            display: contents;
           }
 
-          .podio-label {
-            margin-bottom: 0.85rem;
-          }
-
-          .podio-label h2 {
-            font-size: 0.82rem;
-            letter-spacing: 1px;
-          }
-
-          .podio-label span {
-            font-size: 0.64rem;
-            padding: 0.32rem 0.5rem;
-          }
-
-          .podio-grid {
-            gap: 0.42rem;
-          }
-
-          .podio-slot.first {
-            transform: translateY(-7px);
-          }
-
-          .fut-card {
-            max-width: none;
+          .podio-medal {
+            width: 38px;
+            height: 38px;
             border-radius: 14px;
-            aspect-ratio: 0.62;
+            font-size: 1.15rem;
+            margin: 0;
           }
 
-          .fut-inner-border {
-            inset: 4px;
-            border-radius: 11px;
+          .podio-avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 16px;
+            margin: 0;
           }
 
-          .fut-stats-grid {
-            grid-template-columns: repeat(3, minmax(0, 1fr));
+          .podio-text-wrap {
+            min-width: 0;
+          }
+
+          .podio-value {
+            min-width: 62px;
+          }
+
+          .podio-value strong {
+            font-size: 1.05rem;
           }
 
           .rank-main {
-            grid-template-columns: auto auto minmax(0, 1fr) auto;
             gap: 0.52rem;
           }
 
@@ -942,8 +635,8 @@ function Classifica() {
             border-radius: 15px;
           }
 
-          .rank-points {
-            min-width: 48px;
+          .rank-main-value {
+            min-width: 50px;
             height: 44px;
             border-radius: 16px;
           }
@@ -951,44 +644,6 @@ function Classifica() {
           .rank-stats {
             grid-template-columns: repeat(3, minmax(0, 1fr));
             gap: 0.36rem;
-          }
-
-          .rank-stat-chip {
-            padding: 0.36rem 0.18rem;
-          }
-        }
-
-        @media (max-width: 360px) {
-          .podio-section {
-            padding-left: 0.64rem;
-            padding-right: 0.64rem;
-          }
-
-          .podio-grid {
-            gap: 0.3rem;
-          }
-
-          .rank-card {
-            padding: 0.62rem;
-          }
-
-          .rank-main {
-            gap: 0.42rem;
-          }
-
-          .rank-position {
-            width: 29px;
-            height: 29px;
-          }
-
-          .rank-avatar {
-            width: 39px;
-            height: 39px;
-          }
-
-          .rank-points {
-            min-width: 44px;
-            height: 41px;
           }
         }
       `}</style>
@@ -1001,55 +656,60 @@ function Classifica() {
         </div>
       </div>
 
-      <div className="filter-tabs">
-        {filterOptions.map(option => (
+      <div className="filter-grid">
+        {FILTERS.map(filter => (
           <button
-            key={option.id}
-            type="button"
-            className={`filter-tab ${activeFilter === option.id ? 'active' : ''}`}
-            onClick={() => setActiveFilter(option.id)}
+            key={filter.id}
+            className={`filter-button ${activeFilter === filter.id ? 'active' : ''}`}
+            onClick={() => setActiveFilter(filter.id)}
           >
-            <span className="filter-tab-label">{option.label}</span>
-            <span className="filter-tab-sub">{option.shortLabel}</span>
+            <span className="filter-label">{filter.label}</span>
+            <span className="filter-short">{filter.short}</span>
           </button>
         ))}
       </div>
 
-      {top3.length >= 3 && (
+      {top3.length > 0 && (
         <section className="podio-section">
-          <div className="podio-label">
-            <h2>Podio Fuciabol</h2>
-            <span>{activeFilterInfo.shortLabel} Top 3</span>
+          <div className="section-header">
+            <div>
+              <h2>Podio Fuciabol</h2>
+              <p>{active?.desc || 'Classifica attiva'}</p>
+            </div>
+            <div className="section-pill">{active?.short || 'TOP'}</div>
           </div>
 
-          <div className="podio-grid">
-            <div className="podio-slot second">
-              <FutCard giocatore={top3[1]} position={2} />
-            </div>
-
-            <div className="podio-slot first">
-              <FutCard giocatore={top3[0]} position={1} />
-            </div>
-
-            <div className="podio-slot third">
-              <FutCard giocatore={top3[2]} position={3} />
-            </div>
+          <div className="podio-list">
+            {top3.map((g, index) => (
+              <PodioCard
+                key={g.id}
+                giocatore={g}
+                position={index + 1}
+                filter={activeFilter}
+              />
+            ))}
           </div>
         </section>
       )}
 
       <section className="ranking-section">
-        <div className="ranking-header">
+        <div className="section-header">
           <div>
-            <h2>{activeFilterInfo.title}</h2>
-            <p>{activeFilterInfo.description}</p>
+            <h2>{getRankingTitle(activeFilter)}</h2>
+            <p>{getRankingSubtitle(activeFilter)}</p>
           </div>
-          <div className="ranking-total">{classifica.length} giocatori</div>
+          <div className="section-pill">{classifica.length} giocatori</div>
         </div>
 
         <div className="rank-list">
           {classifica.map((g, index) => (
-            <RankCard key={g.id} giocatore={g} position={index + 1} index={index} activeFilter={activeFilter} />
+            <RankCard
+              key={g.id}
+              giocatore={g}
+              position={index + 1}
+              index={index}
+              filter={activeFilter}
+            />
           ))}
         </div>
       </section>
@@ -1057,147 +717,61 @@ function Classifica() {
   )
 }
 
-function FutCard({ giocatore, position }) {
+function PodioCard({ giocatore, position, filter }) {
+  const rankClass = getRankClass(position)
+  const medal = position === 1 ? '🥇' : position === 2 ? '🥈' : '🥉'
+  const main = getMainValue(giocatore, filter)
   const cleanName = getCleanName(giocatore.nome)
-  const parts = cleanName.split(' ').filter(Boolean)
-  const displayName = parts.length > 1 ? parts[parts.length - 1].toUpperCase() : cleanName.toUpperCase()
-
-  const cfg = {
-    1: {
-      className: 'first',
-      medal: '🥇',
-      bg: 'linear-gradient(160deg, #9f6b05 0%, #d59b18 18%, #ffe26c 38%, #d59b18 58%, #f4c145 76%, #8a5d04 100%)',
-      border: 'rgba(255,235,80,0.95)',
-      innerBorder: 'rgba(255,235,80,0.5)',
-      foil: 'linear-gradient(135deg, rgba(255,255,220,0.52) 0%, transparent 38%, rgba(255,230,100,0.28) 60%, transparent 78%, rgba(255,255,220,0.42) 100%)',
-      text: '#241500',
-      muted: 'rgba(36,21,0,0.68)',
-      statsBg: 'rgba(0,0,0,0.52)',
-      statsText: '#fff5cc',
-    },
-    2: {
-      className: 'second',
-      medal: '🥈',
-      bg: 'linear-gradient(160deg, #6b7280 0%, #cfd6df 22%, #f7f7f7 42%, #9ca3af 58%, #dbe2ea 76%, #6b7280 100%)',
-      border: 'rgba(235,240,245,0.9)',
-      innerBorder: 'rgba(235,240,245,0.45)',
-      foil: 'linear-gradient(135deg, rgba(255,255,255,0.58) 0%, transparent 40%, rgba(230,235,240,0.35) 62%, transparent 80%, rgba(255,255,255,0.45) 100%)',
-      text: '#151515',
-      muted: 'rgba(21,21,21,0.62)',
-      statsBg: 'rgba(0,0,0,0.46)',
-      statsText: '#f5f7fa',
-    },
-    3: {
-      className: 'third',
-      medal: '🥉',
-      bg: 'linear-gradient(160deg, #5d2e08 0%, #a95f22 22%, #dc9149 42%, #7a3f10 58%, #c87832 76%, #5d2e08 100%)',
-      border: 'rgba(220,150,70,0.9)',
-      innerBorder: 'rgba(220,150,70,0.42)',
-      foil: 'linear-gradient(135deg, rgba(255,210,150,0.48) 0%, transparent 40%, rgba(210,145,80,0.28) 62%, transparent 80%, rgba(255,205,140,0.38) 100%)',
-      text: '#1f0d00',
-      muted: 'rgba(31,13,0,0.62)',
-      statsBg: 'rgba(0,0,0,0.48)',
-      statsText: '#ffe8c8',
-    },
-  }[position]
 
   return (
-    <div
-      className={`fut-card ${cfg.className}`}
-      style={{
-        background: cfg.bg,
-        border: `2px solid ${cfg.border}`,
-      }}
-    >
-      <div className="fut-inner-border" style={{ border: `1px solid ${cfg.innerBorder}` }} />
-      <div className="fut-foil" style={{ background: cfg.foil }} />
-      <div className="fut-shimmer" />
-
-      <div className="fut-top-left">
-        <div className="fut-overall" style={{ color: cfg.text }}>{giocatore.overall}</div>
-        <div className="fut-role" style={{ color: cfg.muted }}>{giocatore.ruolo}</div>
-      </div>
-
-      <div className="fut-medal">{cfg.medal}</div>
-
-      <div className="fut-photo">
-        {giocatore.foto_url ? (
-          <img src={giocatore.foto_url} alt={giocatore.nome} />
-        ) : (
-          <div className="fut-placeholder">👤</div>
-        )}
-      </div>
-
-      <div className="fut-name">
-        <div className="fut-name-text" style={{ color: cfg.text }}>{displayName}</div>
-      </div>
-
-      <div className="fut-stats" style={{ background: cfg.statsBg }}>
-        <div className="fut-stats-grid">
-          {[
-            { value: giocatore.punti, label: 'PTS' },
-            { value: giocatore.v || 0, label: 'V' },
-            { value: giocatore.gf || 0, label: 'GOL' },
-            { value: giocatore.pg || 0, label: 'PG' },
-            { value: giocatore.dr || 0, label: 'DR' },
-            { value: giocatore.s || 0, label: 'S' },
-          ].map((stat, index) => (
-            <div className="fut-stat" key={`${stat.label}-${index}`}>
-              <div className="fut-stat-value" style={{ color: cfg.statsText }}>{stat.value}</div>
-              <div className="fut-stat-label">{stat.label}</div>
-            </div>
-          ))}
+    <article className={`podio-card ${rankClass}`}>
+      <div className="podio-top">
+        <div className="podio-medal">{medal}</div>
+        <div className="podio-value">
+          <strong>{main.value}</strong>
+          <span>{main.label}</span>
         </div>
       </div>
-    </div>
+
+      <div className="podio-avatar">
+        {giocatore.foto_url ? <img src={giocatore.foto_url} alt={giocatore.nome} /> : '👤'}
+      </div>
+
+      <div className="podio-text-wrap">
+        <div className="podio-name">{cleanName}</div>
+        <div className="podio-meta">{giocatore.ruolo || '—'} • OVR {giocatore.overall || 65}</div>
+      </div>
+    </article>
   )
 }
 
-function RankCard({ giocatore, position, index, activeFilter }) {
+function RankCard({ giocatore, position, index, filter }) {
   const cleanName = getCleanName(giocatore.nome)
-  const mainMetric = getMainMetric(giocatore, activeFilter)
-
-  const rankClass =
-    position === 1 ? 'gold' :
-    position === 2 ? 'silver' :
-    position === 3 ? 'bronze' :
-    ''
-
-  const positionLabel =
-    position === 1 ? '1' :
-    position === 2 ? '2' :
-    position === 3 ? '3' :
-    position
+  const rankClass = getRankClass(position)
+  const main = getMainValue(giocatore, filter)
+  const lowSample = filter === 'winrate' && giocatore.pg > 0 && giocatore.pg < 2
 
   return (
-    <article
-      className={`rank-card ${rankClass}`}
-      style={{ animationDelay: `${index * 0.035}s` }}
-    >
+    <article className={`rank-card ${rankClass}`} style={{ animationDelay: `${index * 0.03}s` }}>
       <div className="rank-main">
-        <div className={`rank-position ${rankClass}`}>{positionLabel}</div>
+        <div className={`rank-position ${rankClass}`}>{position}</div>
 
         <div className="rank-avatar">
-          {giocatore.foto_url ? (
-            <img src={giocatore.foto_url} alt={giocatore.nome} />
-          ) : (
-            '👤'
-          )}
+          {giocatore.foto_url ? <img src={giocatore.foto_url} alt={giocatore.nome} /> : '👤'}
         </div>
 
         <div className="rank-identity">
           <div className="rank-name">{cleanName}</div>
-          <div className="rank-meta">
-            {giocatore.ruolo || '—'} • OVR {giocatore.overall || 65}
-            {activeFilter === 'winRate' && giocatore.pg > 0 && giocatore.pg < 2 ? ' • campione ridotto' : ''}
-          </div>
+          <div className="rank-meta">{giocatore.ruolo || '—'} • OVR {giocatore.overall || 65}</div>
         </div>
 
-        <div className="rank-points">
-          <div className="rank-points-value">{mainMetric.value}</div>
-          <div className="rank-points-label">{mainMetric.label}</div>
+        <div className="rank-main-value">
+          <div className="rank-value-number">{main.value}</div>
+          <div className="rank-value-label">{main.label}</div>
         </div>
       </div>
+
+      {lowSample && <div className="rank-note">⚠️ dato poco significativo</div>}
 
       <div className="rank-stats">
         <StatChip label="PG" value={giocatore.pg} />
@@ -1220,33 +794,68 @@ function StatChip({ label, value, type = '' }) {
   )
 }
 
-
-function getMainMetric(giocatore, activeFilter) {
-  if (activeFilter === 'winRate') {
-    return {
-      value: `${Math.round(giocatore.winRate || 0)}%`,
-      label: 'WR',
-    }
+function sortPlayers(a, b, filter) {
+  if (filter === 'winrate') {
+    if (b.winRate !== a.winRate) return b.winRate - a.winRate
+    if (b.pg !== a.pg) return b.pg - a.pg
+    if (b.punti !== a.punti) return b.punti - a.punti
+    return b.gf - a.gf
   }
 
-  if (activeFilter === 'mediaGol') {
-    return {
-      value: (giocatore.mediaGol || 0).toFixed(2),
-      label: 'G/P',
-    }
+  if (filter === 'mediagol') {
+    if (b.mediaGol !== a.mediaGol) return b.mediaGol - a.mediaGol
+    if (b.gf !== a.gf) return b.gf - a.gf
+    if (b.pg !== a.pg) return b.pg - a.pg
+    return b.punti - a.punti
   }
 
-  if (activeFilter === 'golTotali') {
-    return {
-      value: giocatore.gf || 0,
-      label: 'GOL',
-    }
+  if (filter === 'gol') {
+    if (b.gf !== a.gf) return b.gf - a.gf
+    if (b.mediaGol !== a.mediaGol) return b.mediaGol - a.mediaGol
+    if (b.punti !== a.punti) return b.punti - a.punti
+    return b.dr - a.dr
   }
 
-  return {
-    value: giocatore.punti || 0,
-    label: 'PTS',
+  if (b.punti !== a.punti) return b.punti - a.punti
+  if (b.dr !== a.dr) return b.dr - a.dr
+  return b.gf - a.gf
+}
+
+function getMainValue(giocatore, filter) {
+  if (filter === 'winrate') {
+    return { value: `${Math.round(giocatore.winRate || 0)}%`, label: 'WR' }
   }
+
+  if (filter === 'mediagol') {
+    return { value: (giocatore.mediaGol || 0).toFixed(2), label: 'G/P' }
+  }
+
+  if (filter === 'gol') {
+    return { value: giocatore.gf || 0, label: 'GOL' }
+  }
+
+  return { value: giocatore.punti || 0, label: 'PTS' }
+}
+
+function getRankingTitle(filter) {
+  if (filter === 'winrate') return 'Classifica win rate'
+  if (filter === 'mediagol') return 'Classifica media gol'
+  if (filter === 'gol') return 'Classifica bomber'
+  return 'Ranking generale'
+}
+
+function getRankingSubtitle(filter) {
+  if (filter === 'winrate') return 'Ordinata per percentuale vittorie e partite giocate'
+  if (filter === 'mediagol') return 'Ordinata per gol segnati in media a partita'
+  if (filter === 'gol') return 'Ordinata per gol totali e media realizzativa'
+  return 'Ordinata per punti, differenza reti e gol fatti'
+}
+
+function getRankClass(position) {
+  if (position === 1) return 'gold'
+  if (position === 2) return 'silver'
+  if (position === 3) return 'bronze'
+  return ''
 }
 
 function getCleanName(nome = '') {
