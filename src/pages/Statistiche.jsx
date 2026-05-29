@@ -23,6 +23,8 @@ const CARD_CONFIGS = {
     label: 'ORO',
     labelBg: 'rgba(255,215,0,0.2)',
     labelColor: '#ffd700',
+    photoFade: 'rgba(90,45,4,0.92)',
+    rimLight: 'rgba(255,215,0,0.18)',
   },
   silver: {
     bg: 'linear-gradient(160deg, #787878 0%, #c8c8c8 20%, #ebebeb 40%, #a0a0a0 55%, #d0d0d0 70%, #787878 100%)',
@@ -37,6 +39,8 @@ const CARD_CONFIGS = {
     label: 'ARGENTO',
     labelBg: 'rgba(192,192,192,0.2)',
     labelColor: '#c0c0c0',
+    photoFade: 'rgba(40,40,40,0.92)',
+    rimLight: 'rgba(200,200,200,0.16)',
   },
   bronze: {
     bg: 'linear-gradient(160deg, #6a3810 0%, #b86828 20%, #d88840 40%, #885018 55%, #c07030 70%, #6a3810 100%)',
@@ -51,6 +55,8 @@ const CARD_CONFIGS = {
     label: 'BRONZO',
     labelBg: 'rgba(205,127,50,0.2)',
     labelColor: '#cd7f32',
+    photoFade: 'rgba(50,20,4,0.92)',
+    rimLight: 'rgba(205,127,50,0.18)',
   },
   if: {
     bg: 'linear-gradient(160deg, #0a0a0a 0%, #1a1a2e 20%, #16213e 40%, #0f3460 55%, #1a1a2e 70%, #0a0a0a 100%)',
@@ -65,6 +71,8 @@ const CARD_CONFIGS = {
     label: 'IN FORM',
     labelBg: 'rgba(0,212,255,0.15)',
     labelColor: '#00d4ff',
+    photoFade: 'rgba(4,12,30,0.95)',
+    rimLight: 'rgba(0,212,255,0.18)',
   }
 }
 
@@ -174,14 +182,7 @@ function Statistiche() {
           z-index: 3;
           border-radius: 18px;
           overflow: hidden;
-          background:
-            radial-gradient(circle at 50% 15%, rgba(255,255,255,0.28), transparent 34%),
-            linear-gradient(180deg, rgba(10,16,30,0.18), rgba(10,16,30,0.72));
-          border: 1px solid rgba(255,255,255,0.22);
-          box-shadow:
-            inset 0 1px 0 rgba(255,255,255,0.22),
-            inset 0 -28px 35px rgba(0,0,0,0.28),
-            0 9px 18px rgba(0,0,0,0.36);
+          background: linear-gradient(180deg, rgba(10,16,30,0.12), rgba(10,16,30,0.6));
         }
 
         .photo-frame::before {
@@ -190,21 +191,7 @@ function Statistiche() {
           inset: 0;
           z-index: 2;
           pointer-events: none;
-          background:
-            linear-gradient(180deg, transparent 48%, rgba(0,0,0,0.42) 100%),
-            radial-gradient(circle at 50% 10%, rgba(255,255,255,0.18), transparent 36%);
-        }
-
-        .photo-frame::after {
-          content: '';
-          position: absolute;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          height: 38%;
-          z-index: 3;
-          pointer-events: none;
-          background: linear-gradient(180deg, transparent, rgba(0,0,0,0.45));
+          background: radial-gradient(circle at 50% 8%, rgba(255,255,255,0.14), transparent 38%);
         }
 
         .photo-frame img {
@@ -214,8 +201,9 @@ function Statistiche() {
           height: 100%;
           object-fit: cover;
           object-position: top center;
-          filter: saturate(1.08) contrast(1.04);
-          transform: scale(1.04);
+          filter: saturate(1.1) contrast(1.05);
+          transform: scale(1.05);
+          display: block;
         }
 
         .photo-placeholder {
@@ -225,10 +213,7 @@ function Statistiche() {
           align-items: center;
           justify-content: center;
           font-size: 3.2rem;
-          color: rgba(255,255,255,0.68);
-          background:
-            radial-gradient(circle at 50% 20%, rgba(0,212,255,0.22), transparent 38%),
-            rgba(0,0,0,0.2);
+          color: rgba(255,255,255,0.5);
         }
 
         .modal-photo-frame {
@@ -236,11 +221,7 @@ function Statistiche() {
           height: 112px;
           border-radius: 18px;
           overflow: hidden;
-          background:
-            radial-gradient(circle at 50% 12%, rgba(255,255,255,0.18), transparent 36%),
-            rgba(0,0,0,0.34);
-          border: 1px solid rgba(255,255,255,0.16);
-          box-shadow: 0 12px 26px rgba(0,0,0,0.35);
+          background: rgba(0,0,0,0.3);
           display: flex;
           align-items: center;
           justify-content: center;
@@ -248,26 +229,19 @@ function Statistiche() {
           position: relative;
         }
 
-        .modal-photo-frame::after {
-          content: '';
-          position: absolute;
-          inset: 0;
-          pointer-events: none;
-          background: linear-gradient(180deg, transparent 52%, rgba(0,0,0,0.42));
-        }
-
         .modal-photo-frame img {
           width: 100%;
           height: 100%;
           object-fit: cover;
           object-position: top center;
-          transform: scale(1.03);
-          filter: saturate(1.08) contrast(1.04);
+          transform: scale(1.04);
+          filter: saturate(1.1) contrast(1.05);
+          display: block;
         }
 
         .modal-photo-placeholder {
           font-size: 3rem;
-          opacity: 0.75;
+          opacity: 0.6;
         }
       `}</style>
 
@@ -322,10 +296,18 @@ function Statistiche() {
           <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, backdropFilter: 'blur(4px)' }} onClick={() => setSelected(null)}>
             <div style={{ background: 'rgba(15, 23, 41, 0.98)', border: `1px solid ${cfg.border}`, borderRadius: '20px', padding: '2rem', maxWidth: '500px', width: '90%', animation: 'fadeInUp 0.3s ease', boxShadow: `0 0 30px ${cfg.glowColor}` }} onClick={e => e.stopPropagation()}>
               <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
-                <div className="modal-photo-frame" style={{ border: `1px solid ${cfg.border}`, background: cfg.bg }}>
+                <div
+                  className="modal-photo-frame"
+                  style={{
+                    border: `1.5px solid ${cfg.border}`,
+                    background: cfg.bg,
+                    boxShadow: `inset 3px 0 12px ${cfg.rimLight}, inset -3px 0 12px ${cfg.rimLight}, 0 0 20px ${cfg.glowColor}, 0 12px 28px rgba(0,0,0,0.4)`,
+                  }}
+                >
                   {g.foto_url
                     ? <img src={g.foto_url} alt={g.nome} />
-                    : <span className="modal-photo-placeholder">👤</span>}
+                    : <span className="modal-photo-placeholder" style={{ color: cfg.labelColor }}>👤</span>}
+                  <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '45%', background: `linear-gradient(180deg, transparent, ${cfg.photoFade})`, zIndex: 2, pointerEvents: 'none' }} />
                 </div>
                 <div>
                   <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
@@ -452,12 +434,36 @@ function FutStatCard({ giocatore, onClick }) {
       </div>
 
       {/* Foto integrata nella card */}
-      <div className="photo-frame">
+      <div
+        className="photo-frame"
+        style={{
+          border: `1.5px solid ${cfg.border}`,
+          boxShadow: `
+            inset 0 1px 0 rgba(255,255,255,0.2),
+            inset 4px 0 14px ${cfg.rimLight},
+            inset -4px 0 14px ${cfg.rimLight},
+            0 0 18px ${cfg.glowColor},
+            0 10px 22px rgba(0,0,0,0.45)
+          `,
+        }}
+      >
         {giocatore.foto_url ? (
           <img src={giocatore.foto_url} alt={giocatore.nome} />
         ) : (
-          <div className="photo-placeholder">👤</div>
+          <div className="photo-placeholder" style={{ color: cfg.labelColor, background: `radial-gradient(circle at 50% 30%, ${cfg.rimLight}, transparent 60%)` }}>👤</div>
         )}
+        {/* Top shine */}
+        <div style={{
+          position: 'absolute', top: 0, left: 0, right: 0, height: '30%',
+          background: 'linear-gradient(180deg, rgba(255,255,255,0.1) 0%, transparent 100%)',
+          zIndex: 2, pointerEvents: 'none',
+        }} />
+        {/* Bottom fade into card color */}
+        <div style={{
+          position: 'absolute', bottom: 0, left: 0, right: 0, height: '52%',
+          background: `linear-gradient(180deg, transparent 0%, ${cfg.photoFade} 100%)`,
+          zIndex: 3, pointerEvents: 'none',
+        }} />
       </div>
 
       {/* Nome */}
