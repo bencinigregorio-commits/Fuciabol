@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../supabase'
 
-// Determina il tipo di card in base a overall e se è IF
 function getCardType(overall, isIF) {
   if (isIF) return 'if'
   if (overall >= 75) return 'gold'
@@ -14,65 +13,65 @@ const CARD_CONFIGS = {
     bg: 'linear-gradient(160deg, #b8800a 0%, #e8c040 20%, #f8e060 40%, #e0a820 55%, #f0c838 70%, #b8800a 100%)',
     foil: 'linear-gradient(135deg, rgba(255,255,220,0.5) 0%, transparent 40%, rgba(255,230,100,0.3) 60%, transparent 80%, rgba(255,255,200,0.4) 100%)',
     border: 'rgba(255,235,80,0.9)',
-    innerBorder: 'rgba(255,220,50,0.5)',
+    innerBorder: 'rgba(255,220,50,0.4)',
     textDark: '#2a1800',
-    statsBar: 'rgba(0,0,0,0.5)',
+    statsBar: 'rgba(0,0,0,0.45)',
     statsText: '#fff5cc',
-    labelText: 'rgba(42,24,0,0.6)',
+    labelText: 'rgba(42,24,0,0.65)',
     glowColor: 'rgba(255,215,0,0.5)',
     label: 'ORO',
     labelBg: 'rgba(255,215,0,0.2)',
     labelColor: '#ffd700',
-    photoFade: 'rgba(90,45,4,0.92)',
-    rimLight: 'rgba(255,215,0,0.18)',
+    dropShadow: 'drop-shadow(0 6px 18px rgba(0,0,0,0.85)) drop-shadow(0 2px 6px rgba(180,120,0,0.4))',
+    nameBg: 'rgba(0,0,0,0.28)',
   },
   silver: {
     bg: 'linear-gradient(160deg, #787878 0%, #c8c8c8 20%, #ebebeb 40%, #a0a0a0 55%, #d0d0d0 70%, #787878 100%)',
     foil: 'linear-gradient(135deg, rgba(255,255,255,0.6) 0%, transparent 40%, rgba(220,220,220,0.4) 60%, transparent 80%, rgba(255,255,255,0.5) 100%)',
     border: 'rgba(230,230,230,0.9)',
-    innerBorder: 'rgba(200,200,200,0.5)',
+    innerBorder: 'rgba(200,200,200,0.4)',
     textDark: '#1a1a1a',
-    statsBar: 'rgba(0,0,0,0.4)',
+    statsBar: 'rgba(0,0,0,0.35)',
     statsText: '#f0f0f0',
-    labelText: 'rgba(26,26,26,0.55)',
+    labelText: 'rgba(26,26,26,0.6)',
     glowColor: 'rgba(192,192,192,0.5)',
     label: 'ARGENTO',
     labelBg: 'rgba(192,192,192,0.2)',
     labelColor: '#c0c0c0',
-    photoFade: 'rgba(40,40,40,0.92)',
-    rimLight: 'rgba(200,200,200,0.16)',
+    dropShadow: 'drop-shadow(0 6px 18px rgba(0,0,0,0.85)) drop-shadow(0 2px 6px rgba(80,80,80,0.5))',
+    nameBg: 'rgba(0,0,0,0.22)',
   },
   bronze: {
     bg: 'linear-gradient(160deg, #6a3810 0%, #b86828 20%, #d88840 40%, #885018 55%, #c07030 70%, #6a3810 100%)',
     foil: 'linear-gradient(135deg, rgba(255,210,150,0.5) 0%, transparent 40%, rgba(200,140,80,0.3) 60%, transparent 80%, rgba(255,200,130,0.4) 100%)',
     border: 'rgba(220,150,70,0.9)',
-    innerBorder: 'rgba(190,120,50,0.5)',
+    innerBorder: 'rgba(190,120,50,0.4)',
     textDark: '#200e00',
-    statsBar: 'rgba(0,0,0,0.45)',
+    statsBar: 'rgba(0,0,0,0.42)',
     statsText: '#ffe8c8',
-    labelText: 'rgba(32,14,0,0.6)',
+    labelText: 'rgba(32,14,0,0.65)',
     glowColor: 'rgba(205,127,50,0.5)',
     label: 'BRONZO',
     labelBg: 'rgba(205,127,50,0.2)',
     labelColor: '#cd7f32',
-    photoFade: 'rgba(50,20,4,0.92)',
-    rimLight: 'rgba(205,127,50,0.18)',
+    dropShadow: 'drop-shadow(0 6px 18px rgba(0,0,0,0.85)) drop-shadow(0 2px 6px rgba(140,70,10,0.5))',
+    nameBg: 'rgba(0,0,0,0.26)',
   },
   if: {
     bg: 'linear-gradient(160deg, #0a0a0a 0%, #1a1a2e 20%, #16213e 40%, #0f3460 55%, #1a1a2e 70%, #0a0a0a 100%)',
     foil: 'linear-gradient(135deg, rgba(0,212,255,0.4) 0%, transparent 30%, rgba(120,0,255,0.3) 55%, transparent 75%, rgba(0,212,255,0.3) 100%)',
     border: 'rgba(0,212,255,0.9)',
-    innerBorder: 'rgba(0,212,255,0.4)',
+    innerBorder: 'rgba(0,212,255,0.35)',
     textDark: '#00d4ff',
-    statsBar: 'rgba(0,0,0,0.7)',
+    statsBar: 'rgba(0,0,0,0.65)',
     statsText: '#00d4ff',
-    labelText: 'rgba(0,212,255,0.8)',
+    labelText: 'rgba(0,212,255,0.85)',
     glowColor: 'rgba(0,212,255,0.6)',
     label: 'IN FORM',
     labelBg: 'rgba(0,212,255,0.15)',
     labelColor: '#00d4ff',
-    photoFade: 'rgba(4,12,30,0.95)',
-    rimLight: 'rgba(0,212,255,0.18)',
+    dropShadow: 'drop-shadow(0 6px 22px rgba(0,0,0,0.9)) drop-shadow(0 0 12px rgba(0,212,255,0.5))',
+    nameBg: 'rgba(0,0,0,0.5)',
   }
 }
 
@@ -90,7 +89,6 @@ function Statistiche() {
     if (partiteData) setPartite(partiteData)
   }
 
-  // Trova il miglior giocatore dell'ultima partita chiusa
   const ultimaPartita = partite.length > 0 ? partite[0] : null
   let miglioreUltimaPartita = null
   if (ultimaPartita?.voti_calcolati?.length > 0) {
@@ -123,7 +121,6 @@ function Statistiche() {
     return { ...g, gol, assist, partiteGiocate, vittorie, pareggi, sconfitte, mediaVoti, winRate, isIF }
   })
 
-  // Ordina: IF prima, poi per overall
   const giocatoriOrdinati = [...giocatoriConStats].sort((a, b) => {
     if (a.isIF && !b.isIF) return -1
     if (!a.isIF && b.isIF) return 1
@@ -169,77 +166,61 @@ function Statistiche() {
         .card-gold { animation: glowGold 3s ease-in-out infinite; }
         .card-silver { animation: glowSilver 3.5s ease-in-out infinite; }
         .card-bronze { animation: glowBronze 4s ease-in-out infinite; }
-        .stat-card:hover { transform: translateY(-8px) scale(1.02) !important; }
         .stat-card { transition: transform 0.3s ease !important; }
+        .stat-card:hover { transform: translateY(-8px) scale(1.02) !important; }
 
-        .photo-frame {
+        /* Layer invisibile — nessun border, background, border-radius, overflow */
+        .player-render-layer {
           position: absolute;
-          top: 34px;
+          top: 14px;
           left: 50%;
           transform: translateX(-50%);
-          width: min(112px, 58%);
-          height: min(132px, 46%);
-          z-index: 3;
-          border-radius: 18px;
-          overflow: hidden;
-          background: linear-gradient(180deg, rgba(10,16,30,0.12), rgba(10,16,30,0.6));
-        }
-
-        .photo-frame::before {
-          content: '';
-          position: absolute;
-          inset: 0;
-          z-index: 2;
+          width: 90%;
+          height: 58%;
+          z-index: 4;
           pointer-events: none;
-          background: radial-gradient(circle at 50% 8%, rgba(255,255,255,0.14), transparent 38%);
         }
 
-        .photo-frame img {
-          position: relative;
-          z-index: 1;
+        .player-render-layer img {
           width: 100%;
           height: 100%;
-          object-fit: cover;
-          object-position: top center;
-          filter: saturate(1.1) contrast(1.05);
-          transform: scale(1.05);
+          object-fit: contain;
+          object-position: bottom center;
           display: block;
+          /* drop-shadow rispetta la trasparenza del PNG */
         }
 
-        .photo-placeholder {
+        .player-placeholder {
           width: 100%;
           height: 100%;
           display: flex;
-          align-items: center;
+          align-items: flex-end;
           justify-content: center;
-          font-size: 3.2rem;
-          color: rgba(255,255,255,0.5);
+          font-size: 4rem;
+          padding-bottom: 4px;
+          opacity: 0.55;
         }
 
-        .modal-photo-frame {
+        /* Modal */
+        .modal-player-layer {
           width: 86px;
           height: 112px;
-          border-radius: 18px;
-          overflow: hidden;
-          background: rgba(0,0,0,0.3);
-          display: flex;
-          align-items: center;
-          justify-content: center;
           flex-shrink: 0;
           position: relative;
+          display: flex;
+          align-items: flex-end;
+          justify-content: center;
         }
 
-        .modal-photo-frame img {
+        .modal-player-layer img {
           width: 100%;
           height: 100%;
-          object-fit: cover;
-          object-position: top center;
-          transform: scale(1.04);
-          filter: saturate(1.1) contrast(1.05);
+          object-fit: contain;
+          object-position: bottom center;
           display: block;
         }
 
-        .modal-photo-placeholder {
+        .modal-player-placeholder {
           font-size: 3rem;
           opacity: 0.6;
         }
@@ -250,17 +231,17 @@ function Statistiche() {
         <div style={{ fontSize: '3rem' }}>📊</div>
         <div>
           <h1 style={{ fontSize: '2.5rem', fontWeight: 900, marginBottom: '0.25rem' }}>Statistiche</h1>
-          <p style={{ color: 'rgba(255, 255, 255, 0.5)', fontSize: '0.95rem' }}>Numeri e prestazioni di ogni giocatore.</p>
+          <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.95rem' }}>Numeri e prestazioni di ogni giocatore.</p>
         </div>
       </div>
 
-      {/* Legenda tipi card */}
+      {/* Legenda */}
       <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '2rem', flexWrap: 'wrap', animation: 'fadeInUp 0.4s ease 0.1s both' }}>
         {[
           { label: 'IN FORM', desc: 'MVP ultima partita', bg: CARD_CONFIGS.if.labelBg, color: CARD_CONFIGS.if.labelColor },
           { label: 'ORO', desc: 'OVR 75+', bg: CARD_CONFIGS.gold.labelBg, color: CARD_CONFIGS.gold.labelColor },
-          { label: 'ARGENTO', desc: 'OVR 65-74', bg: CARD_CONFIGS.silver.labelBg, color: CARD_CONFIGS.silver.labelColor },
-          { label: 'BRONZO', desc: 'OVR 64-', bg: CARD_CONFIGS.bronze.labelBg, color: CARD_CONFIGS.bronze.labelColor },
+          { label: 'ARGENTO', desc: 'OVR 65–74', bg: CARD_CONFIGS.silver.labelBg, color: CARD_CONFIGS.silver.labelColor },
+          { label: 'BRONZO', desc: 'OVR 64–', bg: CARD_CONFIGS.bronze.labelBg, color: CARD_CONFIGS.bronze.labelColor },
         ].map(t => (
           <div key={t.label} style={{ background: t.bg, border: `1px solid ${t.color}`, borderRadius: '8px', padding: '0.3rem 0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <span style={{ fontSize: '0.75rem', fontWeight: 800, color: t.color }}>{t.label}</span>
@@ -269,45 +250,40 @@ function Statistiche() {
         ))}
       </div>
 
-      {/* Grid card giocatori */}
+      {/* Grid */}
       <div style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fill, minmax(min(160px, 28vw), 1fr))',
         gap: '1rem',
-        justifyItems: 'center'
+        justifyItems: 'center',
       }}>
         {giocatoriOrdinati.map((g, i) => (
           <div key={g.id} style={{ animation: `fadeInUp 0.4s ease ${i * 0.05}s both`, width: '100%', maxWidth: '200px' }}>
-            <FutStatCard
-              giocatore={g}
-              onClick={() => setSelected(selected === g.id ? null : g.id)}
-            />
+            <FutStatCard giocatore={g} onClick={() => setSelected(selected === g.id ? null : g.id)} />
           </div>
         ))}
       </div>
 
-      {/* Modal dettaglio */}
+      {/* Modal */}
       {selected && (() => {
         const g = giocatoriConStats.find(x => x.id === selected)
         if (!g) return null
         const cardType = getCardType(g.overall, g.isIF)
         const cfg = CARD_CONFIGS[cardType]
         return (
-          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, backdropFilter: 'blur(4px)' }} onClick={() => setSelected(null)}>
-            <div style={{ background: 'rgba(15, 23, 41, 0.98)', border: `1px solid ${cfg.border}`, borderRadius: '20px', padding: '2rem', maxWidth: '500px', width: '90%', animation: 'fadeInUp 0.3s ease', boxShadow: `0 0 30px ${cfg.glowColor}` }} onClick={e => e.stopPropagation()}>
-              <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
-                <div
-                  className="modal-photo-frame"
-                  style={{
-                    border: `1.5px solid ${cfg.border}`,
-                    background: cfg.bg,
-                    boxShadow: `inset 3px 0 12px ${cfg.rimLight}, inset -3px 0 12px ${cfg.rimLight}, 0 0 20px ${cfg.glowColor}, 0 12px 28px rgba(0,0,0,0.4)`,
-                  }}
-                >
+          <div
+            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, backdropFilter: 'blur(4px)' }}
+            onClick={() => setSelected(null)}
+          >
+            <div
+              style={{ background: 'rgba(15,23,41,0.98)', border: `1px solid ${cfg.border}`, borderRadius: '20px', padding: '2rem', maxWidth: '500px', width: '90%', animation: 'fadeInUp 0.3s ease', boxShadow: `0 0 30px ${cfg.glowColor}` }}
+              onClick={e => e.stopPropagation()}
+            >
+              <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap', alignItems: 'flex-end' }}>
+                <div className="modal-player-layer" style={{ filter: cfg.dropShadow }}>
                   {g.foto_url
                     ? <img src={g.foto_url} alt={g.nome} />
-                    : <span className="modal-photo-placeholder" style={{ color: cfg.labelColor }}>👤</span>}
-                  <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '45%', background: `linear-gradient(180deg, transparent, ${cfg.photoFade})`, zIndex: 2, pointerEvents: 'none' }} />
+                    : <span className="modal-player-placeholder" style={{ color: cfg.labelColor }}>👤</span>}
                 </div>
                 <div>
                   <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
@@ -319,7 +295,7 @@ function Statistiche() {
                   <div style={{ fontSize: 'clamp(1.2rem, 4vw, 1.8rem)', fontWeight: 900, marginBottom: '0.25rem' }}>{g.nome}</div>
                   <div style={{ color: cfg.labelColor, fontWeight: 700, marginBottom: '0.5rem' }}>{g.ruolo}</div>
                   <div style={{ display: 'flex', gap: '0.5rem' }}>
-                    <span style={{ background: `${cfg.labelBg}`, border: `1px solid ${cfg.border}`, borderRadius: '20px', padding: '0.25rem 0.75rem', fontSize: '0.85rem', fontWeight: 700, color: cfg.labelColor }}>OVR {g.overall}</span>
+                    <span style={{ background: cfg.labelBg, border: `1px solid ${cfg.border}`, borderRadius: '20px', padding: '0.25rem 0.75rem', fontSize: '0.85rem', fontWeight: 700, color: cfg.labelColor }}>OVR {g.overall}</span>
                     <span style={{ background: 'rgba(255,215,0,0.15)', border: '1px solid rgba(255,215,0,0.3)', borderRadius: '20px', padding: '0.25rem 0.75rem', fontSize: '0.85rem', fontWeight: 700, color: '#ffd700' }}>{g.winRate}% WR</span>
                   </div>
                 </div>
@@ -373,110 +349,98 @@ function FutStatCard({ giocatore, onClick }) {
       onMouseLeave={() => setHovered(false)}
       style={{
         width: '100%',
-        height: 'min(290px, 55vw)',
+        height: 'min(300px, 58vw)',
         borderRadius: '14px',
         background: cfg.bg,
         border: `2px solid ${cfg.border}`,
         position: 'relative',
         overflow: 'hidden',
         cursor: 'pointer',
-        display: 'flex',
-        flexDirection: 'column',
         transform: hovered ? 'translateY(-8px) scale(1.02)' : 'translateY(0) scale(1)',
       }}
     >
-      {/* Bordo interno */}
-      <div style={{
-        position: 'absolute', top: '4px', left: '4px', right: '4px', bottom: '4px',
-        border: `1px solid ${cfg.innerBorder}`,
-        borderRadius: '11px', pointerEvents: 'none', zIndex: 3
-      }} />
-
       {/* Foil overlay */}
       <div style={{
-        position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-        background: cfg.foil, pointerEvents: 'none', zIndex: 1
+        position: 'absolute', inset: 0,
+        background: cfg.foil,
+        pointerEvents: 'none', zIndex: 1,
       }} />
 
       {/* Shimmer */}
       <div style={{
         position: 'absolute', top: '-50%', left: '-20%',
         width: '35%', height: '200%',
-        background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent)',
-        animation: 'shimmerCard 3s ease-in-out infinite',
-        pointerEvents: 'none', zIndex: 2
+        background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.18), transparent)',
+        animation: 'shimmerCard 3.5s ease-in-out infinite',
+        pointerEvents: 'none', zIndex: 2,
       }} />
 
-      {/* IF badge speciale */}
+      {/* Bordo interno sottile */}
+      <div style={{
+        position: 'absolute', top: '4px', left: '4px', right: '4px', bottom: '4px',
+        border: `1px solid ${cfg.innerBorder}`,
+        borderRadius: '11px',
+        pointerEvents: 'none', zIndex: 3,
+      }} />
+
+      {/* Overall + Ruolo */}
+      <div style={{ position: 'absolute', top: '10px', left: '12px', zIndex: 5, lineHeight: 1 }}>
+        <div style={{ fontSize: '2rem', fontWeight: 900, color: cfg.textDark, textShadow: '0 1px 2px rgba(255,255,255,0.25)', lineHeight: 1 }}>
+          {giocatore.overall}
+        </div>
+        <div style={{ fontSize: '0.58rem', fontWeight: 800, color: cfg.labelText, letterSpacing: '0.5px', marginTop: '3px', textTransform: 'uppercase' }}>
+          {giocatore.ruolo}
+        </div>
+      </div>
+
+      {/* IF badge */}
       {giocatore.isIF && (
         <div style={{
-          position: 'absolute', top: '8px', right: '8px', zIndex: 5,
+          position: 'absolute', top: '8px', right: '8px', zIndex: 6,
           background: 'rgba(0,212,255,0.2)',
           border: '1px solid rgba(0,212,255,0.8)',
           borderRadius: '6px',
           padding: '2px 6px',
           fontSize: '0.55rem', fontWeight: 900, color: '#00d4ff',
           letterSpacing: '0.5px',
-          animation: 'ifPulse 1.5s ease-in-out infinite'
+          animation: 'ifPulse 1.5s ease-in-out infinite',
         }}>
           IF ⚡
         </div>
       )}
 
-      {/* Overall + Ruolo top-left */}
-      <div style={{ position: 'absolute', top: '10px', left: '12px', zIndex: 4, lineHeight: 1 }}>
-        <div style={{ fontSize: '1.9rem', fontWeight: 900, color: cfg.textDark, textShadow: '0 1px 0 rgba(255,255,255,0.3)', lineHeight: 1 }}>
-          {giocatore.overall}
-        </div>
-        <div style={{ fontSize: '0.58rem', fontWeight: 800, color: cfg.labelText, letterSpacing: '0.5px', marginTop: '2px' }}>
-          {giocatore.ruolo}
-        </div>
-      </div>
-
-      {/* Foto integrata nella card */}
+      {/* Player render layer — nessun frame visibile */}
       <div
-        className="photo-frame"
-        style={{
-          border: `1.5px solid ${cfg.border}`,
-          boxShadow: `
-            inset 0 1px 0 rgba(255,255,255,0.2),
-            inset 4px 0 14px ${cfg.rimLight},
-            inset -4px 0 14px ${cfg.rimLight},
-            0 0 18px ${cfg.glowColor},
-            0 10px 22px rgba(0,0,0,0.45)
-          `,
-        }}
+        className="player-render-layer"
+        style={{ filter: cfg.dropShadow }}
       >
         {giocatore.foto_url ? (
           <img src={giocatore.foto_url} alt={giocatore.nome} />
         ) : (
-          <div className="photo-placeholder" style={{ color: cfg.labelColor, background: `radial-gradient(circle at 50% 30%, ${cfg.rimLight}, transparent 60%)` }}>👤</div>
+          <div className="player-placeholder" style={{ color: cfg.labelColor }}>👤</div>
         )}
-        {/* Top shine */}
-        <div style={{
-          position: 'absolute', top: 0, left: 0, right: 0, height: '30%',
-          background: 'linear-gradient(180deg, rgba(255,255,255,0.1) 0%, transparent 100%)',
-          zIndex: 2, pointerEvents: 'none',
-        }} />
-        {/* Bottom fade into card color */}
-        <div style={{
-          position: 'absolute', bottom: 0, left: 0, right: 0, height: '52%',
-          background: `linear-gradient(180deg, transparent 0%, ${cfg.photoFade} 100%)`,
-          zIndex: 3, pointerEvents: 'none',
-        }} />
       </div>
 
       {/* Nome */}
       <div style={{
         position: 'absolute',
-        bottom: '72px',
-        left: 0, right: 0, textAlign: 'center', zIndex: 4, padding: '0 8px'
+        bottom: '68px',
+        left: 0, right: 0,
+        textAlign: 'center',
+        zIndex: 5,
+        padding: '0 8px',
       }}>
         <div style={{
-          fontSize: '0.82rem', fontWeight: 900, color: cfg.textDark,
+          display: 'inline-block',
+          background: cfg.nameBg,
+          backdropFilter: 'blur(4px)',
+          borderRadius: '4px',
+          padding: '1px 8px',
+          fontSize: '0.8rem', fontWeight: 900, color: cfg.textDark,
           letterSpacing: '1.5px', textTransform: 'uppercase',
-          textShadow: '0 1px 0 rgba(255,255,255,0.3)',
-          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'
+          textShadow: '0 1px 0 rgba(255,255,255,0.2)',
+          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+          maxWidth: '100%',
         }}>
           {cognome}
         </div>
@@ -488,7 +452,7 @@ function FutStatCard({ giocatore, onClick }) {
         background: cfg.statsBar,
         borderTop: `1px solid ${cfg.innerBorder}`,
         padding: '7px 8px',
-        zIndex: 4
+        zIndex: 5,
       }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '3px' }}>
           {[
