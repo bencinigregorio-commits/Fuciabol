@@ -10,69 +10,77 @@ function getCardType(overall, isIF) {
 
 const CARD_CONFIGS = {
   gold: {
-    bg: 'linear-gradient(160deg, #b8800a 0%, #e8c040 20%, #f8e060 40%, #e0a820 55%, #f0c838 70%, #b8800a 100%)',
-    foil: 'linear-gradient(135deg, rgba(255,255,220,0.5) 0%, transparent 40%, rgba(255,230,100,0.3) 60%, transparent 80%, rgba(255,255,200,0.4) 100%)',
-    border: 'rgba(255,235,80,0.9)',
-    innerBorder: 'rgba(255,220,50,0.4)',
+    bg: 'linear-gradient(155deg, #7a4e08 0%, #c48a1a 18%, #f0c830 34%, #fde878 46%, #e8b820 58%, #c07010 74%, #7a4e08 100%)',
+    pattern: 'repeating-linear-gradient(60deg, transparent, transparent 18px, rgba(255,240,120,0.06) 18px, rgba(255,240,120,0.06) 19px), repeating-linear-gradient(-60deg, transparent, transparent 18px, rgba(255,240,120,0.06) 18px, rgba(255,240,120,0.06) 19px)',
+    foil: 'linear-gradient(130deg, rgba(255,255,200,0.55) 0%, transparent 38%, rgba(255,230,80,0.28) 58%, transparent 76%, rgba(255,255,200,0.4) 100%)',
+    border: 'rgba(255,235,80,0.95)',
+    innerBorder: 'rgba(255,220,60,0.35)',
     textDark: '#2a1800',
-    statsBar: 'rgba(0,0,0,0.45)',
+    statsGlass: 'rgba(0,0,0,0.38)',
     statsText: '#fff5cc',
-    labelText: 'rgba(42,24,0,0.65)',
-    glowColor: 'rgba(255,215,0,0.5)',
+    labelText: 'rgba(42,24,0,0.7)',
+    glowColor: 'rgba(255,215,0,0.55)',
     label: 'ORO',
     labelBg: 'rgba(255,215,0,0.2)',
     labelColor: '#ffd700',
-    dropShadow: 'drop-shadow(0 6px 18px rgba(0,0,0,0.85)) drop-shadow(0 2px 6px rgba(180,120,0,0.4))',
-    nameBg: 'rgba(0,0,0,0.28)',
+    dropShadow: 'drop-shadow(0 8px 20px rgba(0,0,0,0.9)) drop-shadow(0 2px 8px rgba(200,140,0,0.45))',
+    nameLine: 'rgba(255,215,0,0.6)',
+    sepColor: 'rgba(255,220,60,0.25)',
   },
   silver: {
-    bg: 'linear-gradient(160deg, #787878 0%, #c8c8c8 20%, #ebebeb 40%, #a0a0a0 55%, #d0d0d0 70%, #787878 100%)',
-    foil: 'linear-gradient(135deg, rgba(255,255,255,0.6) 0%, transparent 40%, rgba(220,220,220,0.4) 60%, transparent 80%, rgba(255,255,255,0.5) 100%)',
-    border: 'rgba(230,230,230,0.9)',
-    innerBorder: 'rgba(200,200,200,0.4)',
+    bg: 'linear-gradient(155deg, #4a4a4a 0%, #909090 18%, #d8d8d8 34%, #f2f2f2 46%, #b8b8b8 58%, #787878 74%, #4a4a4a 100%)',
+    pattern: 'repeating-linear-gradient(60deg, transparent, transparent 18px, rgba(255,255,255,0.05) 18px, rgba(255,255,255,0.05) 19px), repeating-linear-gradient(-60deg, transparent, transparent 18px, rgba(255,255,255,0.05) 18px, rgba(255,255,255,0.05) 19px)',
+    foil: 'linear-gradient(130deg, rgba(255,255,255,0.65) 0%, transparent 38%, rgba(220,220,220,0.35) 58%, transparent 76%, rgba(255,255,255,0.45) 100%)',
+    border: 'rgba(235,235,235,0.95)',
+    innerBorder: 'rgba(200,200,200,0.3)',
     textDark: '#1a1a1a',
-    statsBar: 'rgba(0,0,0,0.35)',
+    statsGlass: 'rgba(0,0,0,0.32)',
     statsText: '#f0f0f0',
-    labelText: 'rgba(26,26,26,0.6)',
-    glowColor: 'rgba(192,192,192,0.5)',
+    labelText: 'rgba(26,26,26,0.65)',
+    glowColor: 'rgba(192,192,192,0.55)',
     label: 'ARGENTO',
     labelBg: 'rgba(192,192,192,0.2)',
-    labelColor: '#c0c0c0',
-    dropShadow: 'drop-shadow(0 6px 18px rgba(0,0,0,0.85)) drop-shadow(0 2px 6px rgba(80,80,80,0.5))',
-    nameBg: 'rgba(0,0,0,0.22)',
+    labelColor: '#d0d0d0',
+    dropShadow: 'drop-shadow(0 8px 20px rgba(0,0,0,0.9)) drop-shadow(0 2px 8px rgba(100,100,100,0.5))',
+    nameLine: 'rgba(210,210,210,0.6)',
+    sepColor: 'rgba(200,200,200,0.2)',
   },
   bronze: {
-    bg: 'linear-gradient(160deg, #6a3810 0%, #b86828 20%, #d88840 40%, #885018 55%, #c07030 70%, #6a3810 100%)',
-    foil: 'linear-gradient(135deg, rgba(255,210,150,0.5) 0%, transparent 40%, rgba(200,140,80,0.3) 60%, transparent 80%, rgba(255,200,130,0.4) 100%)',
-    border: 'rgba(220,150,70,0.9)',
-    innerBorder: 'rgba(190,120,50,0.4)',
+    bg: 'linear-gradient(155deg, #3e1e08 0%, #8a4018 18%, #c87030 34%, #e89848 46%, #a05020 58%, #6a3010 74%, #3e1e08 100%)',
+    pattern: 'repeating-linear-gradient(60deg, transparent, transparent 18px, rgba(255,180,80,0.06) 18px, rgba(255,180,80,0.06) 19px), repeating-linear-gradient(-60deg, transparent, transparent 18px, rgba(255,180,80,0.06) 18px, rgba(255,180,80,0.06) 19px)',
+    foil: 'linear-gradient(130deg, rgba(255,210,140,0.55) 0%, transparent 38%, rgba(200,130,60,0.3) 58%, transparent 76%, rgba(255,200,120,0.4) 100%)',
+    border: 'rgba(225,155,75,0.95)',
+    innerBorder: 'rgba(190,120,50,0.3)',
     textDark: '#200e00',
-    statsBar: 'rgba(0,0,0,0.42)',
+    statsGlass: 'rgba(0,0,0,0.4)',
     statsText: '#ffe8c8',
-    labelText: 'rgba(32,14,0,0.65)',
-    glowColor: 'rgba(205,127,50,0.5)',
+    labelText: 'rgba(32,14,0,0.7)',
+    glowColor: 'rgba(205,127,50,0.55)',
     label: 'BRONZO',
     labelBg: 'rgba(205,127,50,0.2)',
-    labelColor: '#cd7f32',
-    dropShadow: 'drop-shadow(0 6px 18px rgba(0,0,0,0.85)) drop-shadow(0 2px 6px rgba(140,70,10,0.5))',
-    nameBg: 'rgba(0,0,0,0.26)',
+    labelColor: '#d4903a',
+    dropShadow: 'drop-shadow(0 8px 20px rgba(0,0,0,0.9)) drop-shadow(0 2px 8px rgba(150,70,10,0.5))',
+    nameLine: 'rgba(220,150,60,0.6)',
+    sepColor: 'rgba(190,120,50,0.22)',
   },
   if: {
-    bg: 'linear-gradient(160deg, #0a0a0a 0%, #1a1a2e 20%, #16213e 40%, #0f3460 55%, #1a1a2e 70%, #0a0a0a 100%)',
-    foil: 'linear-gradient(135deg, rgba(0,212,255,0.4) 0%, transparent 30%, rgba(120,0,255,0.3) 55%, transparent 75%, rgba(0,212,255,0.3) 100%)',
-    border: 'rgba(0,212,255,0.9)',
-    innerBorder: 'rgba(0,212,255,0.35)',
+    bg: 'linear-gradient(155deg, #050508 0%, #0e0e20 18%, #141830 34%, #0a2248 46%, #101828 58%, #080810 74%, #050508 100%)',
+    pattern: 'repeating-linear-gradient(60deg, transparent, transparent 18px, rgba(0,212,255,0.04) 18px, rgba(0,212,255,0.04) 19px), repeating-linear-gradient(-60deg, transparent, transparent 18px, rgba(0,212,255,0.04) 18px, rgba(0,212,255,0.04) 19px)',
+    foil: 'linear-gradient(130deg, rgba(0,212,255,0.45) 0%, transparent 30%, rgba(120,0,255,0.28) 55%, transparent 75%, rgba(0,212,255,0.32) 100%)',
+    border: 'rgba(0,212,255,0.92)',
+    innerBorder: 'rgba(0,212,255,0.28)',
     textDark: '#00d4ff',
-    statsBar: 'rgba(0,0,0,0.65)',
+    statsGlass: 'rgba(0,0,0,0.62)',
     statsText: '#00d4ff',
-    labelText: 'rgba(0,212,255,0.85)',
-    glowColor: 'rgba(0,212,255,0.6)',
+    labelText: 'rgba(0,212,255,0.88)',
+    glowColor: 'rgba(0,212,255,0.65)',
     label: 'IN FORM',
     labelBg: 'rgba(0,212,255,0.15)',
     labelColor: '#00d4ff',
-    dropShadow: 'drop-shadow(0 6px 22px rgba(0,0,0,0.9)) drop-shadow(0 0 12px rgba(0,212,255,0.5))',
-    nameBg: 'rgba(0,0,0,0.5)',
-  }
+    dropShadow: 'drop-shadow(0 8px 24px rgba(0,0,0,0.95)) drop-shadow(0 0 14px rgba(0,212,255,0.55))',
+    nameLine: 'rgba(0,212,255,0.5)',
+    sepColor: 'rgba(0,212,255,0.18)',
+  },
 }
 
 function Statistiche() {
@@ -135,83 +143,79 @@ function Statistiche() {
           to { opacity: 1; transform: translateY(0); }
         }
         @keyframes shimmerCard {
-          0% { transform: translateX(-100%) rotate(20deg); }
-          100% { transform: translateX(300%) rotate(20deg); }
+          0% { transform: translateX(-120%) skewX(-12deg); }
+          100% { transform: translateX(320%) skewX(-12deg); }
         }
         @keyframes floatIF {
           0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-8px); }
+          50% { transform: translateY(-7px); }
         }
         @keyframes glowIF {
-          0%, 100% { box-shadow: 0 0 20px rgba(0,212,255,0.5), 0 0 40px rgba(0,212,255,0.2), 0 15px 35px rgba(0,0,0,0.6); }
-          50% { box-shadow: 0 0 40px rgba(0,212,255,0.8), 0 0 80px rgba(0,212,255,0.4), 0 15px 40px rgba(0,0,0,0.7); }
+          0%, 100% { box-shadow: 0 0 18px rgba(0,212,255,0.5), 0 0 36px rgba(0,212,255,0.18), 0 14px 32px rgba(0,0,0,0.7); }
+          50% { box-shadow: 0 0 36px rgba(0,212,255,0.8), 0 0 70px rgba(0,212,255,0.35), 0 14px 38px rgba(0,0,0,0.8); }
         }
         @keyframes glowGold {
-          0%, 100% { box-shadow: 0 0 15px rgba(255,215,0,0.4), 0 12px 30px rgba(0,0,0,0.5); }
-          50% { box-shadow: 0 0 30px rgba(255,215,0,0.6), 0 12px 35px rgba(0,0,0,0.6); }
+          0%, 100% { box-shadow: 0 0 14px rgba(255,215,0,0.4), 0 10px 28px rgba(0,0,0,0.6); }
+          50% { box-shadow: 0 0 28px rgba(255,215,0,0.65), 0 10px 34px rgba(0,0,0,0.7); }
         }
         @keyframes glowSilver {
-          0%, 100% { box-shadow: 0 0 12px rgba(192,192,192,0.3), 0 10px 25px rgba(0,0,0,0.5); }
-          50% { box-shadow: 0 0 25px rgba(192,192,192,0.5), 0 10px 30px rgba(0,0,0,0.6); }
+          0%, 100% { box-shadow: 0 0 10px rgba(192,192,192,0.3), 0 10px 24px rgba(0,0,0,0.6); }
+          50% { box-shadow: 0 0 22px rgba(192,192,192,0.5), 0 10px 30px rgba(0,0,0,0.7); }
         }
         @keyframes glowBronze {
-          0%, 100% { box-shadow: 0 0 12px rgba(205,127,50,0.3), 0 10px 25px rgba(0,0,0,0.5); }
-          50% { box-shadow: 0 0 25px rgba(205,127,50,0.5), 0 10px 30px rgba(0,0,0,0.6); }
+          0%, 100% { box-shadow: 0 0 10px rgba(205,127,50,0.35), 0 10px 24px rgba(0,0,0,0.6); }
+          50% { box-shadow: 0 0 22px rgba(205,127,50,0.55), 0 10px 30px rgba(0,0,0,0.7); }
         }
         @keyframes ifPulse {
           0%, 100% { opacity: 1; }
-          50% { opacity: 0.6; }
+          50% { opacity: 0.55; }
         }
-        .card-if { animation: glowIF 2s ease-in-out infinite, floatIF 3.5s ease-in-out infinite; }
-        .card-gold { animation: glowGold 3s ease-in-out infinite; }
+
+        .card-if  { animation: glowIF 2s ease-in-out infinite, floatIF 3.5s ease-in-out infinite; }
+        .card-gold   { animation: glowGold 3s ease-in-out infinite; }
         .card-silver { animation: glowSilver 3.5s ease-in-out infinite; }
         .card-bronze { animation: glowBronze 4s ease-in-out infinite; }
-        .stat-card { transition: transform 0.3s ease !important; }
-        .stat-card:hover { transform: translateY(-8px) scale(1.02) !important; }
+        .stat-card { transition: transform 0.28s ease !important; }
+        .stat-card:hover { transform: translateY(-9px) scale(1.03) !important; }
 
-        /* Layer invisibile — nessun border, background, border-radius, overflow */
+        /* Layer render giocatore — nessun frame, nessun clip */
         .player-render-layer {
           position: absolute;
-          top: 14px;
+          top: 8px;
           left: 50%;
           transform: translateX(-50%);
-          width: 90%;
-          height: 58%;
+          width: 96%;
+          height: 62%;
           z-index: 4;
           pointer-events: none;
         }
-
         .player-render-layer img {
           width: 100%;
           height: 100%;
           object-fit: contain;
           object-position: bottom center;
           display: block;
-          /* drop-shadow rispetta la trasparenza del PNG */
         }
-
         .player-placeholder {
           width: 100%;
           height: 100%;
           display: flex;
           align-items: flex-end;
           justify-content: center;
-          font-size: 4rem;
-          padding-bottom: 4px;
-          opacity: 0.55;
+          font-size: 4.5rem;
+          padding-bottom: 2px;
+          opacity: 0.5;
         }
 
         /* Modal */
         .modal-player-layer {
-          width: 86px;
-          height: 112px;
+          width: 90px;
+          height: 118px;
           flex-shrink: 0;
-          position: relative;
           display: flex;
           align-items: flex-end;
           justify-content: center;
         }
-
         .modal-player-layer img {
           width: 100%;
           height: 100%;
@@ -219,10 +223,9 @@ function Statistiche() {
           object-position: bottom center;
           display: block;
         }
-
         .modal-player-placeholder {
           font-size: 3rem;
-          opacity: 0.6;
+          opacity: 0.55;
         }
       `}</style>
 
@@ -254,7 +257,7 @@ function Statistiche() {
       <div style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fill, minmax(min(160px, 28vw), 1fr))',
-        gap: '1rem',
+        gap: '1.1rem',
         justifyItems: 'center',
       }}>
         {giocatoriOrdinati.map((g, i) => (
@@ -272,36 +275,34 @@ function Statistiche() {
         const cfg = CARD_CONFIGS[cardType]
         return (
           <div
-            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, backdropFilter: 'blur(4px)' }}
+            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.88)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, backdropFilter: 'blur(6px)' }}
             onClick={() => setSelected(null)}
           >
             <div
-              style={{ background: 'rgba(15,23,41,0.98)', border: `1px solid ${cfg.border}`, borderRadius: '20px', padding: '2rem', maxWidth: '500px', width: '90%', animation: 'fadeInUp 0.3s ease', boxShadow: `0 0 30px ${cfg.glowColor}` }}
+              style={{ background: 'rgba(12,18,36,0.98)', border: `1px solid ${cfg.border}`, borderRadius: '22px', padding: '1.75rem', maxWidth: '500px', width: '90%', animation: 'fadeInUp 0.28s ease', boxShadow: `0 0 36px ${cfg.glowColor}, 0 20px 50px rgba(0,0,0,0.7)` }}
               onClick={e => e.stopPropagation()}
             >
-              <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap', alignItems: 'flex-end' }}>
+              <div style={{ display: 'flex', gap: '1.1rem', marginBottom: '1.5rem', alignItems: 'flex-end' }}>
                 <div className="modal-player-layer" style={{ filter: cfg.dropShadow }}>
                   {g.foto_url
                     ? <img src={g.foto_url} alt={g.nome} />
                     : <span className="modal-player-placeholder" style={{ color: cfg.labelColor }}>👤</span>}
                 </div>
-                <div>
-                  <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                    <span style={{ background: cfg.labelBg, border: `1px solid ${cfg.labelColor}`, borderRadius: '6px', padding: '0.2rem 0.5rem', fontSize: '0.7rem', fontWeight: 800, color: cfg.labelColor }}>
-                      {cfg.label}
-                    </span>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem', flexWrap: 'wrap' }}>
+                    <span style={{ background: cfg.labelBg, border: `1px solid ${cfg.labelColor}`, borderRadius: '6px', padding: '0.2rem 0.5rem', fontSize: '0.7rem', fontWeight: 800, color: cfg.labelColor }}>{cfg.label}</span>
                     {g.isIF && <span style={{ animation: 'ifPulse 1.5s ease-in-out infinite', fontSize: '0.7rem', color: '#00d4ff' }}>⚡ MVP ultima partita</span>}
                   </div>
-                  <div style={{ fontSize: 'clamp(1.2rem, 4vw, 1.8rem)', fontWeight: 900, marginBottom: '0.25rem' }}>{g.nome}</div>
-                  <div style={{ color: cfg.labelColor, fontWeight: 700, marginBottom: '0.5rem' }}>{g.ruolo}</div>
-                  <div style={{ display: 'flex', gap: '0.5rem' }}>
-                    <span style={{ background: cfg.labelBg, border: `1px solid ${cfg.border}`, borderRadius: '20px', padding: '0.25rem 0.75rem', fontSize: '0.85rem', fontWeight: 700, color: cfg.labelColor }}>OVR {g.overall}</span>
-                    <span style={{ background: 'rgba(255,215,0,0.15)', border: '1px solid rgba(255,215,0,0.3)', borderRadius: '20px', padding: '0.25rem 0.75rem', fontSize: '0.85rem', fontWeight: 700, color: '#ffd700' }}>{g.winRate}% WR</span>
+                  <div style={{ fontSize: 'clamp(1.2rem, 4vw, 1.75rem)', fontWeight: 900, marginBottom: '0.25rem' }}>{g.nome}</div>
+                  <div style={{ color: cfg.labelColor, fontWeight: 700, fontSize: '0.9rem', marginBottom: '0.6rem' }}>{g.ruolo}</div>
+                  <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                    <span style={{ background: cfg.labelBg, border: `1px solid ${cfg.border}`, borderRadius: '20px', padding: '0.22rem 0.7rem', fontSize: '0.82rem', fontWeight: 700, color: cfg.labelColor }}>OVR {g.overall}</span>
+                    <span style={{ background: 'rgba(255,215,0,0.14)', border: '1px solid rgba(255,215,0,0.3)', borderRadius: '20px', padding: '0.22rem 0.7rem', fontSize: '0.82rem', fontWeight: 700, color: '#ffd700' }}>{g.winRate}% WR</span>
                   </div>
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.75rem', marginBottom: '1.5rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.6rem', marginBottom: '1.25rem' }}>
                 {[
                   { label: 'Partite', value: g.partiteGiocate, color: '#fff' },
                   { label: 'Vittorie', value: g.vittorie, color: '#00d4ff' },
@@ -310,19 +311,19 @@ function Statistiche() {
                   { label: 'Gol', value: g.gol, color: '#00ff88' },
                   { label: 'Assist', value: g.assist, color: '#a78bfa' },
                 ].map(s => (
-                  <div key={s.label} style={{ background: 'rgba(0,0,0,0.3)', borderRadius: '12px', padding: '1rem', textAlign: 'center' }}>
-                    <div style={{ fontSize: '1.8rem', fontWeight: 900, color: s.color }}>{s.value}</div>
-                    <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginTop: '0.25rem' }}>{s.label}</div>
+                  <div key={s.label} style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '12px', padding: '0.9rem 0.5rem', textAlign: 'center' }}>
+                    <div style={{ fontSize: '1.7rem', fontWeight: 900, color: s.color }}>{s.value}</div>
+                    <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.38)', marginTop: '0.2rem', textTransform: 'uppercase', letterSpacing: '0.4px' }}>{s.label}</div>
                   </div>
                 ))}
               </div>
 
-              <div style={{ background: 'rgba(0,0,0,0.3)', borderRadius: '12px', padding: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                <div style={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.5)' }}>Media Voti</div>
+              <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '12px', padding: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                <div style={{ fontSize: '0.88rem', color: 'rgba(255,255,255,0.45)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Media Voti</div>
                 <div style={{ fontSize: '2rem', fontWeight: 900, color: '#ffd700' }}>{g.mediaVoti}</div>
               </div>
 
-              <button onClick={() => setSelected(null)} style={{ width: '100%', background: 'rgba(100,116,139,0.3)', border: 'none', borderRadius: '12px', padding: '0.75rem', color: '#fff', fontWeight: 700, cursor: 'pointer' }}>
+              <button onClick={() => setSelected(null)} style={{ width: '100%', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', padding: '0.75rem', color: 'rgba(255,255,255,0.7)', fontWeight: 700, cursor: 'pointer', fontSize: '0.9rem', letterSpacing: '0.3px' }}>
                 Chiudi
               </button>
             </div>
@@ -341,6 +342,15 @@ function FutStatCard({ giocatore, onClick }) {
   const nomeParti = giocatore.nome.replace(/\s*\(.*?\)/g, '').trim().split(' ')
   const cognome = nomeParti.length > 1 ? nomeParti[nomeParti.length - 1].toUpperCase() : giocatore.nome.toUpperCase()
 
+  const statsData = [
+    { val: giocatore.partiteGiocate, label: 'PG' },
+    { val: giocatore.vittorie,       label: 'V'  },
+    { val: giocatore.gol,            label: 'GOL'},
+    { val: giocatore.overall,        label: 'OVR'},
+    { val: giocatore.pareggi,        label: 'PAR'},
+    { val: giocatore.assist,         label: 'ASS'},
+  ]
+
   return (
     <div
       className={`stat-card card-${cardType}`}
@@ -349,16 +359,24 @@ function FutStatCard({ giocatore, onClick }) {
       onMouseLeave={() => setHovered(false)}
       style={{
         width: '100%',
-        height: 'min(300px, 58vw)',
+        height: 'min(305px, 60vw)',
         borderRadius: '14px',
         background: cfg.bg,
         border: `2px solid ${cfg.border}`,
         position: 'relative',
         overflow: 'hidden',
         cursor: 'pointer',
-        transform: hovered ? 'translateY(-8px) scale(1.02)' : 'translateY(0) scale(1)',
+        transform: hovered ? 'translateY(-9px) scale(1.03)' : 'translateY(0) scale(1)',
       }}
     >
+      {/* Pattern geometrico sottile */}
+      <div style={{
+        position: 'absolute', inset: 0,
+        background: cfg.pattern,
+        opacity: 0.9,
+        pointerEvents: 'none', zIndex: 0,
+      }} />
+
       {/* Foil overlay */}
       <div style={{
         position: 'absolute', inset: 0,
@@ -366,29 +384,36 @@ function FutStatCard({ giocatore, onClick }) {
         pointerEvents: 'none', zIndex: 1,
       }} />
 
-      {/* Shimmer */}
+      {/* Shimmer sweep */}
       <div style={{
-        position: 'absolute', top: '-50%', left: '-20%',
-        width: '35%', height: '200%',
-        background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.18), transparent)',
-        animation: 'shimmerCard 3.5s ease-in-out infinite',
+        position: 'absolute', top: '-60%', left: '-25%',
+        width: '30%', height: '220%',
+        background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.22), transparent)',
+        animation: 'shimmerCard 4s ease-in-out infinite',
         pointerEvents: 'none', zIndex: 2,
       }} />
 
-      {/* Bordo interno sottile */}
+      {/* Bordo interno inciso */}
       <div style={{
-        position: 'absolute', top: '4px', left: '4px', right: '4px', bottom: '4px',
+        position: 'absolute', top: '5px', left: '5px', right: '5px', bottom: '5px',
         border: `1px solid ${cfg.innerBorder}`,
-        borderRadius: '11px',
+        borderRadius: '10px',
         pointerEvents: 'none', zIndex: 3,
       }} />
 
       {/* Overall + Ruolo */}
-      <div style={{ position: 'absolute', top: '10px', left: '12px', zIndex: 5, lineHeight: 1 }}>
-        <div style={{ fontSize: '2rem', fontWeight: 900, color: cfg.textDark, textShadow: '0 1px 2px rgba(255,255,255,0.25)', lineHeight: 1 }}>
+      <div style={{ position: 'absolute', top: '10px', left: '11px', zIndex: 6, lineHeight: 1 }}>
+        <div style={{
+          fontSize: '2.05rem', fontWeight: 900, color: cfg.textDark,
+          textShadow: '0 1px 0 rgba(255,255,255,0.3)',
+          lineHeight: 1,
+        }}>
           {giocatore.overall}
         </div>
-        <div style={{ fontSize: '0.58rem', fontWeight: 800, color: cfg.labelText, letterSpacing: '0.5px', marginTop: '3px', textTransform: 'uppercase' }}>
+        <div style={{
+          fontSize: '0.56rem', fontWeight: 800, color: cfg.labelText,
+          letterSpacing: '0.6px', marginTop: '3px', textTransform: 'uppercase',
+        }}>
           {giocatore.ruolo}
         </div>
       </div>
@@ -396,24 +421,21 @@ function FutStatCard({ giocatore, onClick }) {
       {/* IF badge */}
       {giocatore.isIF && (
         <div style={{
-          position: 'absolute', top: '8px', right: '8px', zIndex: 6,
-          background: 'rgba(0,212,255,0.2)',
-          border: '1px solid rgba(0,212,255,0.8)',
-          borderRadius: '6px',
+          position: 'absolute', top: '8px', right: '8px', zIndex: 7,
+          background: 'rgba(0,212,255,0.18)',
+          border: '1px solid rgba(0,212,255,0.82)',
+          borderRadius: '5px',
           padding: '2px 6px',
-          fontSize: '0.55rem', fontWeight: 900, color: '#00d4ff',
-          letterSpacing: '0.5px',
+          fontSize: '0.52rem', fontWeight: 900, color: '#00d4ff',
+          letterSpacing: '0.6px',
           animation: 'ifPulse 1.5s ease-in-out infinite',
         }}>
           IF ⚡
         </div>
       )}
 
-      {/* Player render layer — nessun frame visibile */}
-      <div
-        className="player-render-layer"
-        style={{ filter: cfg.dropShadow }}
-      >
+      {/* Player render layer — nessun frame, nessun clip */}
+      <div className="player-render-layer" style={{ filter: cfg.dropShadow }}>
         {giocatore.foto_url ? (
           <img src={giocatore.foto_url} alt={giocatore.nome} />
         ) : (
@@ -421,54 +443,57 @@ function FutStatCard({ giocatore, onClick }) {
         )}
       </div>
 
-      {/* Nome */}
+      {/* Nome — integrato come scritta sulla card, non badge */}
       <div style={{
         position: 'absolute',
-        bottom: '68px',
+        bottom: '66px',
         left: 0, right: 0,
         textAlign: 'center',
-        zIndex: 5,
-        padding: '0 8px',
+        zIndex: 6,
+        padding: '0 10px',
       }}>
-        <div style={{
-          display: 'inline-block',
-          background: cfg.nameBg,
-          backdropFilter: 'blur(4px)',
-          borderRadius: '4px',
-          padding: '1px 8px',
-          fontSize: '0.8rem', fontWeight: 900, color: cfg.textDark,
-          letterSpacing: '1.5px', textTransform: 'uppercase',
-          textShadow: '0 1px 0 rgba(255,255,255,0.2)',
-          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-          maxWidth: '100%',
+        <span style={{
+          fontSize: '0.78rem',
+          fontWeight: 900,
+          color: cfg.textDark,
+          letterSpacing: '2px',
+          textTransform: 'uppercase',
+          textShadow: '0 1px 3px rgba(0,0,0,0.35), 0 -1px 0 rgba(255,255,255,0.15)',
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          display: 'block',
+          // linea accent sotto il nome
+          borderBottom: `1px solid ${cfg.nameLine}`,
+          paddingBottom: '3px',
         }}>
           {cognome}
-        </div>
+        </span>
       </div>
 
-      {/* Stats bar */}
+      {/* Stats bar — glass/metal moderna */}
       <div style={{
         position: 'absolute', bottom: 0, left: 0, right: 0,
-        background: cfg.statsBar,
-        borderTop: `1px solid ${cfg.innerBorder}`,
-        padding: '7px 8px',
+        height: '62px',
+        background: `linear-gradient(180deg, rgba(0,0,0,0.0) 0%, ${cfg.statsGlass} 28%)`,
+        backdropFilter: 'blur(6px)',
+        borderTop: `1px solid ${cfg.sepColor}`,
         zIndex: 5,
+        display: 'flex',
+        alignItems: 'center',
+        padding: '0 6px',
       }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '3px' }}>
-          {[
-            { val: giocatore.partiteGiocate, label: 'PG' },
-            { val: giocatore.vittorie, label: 'V' },
-            { val: giocatore.gol, label: 'GOL' },
-            { val: giocatore.overall, label: 'OVR' },
-            { val: giocatore.pareggi, label: 'PAR' },
-            { val: giocatore.assist, label: 'ASS' },
-          ].map((s, i) => (
-            <div key={i} style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: '0.85rem', fontWeight: 900, color: cfg.statsText, lineHeight: 1 }}>{s.val}</div>
-              <div style={{ fontSize: '0.5rem', fontWeight: 700, color: 'rgba(255,255,255,0.45)', letterSpacing: '0.3px', textTransform: 'uppercase' }}>{s.label}</div>
-            </div>
-          ))}
-        </div>
+        {statsData.map((s, i) => (
+          <div key={i} style={{
+            flex: 1,
+            textAlign: 'center',
+            borderRight: i < statsData.length - 1 ? `1px solid ${cfg.sepColor}` : 'none',
+            padding: '4px 0',
+          }}>
+            <div style={{ fontSize: '0.84rem', fontWeight: 900, color: cfg.statsText, lineHeight: 1 }}>{s.val}</div>
+            <div style={{ fontSize: '0.46rem', fontWeight: 700, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.4px', textTransform: 'uppercase', marginTop: '2px' }}>{s.label}</div>
+          </div>
+        ))}
       </div>
     </div>
   )
