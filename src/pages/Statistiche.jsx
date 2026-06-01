@@ -26,6 +26,8 @@ const CARD_CONFIGS = {
     dropShadow: 'drop-shadow(0 8px 20px rgba(0,0,0,0.9)) drop-shadow(0 2px 8px rgba(200,140,0,0.45))',
     nameLine: 'rgba(255,215,0,0.6)',
     sepColor: 'rgba(255,220,60,0.25)',
+    accent: '#ffd700',
+    ovrRange: '75+',
   },
   silver: {
     bg: 'linear-gradient(155deg, #4a4a4a 0%, #909090 18%, #d8d8d8 34%, #f2f2f2 46%, #b8b8b8 58%, #787878 74%, #4a4a4a 100%)',
@@ -44,6 +46,8 @@ const CARD_CONFIGS = {
     dropShadow: 'drop-shadow(0 8px 20px rgba(0,0,0,0.9)) drop-shadow(0 2px 8px rgba(100,100,100,0.5))',
     nameLine: 'rgba(210,210,210,0.6)',
     sepColor: 'rgba(200,200,200,0.2)',
+    accent: '#c8c8c8',
+    ovrRange: '65–74',
   },
   bronze: {
     bg: 'linear-gradient(155deg, #3e1e08 0%, #8a4018 18%, #c87030 34%, #e89848 46%, #a05020 58%, #6a3010 74%, #3e1e08 100%)',
@@ -62,6 +66,8 @@ const CARD_CONFIGS = {
     dropShadow: 'drop-shadow(0 8px 20px rgba(0,0,0,0.9)) drop-shadow(0 2px 8px rgba(150,70,10,0.5))',
     nameLine: 'rgba(220,150,60,0.6)',
     sepColor: 'rgba(190,120,50,0.22)',
+    accent: '#cd7f32',
+    ovrRange: '–64',
   },
   if: {
     bg: 'linear-gradient(155deg, #050508 0%, #0e0e20 18%, #141830 34%, #0a2248 46%, #101828 58%, #080810 74%, #050508 100%)',
@@ -80,8 +86,17 @@ const CARD_CONFIGS = {
     dropShadow: 'drop-shadow(0 8px 24px rgba(0,0,0,0.95)) drop-shadow(0 0 14px rgba(0,212,255,0.55))',
     nameLine: 'rgba(0,212,255,0.5)',
     sepColor: 'rgba(0,212,255,0.18)',
+    accent: '#00d4ff',
+    ovrRange: 'MVP',
   },
 }
+
+const LEGEND_ITEMS = [
+  { key: 'if',     label: 'IN FORM', sub: 'MVP ultima partita', dot: '#00d4ff' },
+  { key: 'gold',   label: 'ORO',     sub: 'OVR 75+',           dot: '#ffd700' },
+  { key: 'silver', label: 'ARGENTO', sub: 'OVR 65–74',         dot: '#c8c8c8' },
+  { key: 'bronze', label: 'BRONZO',  sub: 'OVR –64',           dot: '#cd7f32' },
+]
 
 function Statistiche() {
   const [giocatori, setGiocatori] = useState([])
@@ -139,46 +154,62 @@ function Statistiche() {
     <div>
       <style>{`
         @keyframes fadeInUp {
-          from { opacity: 0; transform: translateY(25px); }
-          to { opacity: 1; transform: translateY(0); }
+          from { opacity: 0; transform: translateY(20px); }
+          to   { opacity: 1; transform: translateY(0); }
         }
         @keyframes shimmerCard {
-          0% { transform: translateX(-120%) skewX(-12deg); }
-          100% { transform: translateX(320%) skewX(-12deg); }
+          0%   { transform: translateX(-120%) skewX(-12deg); }
+          100% { transform: translateX(320%)  skewX(-12deg); }
         }
         @keyframes floatIF {
           0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-7px); }
+          50%      { transform: translateY(-7px); }
         }
         @keyframes glowIF {
           0%, 100% { box-shadow: 0 0 18px rgba(0,212,255,0.5), 0 0 36px rgba(0,212,255,0.18), 0 14px 32px rgba(0,0,0,0.7); }
-          50% { box-shadow: 0 0 36px rgba(0,212,255,0.8), 0 0 70px rgba(0,212,255,0.35), 0 14px 38px rgba(0,0,0,0.8); }
+          50%      { box-shadow: 0 0 36px rgba(0,212,255,0.8), 0 0 70px rgba(0,212,255,0.35), 0 14px 38px rgba(0,0,0,0.8); }
         }
         @keyframes glowGold {
           0%, 100% { box-shadow: 0 0 14px rgba(255,215,0,0.4), 0 10px 28px rgba(0,0,0,0.6); }
-          50% { box-shadow: 0 0 28px rgba(255,215,0,0.65), 0 10px 34px rgba(0,0,0,0.7); }
+          50%      { box-shadow: 0 0 28px rgba(255,215,0,0.65), 0 10px 34px rgba(0,0,0,0.7); }
         }
         @keyframes glowSilver {
           0%, 100% { box-shadow: 0 0 10px rgba(192,192,192,0.3), 0 10px 24px rgba(0,0,0,0.6); }
-          50% { box-shadow: 0 0 22px rgba(192,192,192,0.5), 0 10px 30px rgba(0,0,0,0.7); }
+          50%      { box-shadow: 0 0 22px rgba(192,192,192,0.5), 0 10px 30px rgba(0,0,0,0.7); }
         }
         @keyframes glowBronze {
           0%, 100% { box-shadow: 0 0 10px rgba(205,127,50,0.35), 0 10px 24px rgba(0,0,0,0.6); }
-          50% { box-shadow: 0 0 22px rgba(205,127,50,0.55), 0 10px 30px rgba(0,0,0,0.7); }
+          50%      { box-shadow: 0 0 22px rgba(205,127,50,0.55), 0 10px 30px rgba(0,0,0,0.7); }
         }
         @keyframes ifPulse {
           0%, 100% { opacity: 1; }
-          50% { opacity: 0.55; }
+          50%      { opacity: 0.55; }
+        }
+        @keyframes iconGlow {
+          0%, 100% { box-shadow: 0 0 10px rgba(0,212,255,0.2), inset 0 0 12px rgba(0,212,255,0.06); }
+          50%      { box-shadow: 0 0 20px rgba(0,212,255,0.35), inset 0 0 16px rgba(0,212,255,0.1); }
         }
 
-        .card-if  { animation: glowIF 2s ease-in-out infinite, floatIF 3.5s ease-in-out infinite; }
-        .card-gold   { animation: glowGold 3s ease-in-out infinite; }
+        .card-if     { animation: glowIF 2s ease-in-out infinite, floatIF 3.5s ease-in-out infinite; }
+        .card-gold   { animation: glowGold   3s   ease-in-out infinite; }
         .card-silver { animation: glowSilver 3.5s ease-in-out infinite; }
-        .card-bronze { animation: glowBronze 4s ease-in-out infinite; }
+        .card-bronze { animation: glowBronze 4s   ease-in-out infinite; }
         .stat-card { transition: transform 0.28s ease !important; }
         .stat-card:hover { transform: translateY(-9px) scale(1.03) !important; }
 
-        /* Layer render giocatore — nessun frame, nessun clip */
+        .page-icon-box {
+          width: 48px;
+          height: 48px;
+          flex-shrink: 0;
+          border-radius: 13px;
+          background: rgba(0,212,255,0.07);
+          border: 1px solid rgba(0,212,255,0.38);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          animation: iconGlow 3s ease-in-out infinite;
+        }
+
         .player-render-layer {
           position: absolute;
           top: 8px;
@@ -207,7 +238,6 @@ function Statistiche() {
           opacity: 0.5;
         }
 
-        /* Modal */
         .modal-player-layer {
           width: 90px;
           height: 118px;
@@ -223,51 +253,132 @@ function Statistiche() {
           object-position: bottom center;
           display: block;
         }
-        .modal-player-placeholder {
-          font-size: 3rem;
-          opacity: 0.55;
-        }
+        .modal-player-placeholder { font-size: 3rem; opacity: 0.55; }
       `}</style>
 
-      {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem', animation: 'fadeInUp 0.4s ease' }}>
-        <div style={{ fontSize: '3rem' }}>📊</div>
-        <div>
-          <h1 style={{ fontSize: '2.5rem', fontWeight: 900, marginBottom: '0.25rem' }}>Statistiche</h1>
-          <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.95rem' }}>Numeri e prestazioni di ogni giocatore.</p>
-        </div>
-      </div>
+      {/* ── PAGE HEADER ───────────────────────────────────────────── */}
+      <div style={{ marginBottom: '1.75rem', animation: 'fadeInUp 0.35s ease' }}>
 
-      {/* Legenda */}
-      <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '2rem', flexWrap: 'wrap', animation: 'fadeInUp 0.4s ease 0.1s both' }}>
-        {[
-          { label: 'IN FORM', desc: 'MVP ultima partita', bg: CARD_CONFIGS.if.labelBg, color: CARD_CONFIGS.if.labelColor },
-          { label: 'ORO', desc: 'OVR 75+', bg: CARD_CONFIGS.gold.labelBg, color: CARD_CONFIGS.gold.labelColor },
-          { label: 'ARGENTO', desc: 'OVR 65–74', bg: CARD_CONFIGS.silver.labelBg, color: CARD_CONFIGS.silver.labelColor },
-          { label: 'BRONZO', desc: 'OVR 64–', bg: CARD_CONFIGS.bronze.labelBg, color: CARD_CONFIGS.bronze.labelColor },
-        ].map(t => (
-          <div key={t.label} style={{ background: t.bg, border: `1px solid ${t.color}`, borderRadius: '8px', padding: '0.3rem 0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <span style={{ fontSize: '0.75rem', fontWeight: 800, color: t.color }}>{t.label}</span>
-            <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)' }}>{t.desc}</span>
+        {/* Titolo + icona */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.9rem', marginBottom: '0.5rem' }}>
+          {/* Icon box — CSS bar chart, niente emoji */}
+          <div className="page-icon-box">
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: '3px', height: '22px' }}>
+              {[55, 100, 75, 42].map((h, i) => (
+                <div key={i} style={{
+                  width: '5px',
+                  height: `${h}%`,
+                  background: i === 1 ? '#00d4ff' : `rgba(0,212,255,${0.45 + i * 0.05})`,
+                  borderRadius: '2px 2px 0 0',
+                }} />
+              ))}
+            </div>
           </div>
-        ))}
+
+          <div>
+            <h1 style={{
+              margin: 0,
+              fontSize: 'clamp(1.55rem, 5vw, 2.2rem)',
+              fontWeight: 900,
+              fontFamily: 'system-ui, -apple-system, sans-serif',
+              letterSpacing: '0.04em',
+              textTransform: 'uppercase',
+              color: '#fff',
+              lineHeight: 1,
+            }}>
+              Statistiche
+            </h1>
+            <p style={{
+              margin: '4px 0 0',
+              fontSize: '0.82rem',
+              color: 'rgba(255,255,255,0.38)',
+              fontWeight: 500,
+              letterSpacing: '0.02em',
+            }}>
+              Performance e numeri — stagione in corso
+            </p>
+          </div>
+        </div>
+
+        {/* Divisore accent */}
+        <div style={{
+          height: '1px',
+          background: 'linear-gradient(90deg, rgba(0,212,255,0.45) 0%, rgba(0,212,255,0.08) 60%, transparent 100%)',
+          marginTop: '0.85rem',
+        }} />
       </div>
 
-      {/* Grid */}
+      {/* ── LEGENDA RARITÀ ────────────────────────────────────────── */}
+      <div style={{
+        display: 'flex',
+        gap: '0.5rem',
+        marginBottom: '1.75rem',
+        flexWrap: 'wrap',
+        animation: 'fadeInUp 0.35s ease 0.08s both',
+      }}>
+        {LEGEND_ITEMS.map(item => {
+          const cfg = CARD_CONFIGS[item.key]
+          return (
+            <div key={item.key} style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              background: 'rgba(255,255,255,0.03)',
+              border: `1px solid ${cfg.border}`,
+              borderRadius: '10px',
+              padding: '0.4rem 0.7rem',
+              backdropFilter: 'blur(4px)',
+            }}>
+              {/* Dot colorato */}
+              <div style={{
+                width: '7px',
+                height: '7px',
+                borderRadius: '50%',
+                background: item.dot,
+                boxShadow: `0 0 6px ${item.dot}`,
+                flexShrink: 0,
+              }} />
+              <div>
+                <div style={{
+                  fontSize: '0.68rem',
+                  fontWeight: 800,
+                  color: cfg.labelColor,
+                  letterSpacing: '0.06em',
+                  textTransform: 'uppercase',
+                  lineHeight: 1,
+                }}>
+                  {item.label}
+                </div>
+                <div style={{
+                  fontSize: '0.6rem',
+                  color: 'rgba(255,255,255,0.32)',
+                  marginTop: '2px',
+                  lineHeight: 1,
+                }}>
+                  {item.sub}
+                </div>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
+      {/* ── GRID CARD ─────────────────────────────────────────────── */}
       <div style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fill, minmax(min(160px, 28vw), 1fr))',
         gap: '1.1rem',
         justifyItems: 'center',
+        animation: 'fadeInUp 0.35s ease 0.14s both',
       }}>
         {giocatoriOrdinati.map((g, i) => (
-          <div key={g.id} style={{ animation: `fadeInUp 0.4s ease ${i * 0.05}s both`, width: '100%', maxWidth: '200px' }}>
+          <div key={g.id} style={{ animation: `fadeInUp 0.35s ease ${0.14 + i * 0.04}s both`, width: '100%', maxWidth: '200px' }}>
             <FutStatCard giocatore={g} onClick={() => setSelected(selected === g.id ? null : g.id)} />
           </div>
         ))}
       </div>
 
-      {/* Modal */}
+      {/* ── MODAL ─────────────────────────────────────────────────── */}
       {selected && (() => {
         const g = giocatoriConStats.find(x => x.id === selected)
         if (!g) return null
@@ -304,12 +415,12 @@ function Statistiche() {
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.6rem', marginBottom: '1.25rem' }}>
                 {[
-                  { label: 'Partite', value: g.partiteGiocate, color: '#fff' },
-                  { label: 'Vittorie', value: g.vittorie, color: '#00d4ff' },
-                  { label: 'Pareggi', value: g.pareggi, color: '#ffd700' },
-                  { label: 'Sconfitte', value: g.sconfitte, color: '#ef4444' },
-                  { label: 'Gol', value: g.gol, color: '#00ff88' },
-                  { label: 'Assist', value: g.assist, color: '#a78bfa' },
+                  { label: 'Partite',   value: g.partiteGiocate, color: '#fff'    },
+                  { label: 'Vittorie',  value: g.vittorie,        color: '#00d4ff' },
+                  { label: 'Pareggi',   value: g.pareggi,         color: '#ffd700' },
+                  { label: 'Sconfitte', value: g.sconfitte,       color: '#ef4444' },
+                  { label: 'Gol',       value: g.gol,             color: '#00ff88' },
+                  { label: 'Assist',    value: g.assist,          color: '#a78bfa' },
                 ].map(s => (
                   <div key={s.label} style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '12px', padding: '0.9rem 0.5rem', textAlign: 'center' }}>
                     <div style={{ fontSize: '1.7rem', fontWeight: 900, color: s.color }}>{s.value}</div>
@@ -343,12 +454,12 @@ function FutStatCard({ giocatore, onClick }) {
   const cognome = nomeParti.length > 1 ? nomeParti[nomeParti.length - 1].toUpperCase() : giocatore.nome.toUpperCase()
 
   const statsData = [
-    { val: giocatore.partiteGiocate, label: 'PG' },
-    { val: giocatore.vittorie,       label: 'V'  },
-    { val: giocatore.gol,            label: 'GOL'},
-    { val: giocatore.overall,        label: 'OVR'},
-    { val: giocatore.pareggi,        label: 'PAR'},
-    { val: giocatore.assist,         label: 'ASS'},
+    { val: giocatore.partiteGiocate, label: 'PG'  },
+    { val: giocatore.vittorie,       label: 'V'   },
+    { val: giocatore.gol,            label: 'GOL' },
+    { val: giocatore.overall,        label: 'OVR' },
+    { val: giocatore.pareggi,        label: 'PAR' },
+    { val: giocatore.assist,         label: 'ASS' },
   ]
 
   return (
@@ -369,22 +480,13 @@ function FutStatCard({ giocatore, onClick }) {
         transform: hovered ? 'translateY(-9px) scale(1.03)' : 'translateY(0) scale(1)',
       }}
     >
-      {/* Pattern geometrico sottile */}
-      <div style={{
-        position: 'absolute', inset: 0,
-        background: cfg.pattern,
-        opacity: 0.9,
-        pointerEvents: 'none', zIndex: 0,
-      }} />
+      {/* Pattern geometrico */}
+      <div style={{ position: 'absolute', inset: 0, background: cfg.pattern, pointerEvents: 'none', zIndex: 0 }} />
 
-      {/* Foil overlay */}
-      <div style={{
-        position: 'absolute', inset: 0,
-        background: cfg.foil,
-        pointerEvents: 'none', zIndex: 1,
-      }} />
+      {/* Foil */}
+      <div style={{ position: 'absolute', inset: 0, background: cfg.foil, pointerEvents: 'none', zIndex: 1 }} />
 
-      {/* Shimmer sweep */}
+      {/* Shimmer */}
       <div style={{
         position: 'absolute', top: '-60%', left: '-25%',
         width: '30%', height: '220%',
@@ -393,7 +495,7 @@ function FutStatCard({ giocatore, onClick }) {
         pointerEvents: 'none', zIndex: 2,
       }} />
 
-      {/* Bordo interno inciso */}
+      {/* Bordo interno */}
       <div style={{
         position: 'absolute', top: '5px', left: '5px', right: '5px', bottom: '5px',
         border: `1px solid ${cfg.innerBorder}`,
@@ -403,17 +505,10 @@ function FutStatCard({ giocatore, onClick }) {
 
       {/* Overall + Ruolo */}
       <div style={{ position: 'absolute', top: '10px', left: '11px', zIndex: 6, lineHeight: 1 }}>
-        <div style={{
-          fontSize: '2.05rem', fontWeight: 900, color: cfg.textDark,
-          textShadow: '0 1px 0 rgba(255,255,255,0.3)',
-          lineHeight: 1,
-        }}>
+        <div style={{ fontSize: '2.05rem', fontWeight: 900, color: cfg.textDark, textShadow: '0 1px 0 rgba(255,255,255,0.3)', lineHeight: 1 }}>
           {giocatore.overall}
         </div>
-        <div style={{
-          fontSize: '0.56rem', fontWeight: 800, color: cfg.labelText,
-          letterSpacing: '0.6px', marginTop: '3px', textTransform: 'uppercase',
-        }}>
+        <div style={{ fontSize: '0.56rem', fontWeight: 800, color: cfg.labelText, letterSpacing: '0.6px', marginTop: '3px', textTransform: 'uppercase' }}>
           {giocatore.ruolo}
         </div>
       </div>
@@ -434,7 +529,7 @@ function FutStatCard({ giocatore, onClick }) {
         </div>
       )}
 
-      {/* Player render layer — nessun frame, nessun clip */}
+      {/* Player render layer */}
       <div className="player-render-layer" style={{ filter: cfg.dropShadow }}>
         {giocatore.foto_url ? (
           <img src={giocatore.foto_url} alt={giocatore.nome} />
@@ -443,15 +538,8 @@ function FutStatCard({ giocatore, onClick }) {
         )}
       </div>
 
-      {/* Nome — integrato come scritta sulla card, non badge */}
-      <div style={{
-        position: 'absolute',
-        bottom: '66px',
-        left: 0, right: 0,
-        textAlign: 'center',
-        zIndex: 6,
-        padding: '0 10px',
-      }}>
+      {/* Nome */}
+      <div style={{ position: 'absolute', bottom: '66px', left: 0, right: 0, textAlign: 'center', zIndex: 6, padding: '0 10px' }}>
         <span style={{
           fontSize: '0.78rem',
           fontWeight: 900,
@@ -463,7 +551,6 @@ function FutStatCard({ giocatore, onClick }) {
           overflow: 'hidden',
           textOverflow: 'ellipsis',
           display: 'block',
-          // linea accent sotto il nome
           borderBottom: `1px solid ${cfg.nameLine}`,
           paddingBottom: '3px',
         }}>
@@ -471,7 +558,7 @@ function FutStatCard({ giocatore, onClick }) {
         </span>
       </div>
 
-      {/* Stats bar — glass/metal moderna */}
+      {/* Stats bar glass */}
       <div style={{
         position: 'absolute', bottom: 0, left: 0, right: 0,
         height: '62px',
