@@ -159,14 +159,18 @@ function Layout({ children, currentUser, onLogout, tabs = [], activeTab, onTabCh
                 borderRadius: '50%',
                 background: isAdmin
                   ? 'linear-gradient(135deg, #00d4ff, #0099ff)'
-                  : 'linear-gradient(135deg, #00d4ff, #6366f1)',
+                  : 'linear-gradient(135deg, #6366f1, #00d4ff)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                fontSize: '0.85rem',
-                flexShrink: 0
+                fontSize: '0.78rem',
+                fontWeight: 900,
+                letterSpacing: '0',
+                color: '#0f1729',
+                flexShrink: 0,
+                textTransform: 'uppercase'
               }}>
-                {isAdmin ? '⚡' : '👤'}
+                {firstName[0] || '?'}
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.05 }}>
                 <span style={{ fontWeight: 800, fontSize: '0.82rem', whiteSpace: 'nowrap' }}>{firstName}</span>
@@ -176,15 +180,17 @@ function Layout({ children, currentUser, onLogout, tabs = [], activeTab, onTabCh
               </div>
               {isAdmin && (
                 <div style={{
-                  background: 'linear-gradient(135deg, #ffd700, #ffa500)',
-                  color: '#0f1729',
-                  fontSize: '0.58rem',
+                  background: 'rgba(0,212,255,0.10)',
+                  border: '1px solid rgba(0,212,255,0.45)',
+                  color: '#00d4ff',
+                  fontSize: '0.52rem',
                   fontWeight: 900,
-                  padding: '0.16rem 0.42rem',
-                  borderRadius: '999px',
-                  letterSpacing: '0.5px'
+                  padding: '0.14rem 0.38rem',
+                  borderRadius: '4px',
+                  letterSpacing: '1px',
+                  textTransform: 'uppercase'
                 }}>
-                  ADMIN
+                  ADM
                 </div>
               )}
             </div>
@@ -256,14 +262,16 @@ function Layout({ children, currentUser, onLogout, tabs = [], activeTab, onTabCh
                       </div>
                       {isAdmin && (
                         <div style={{
-                          background: 'linear-gradient(135deg, #ffd700, #ffa500)',
-                          color: '#0f1729',
-                          borderRadius: '999px',
-                          padding: '0.24rem 0.55rem',
+                          background: 'rgba(0,212,255,0.10)',
+                          border: '1px solid rgba(0,212,255,0.45)',
+                          color: '#00d4ff',
+                          borderRadius: '4px',
+                          padding: '0.2rem 0.5rem',
                           fontWeight: 900,
-                          fontSize: '0.62rem',
-                          letterSpacing: '0.6px'
-                        }}>ADMIN</div>
+                          fontSize: '0.58rem',
+                          letterSpacing: '1px',
+                          textTransform: 'uppercase'
+                        }}>ADM</div>
                       )}
                     </div>
                   </div>

@@ -321,12 +321,12 @@ function App() {
   }
 
   const tabs = [
-    ...(currentUser?.role === 'player' ? [{ id: 'dashboard', icon: '🏠', label: 'Dashboard' }] : []),
-    { id: 'calendario', icon: '📅', label: 'Calendario' },
-    { id: 'statistiche', icon: '📊', label: 'Stats' },
-    { id: 'classifica', icon: '🏆', label: 'Classifica' },
-    { id: 'scommesse', icon: '🎰', label: 'Scommesse' },
-    ...(currentUser?.role === 'admin' ? [{ id: 'admin', icon: '⚙️', label: 'Admin' }] : []),
+    ...(currentUser?.role === 'player' ? [{ id: 'dashboard', icon: '⬡', label: 'Dashboard' }] : []),
+    { id: 'calendario', icon: '◫', label: 'Calendario' },
+    { id: 'statistiche', icon: '▦', label: 'Stats' },
+    { id: 'classifica', icon: '◈', label: 'Classifica' },
+    { id: 'scommesse', icon: '◇', label: 'Scommesse' },
+    ...(currentUser?.role === 'admin' ? [{ id: 'admin', icon: '⊞', label: 'Admin' }] : []),
   ]
 
   return (
