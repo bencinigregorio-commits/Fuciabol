@@ -105,37 +105,40 @@ function Classifica() {
           animation: fadeInUp 0.35s ease both;
         }
 
+        @keyframes iconGlow {
+          0%, 100% { box-shadow: 0 0 14px rgba(0,212,255,0.18), 0 4px 18px rgba(0,0,0,0.4); }
+          50% { box-shadow: 0 0 26px rgba(0,212,255,0.32), 0 4px 22px rgba(0,0,0,0.45); }
+        }
+
         .classifica-icon {
-          width: 58px;
-          height: 58px;
-          border-radius: 20px;
+          width: 52px;
+          height: 52px;
+          border-radius: 16px;
           display: flex;
           align-items: center;
           justify-content: center;
-          font-size: 2rem;
-          background: radial-gradient(circle at 35% 25%, rgba(255,215,0,0.35), rgba(0,212,255,0.12) 44%, rgba(15,23,41,0.78) 100%);
-          border: 1px solid rgba(255,255,255,0.1);
-          box-shadow: 0 16px 35px rgba(0,0,0,0.35);
+          background: linear-gradient(145deg, rgba(0,212,255,0.12), rgba(10,16,30,0.9));
+          border: 1px solid rgba(0,212,255,0.28);
+          animation: iconGlow 3s ease-in-out infinite;
           flex-shrink: 0;
         }
 
         .classifica-title {
-          margin: 0 0 0.25rem 0;
-          font-size: clamp(2rem, 7vw, 2.8rem);
-          font-weight: 950;
-          letter-spacing: -1px;
-          line-height: 0.95;
-          background: linear-gradient(135deg, #fff 0%, #e9fbff 45%, #00d4ff 100%);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
+          margin: 0 0 0.22rem 0;
+          font-size: clamp(1.5rem, 6vw, 2rem);
+          font-weight: 900;
+          letter-spacing: -0.5px;
+          line-height: 1;
+          font-family: system-ui, -apple-system, sans-serif;
+          color: #fff;
         }
 
         .classifica-subtitle {
           margin: 0;
-          color: rgba(255,255,255,0.48);
-          font-size: clamp(0.78rem, 3vw, 0.95rem);
-          font-weight: 650;
+          color: rgba(255,255,255,0.42);
+          font-size: clamp(0.72rem, 2.8vw, 0.82rem);
+          font-weight: 500;
+          letter-spacing: 0.2px;
         }
 
         .filter-grid {
@@ -649,12 +652,18 @@ function Classifica() {
       `}</style>
 
       <div className="classifica-hero">
-        <div className="classifica-icon">🏆</div>
+        <div className="classifica-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#00d4ff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M8 21h8M12 17v4M17 3H7l-2 7c0 2.2 3.1 4 7 4s7-1.8 7-4L17 3z"/>
+            <path d="M5 10c-2 0-3 1-3 2.5S3 15 5 15M19 10c2 0 3 1 3 2.5S21 15 19 15"/>
+          </svg>
+        </div>
         <div style={{ minWidth: 0 }}>
           <h1 className="classifica-title">Classifica</h1>
-          <p className="classifica-subtitle">Vittoria 3 punti • Pareggio 1 • Sconfitta 0</p>
+          <p className="classifica-subtitle">Vittoria 3 punti · Pareggio 1 · Sconfitta 0</p>
         </div>
       </div>
+      <div style={{ height: '2px', background: 'linear-gradient(90deg, rgba(0,212,255,0.5), rgba(0,212,255,0.08), transparent)', borderRadius: '2px', marginBottom: '1.5rem' }} />
 
       <div className="filter-grid">
         {FILTERS.map(filter => (

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../supabase'
 import { calcolaVotoFinale, votoToPuntiForma, aggiornaOverall } from './calcoli'
-import { calcolaQuoteRisultato, calcolaQuoteMiglioreInCampo, calcolaQuoteCapocannoniere, verificaVincitaRisultato, verificaVincitaMiglioreInCampo, verificaVincitaCapocannoniere } from './scommesseCalcoli.js'
+import { calcolaQuoteRisultato, calcolaQuoteMiglioreInCampo, calcolaQuoteCapocannoniere, verificaVincitaRisultato, verificaVincitaMiglioreInCampo, verificaVincitaCapocannoniere } from './scommesseCalcoli'
 
 function Calendario({ currentUser }) {
   const [partite, setPartite] = useState([])
@@ -109,18 +109,35 @@ function Calendario({ currentUser }) {
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
+      <style>{`
+        @keyframes iconGlowCal {
+          0%, 100% { box-shadow: 0 0 14px rgba(0,212,255,0.18), 0 4px 18px rgba(0,0,0,0.4); }
+          50% { box-shadow: 0 0 26px rgba(0,212,255,0.32), 0 4px 22px rgba(0,0,0,0.45); }
+        }
+      `}</style>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0', flexWrap: 'wrap', gap: '1rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <div style={{ fontSize: '3rem' }}>📅</div>
+          <div style={{
+            width: '52px', height: '52px', borderRadius: '16px', flexShrink: 0,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            background: 'linear-gradient(145deg, rgba(0,212,255,0.12), rgba(10,16,30,0.9))',
+            border: '1px solid rgba(0,212,255,0.28)',
+            animation: 'iconGlowCal 3s ease-in-out infinite'
+          }}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#00d4ff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="4" width="18" height="18" rx="3"/>
+              <path d="M16 2v4M8 2v4M3 10h18"/>
+            </svg>
+          </div>
           <div>
-            <h1 style={{ fontSize: '2.5rem', fontWeight: 900, marginBottom: '0.25rem' }}>Calendario</h1>
-            <p style={{ color: 'rgba(255, 255, 255, 0.5)', fontSize: '0.95rem' }}>Partite giocate e in programma.</p>
+            <h1 style={{ margin: '0 0 0.22rem 0', fontSize: 'clamp(1.5rem, 6vw, 2rem)', fontWeight: 900, letterSpacing: '-0.5px', lineHeight: 1, fontFamily: 'system-ui, -apple-system, sans-serif', color: '#fff' }}>Calendario</h1>
+            <p style={{ margin: 0, color: 'rgba(255,255,255,0.42)', fontSize: 'clamp(0.72rem, 2.8vw, 0.82rem)', fontWeight: 500, letterSpacing: '0.2px' }}>Partite giocate e in programma.</p>
           </div>
         </div>
         {isAdmin && (
           <button
             onClick={() => setShowModal(true)}
-            style={{ background: 'linear-gradient(135deg, #00d4ff, #0099ff)', border: 'none', borderRadius: '12px', padding: '0.8rem 1.5rem', color: '#0f1729', fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 15px rgba(0, 212, 255, 0.4)', transition: 'all 0.3s' }}
+            style={{ background: 'linear-gradient(135deg, #00d4ff, #0099ff)', border: 'none', borderRadius: '12px', padding: '0.7rem 1.3rem', color: '#0f1729', fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 15px rgba(0,212,255,0.4)', transition: 'all 0.2s', fontSize: '0.9rem' }}
             onMouseOver={(e) => e.target.style.transform = 'translateY(-2px)'}
             onMouseOut={(e) => e.target.style.transform = 'translateY(0)'}
           >
@@ -128,6 +145,7 @@ function Calendario({ currentUser }) {
           </button>
         )}
       </div>
+      <div style={{ height: '2px', background: 'linear-gradient(90deg, rgba(0,212,255,0.5), rgba(0,212,255,0.08), transparent)', borderRadius: '2px', margin: '1.25rem 0 1.75rem' }} />
 
       {/* GAZZETTA FUCIABOL */}
       {partite.filter(p => p.stato === 'chiusa').length > 0 && (
