@@ -629,8 +629,8 @@ function Classifica() {
           </svg>
         </div>
         <div style={{ minWidth: 0 }}>
-          <h1 style={{ margin: '0 0 0.25rem 0', fontSize: 'clamp(1.8rem, 6vw, 2.2rem)', fontWeight: 900, letterSpacing: '-0.5px', lineHeight: 1, fontFamily: 'system-ui, -apple-system, sans-serif', background: 'linear-gradient(135deg, #fff 0%, #e0f8ff 55%, #00d4ff 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>Classifica</h1>
-          <p style={{ margin: 0, color: 'rgba(255,255,255,0.38)', fontSize: '0.78rem', fontWeight: 500, letterSpacing: '0.4px' }}>Vittoria 3pt · Pareggio 1pt · Sconfitta 0pt</p>
+          <h1 style={{ margin: '0 0 0.3rem 0', fontSize: 'clamp(1.4rem, 5vw, 1.75rem)', fontWeight: 900, letterSpacing: '3px', lineHeight: 1, fontFamily: 'system-ui, -apple-system, sans-serif', textTransform: 'uppercase', background: 'linear-gradient(135deg, #fff 0%, #e0f8ff 55%, #00d4ff 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>Classifica</h1>
+          <p style={{ margin: 0, color: 'rgba(255,255,255,0.38)', fontSize: '0.7rem', fontWeight: 600, letterSpacing: '1.5px', textTransform: 'uppercase' }}>Vittoria 3pt · Pareggio 1pt · Sconfitta 0pt</p>
         </div>
       </div>
       <div style={{ height: '1px', background: 'linear-gradient(90deg, rgba(0,212,255,0.55), rgba(0,212,255,0.1), transparent)', margin: '1.1rem 0 1.5rem' }} />
