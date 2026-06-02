@@ -101,44 +101,8 @@ function Classifica() {
           display: flex;
           align-items: center;
           gap: 1rem;
-          margin-bottom: 1.5rem;
+          margin-bottom: 0;
           animation: fadeInUp 0.35s ease both;
-        }
-
-        @keyframes iconGlow {
-          0%, 100% { box-shadow: 0 0 14px rgba(0,212,255,0.18), 0 4px 18px rgba(0,0,0,0.4); }
-          50% { box-shadow: 0 0 26px rgba(0,212,255,0.32), 0 4px 22px rgba(0,0,0,0.45); }
-        }
-
-        .classifica-icon {
-          width: 52px;
-          height: 52px;
-          border-radius: 16px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          background: linear-gradient(145deg, rgba(0,212,255,0.12), rgba(10,16,30,0.9));
-          border: 1px solid rgba(0,212,255,0.28);
-          animation: iconGlow 3s ease-in-out infinite;
-          flex-shrink: 0;
-        }
-
-        .classifica-title {
-          margin: 0 0 0.22rem 0;
-          font-size: clamp(1.5rem, 6vw, 2rem);
-          font-weight: 900;
-          letter-spacing: -0.5px;
-          line-height: 1;
-          font-family: system-ui, -apple-system, sans-serif;
-          color: #fff;
-        }
-
-        .classifica-subtitle {
-          margin: 0;
-          color: rgba(255,255,255,0.42);
-          font-size: clamp(0.72rem, 2.8vw, 0.82rem);
-          font-weight: 500;
-          letter-spacing: 0.2px;
         }
 
         .filter-grid {
@@ -652,18 +616,24 @@ function Classifica() {
       `}</style>
 
       <div className="classifica-hero">
-        <div className="classifica-icon">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#00d4ff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <div style={{
+          width: '52px', height: '52px', borderRadius: '16px', flexShrink: 0,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          background: 'linear-gradient(145deg, rgba(0,212,255,0.12), rgba(10,16,30,0.9))',
+          border: '1px solid rgba(0,212,255,0.28)',
+          boxShadow: '0 0 18px rgba(0,212,255,0.18), 0 4px 18px rgba(0,0,0,0.4)'
+        }}>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#00d4ff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M8 21h8M12 17v4M17 3H7l-2 7c0 2.2 3.1 4 7 4s7-1.8 7-4L17 3z"/>
             <path d="M5 10c-2 0-3 1-3 2.5S3 15 5 15M19 10c2 0 3 1 3 2.5S21 15 19 15"/>
           </svg>
         </div>
         <div style={{ minWidth: 0 }}>
-          <h1 className="classifica-title">Classifica</h1>
-          <p className="classifica-subtitle">Vittoria 3 punti · Pareggio 1 · Sconfitta 0</p>
+          <h1 style={{ margin: '0 0 0.25rem 0', fontSize: 'clamp(1.8rem, 6vw, 2.2rem)', fontWeight: 900, letterSpacing: '-0.5px', lineHeight: 1, fontFamily: 'system-ui, -apple-system, sans-serif', background: 'linear-gradient(135deg, #fff 0%, #e0f8ff 55%, #00d4ff 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>Classifica</h1>
+          <p style={{ margin: 0, color: 'rgba(255,255,255,0.38)', fontSize: '0.78rem', fontWeight: 500, letterSpacing: '0.4px' }}>Vittoria 3pt · Pareggio 1pt · Sconfitta 0pt</p>
         </div>
       </div>
-      <div style={{ height: '2px', background: 'linear-gradient(90deg, rgba(0,212,255,0.5), rgba(0,212,255,0.08), transparent)', borderRadius: '2px', marginBottom: '1.5rem' }} />
+      <div style={{ height: '1px', background: 'linear-gradient(90deg, rgba(0,212,255,0.55), rgba(0,212,255,0.1), transparent)', margin: '1.1rem 0 1.5rem' }} />
 
       <div className="filter-grid">
         {FILTERS.map(filter => (
