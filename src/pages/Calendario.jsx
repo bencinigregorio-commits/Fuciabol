@@ -699,14 +699,14 @@ function PartitaCard({ partita, currentUser, onVoteClick, onChiudiVoti, onScomme
                     )}
                   </div>
                   {stato === 'live' && currentUser?.role === 'admin' && (
-                    <div style={{ display: 'flex', gap: '0.25rem', marginTop: '0.3rem', paddingLeft: '28px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.35rem', marginTop: '0.45rem', paddingLeft: '28px' }}>
                       {[
-                        { label: '+G', field: 'gol', delta: 1, color: '#00ff88' },
-                        { label: '-G', field: 'gol', delta: -1, color: '#ff6b6b', disabled: !(liveEventi[id]?.gol > 0) },
-                        { label: '+A', field: 'assist', delta: 1, color: '#00d4ff' },
-                        { label: '-A', field: 'assist', delta: -1, color: '#ff9f43', disabled: !(liveEventi[id]?.assist > 0) },
+                        { label: '+G', field: 'gol', delta: 1, bg: 'rgba(0,255,136,0.15)', color: '#00ff88', disabled: false },
+                        { label: '−G', field: 'gol', delta: -1, bg: 'rgba(255,107,107,0.15)', color: '#ff6b6b', disabled: !(liveEventi[id]?.gol > 0) },
+                        { label: '+A', field: 'assist', delta: 1, bg: 'rgba(0,212,255,0.15)', color: '#00d4ff', disabled: false },
+                        { label: '−A', field: 'assist', delta: -1, bg: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.45)', disabled: !(liveEventi[id]?.assist > 0) },
                       ].map(btn => (
-                        <button key={btn.label} onClick={() => aggiornaEventoLive(id, btn.field, btn.delta)} disabled={btn.disabled || liveSaving} style={{ padding: '0.15rem 0.4rem', borderRadius: '5px', fontSize: '0.6rem', fontWeight: 800, border: 'none', cursor: btn.disabled ? 'default' : 'pointer', background: btn.disabled ? 'rgba(255,255,255,0.05)' : `rgba(${btn.color === '#00ff88' ? '0,255,136' : btn.color === '#ff6b6b' ? '255,107,107' : btn.color === '#00d4ff' ? '0,212,255' : '255,159,67'},0.15)`, color: btn.disabled ? 'rgba(255,255,255,0.2)' : btn.color, letterSpacing: '0.3px', transition: 'all 0.15s' }}>
+                        <button key={btn.label} onClick={() => aggiornaEventoLive(id, btn.field, btn.delta)} disabled={btn.disabled || liveSaving} style={{ padding: '0.5rem 0.25rem', minHeight: '40px', borderRadius: '8px', fontSize: '0.75rem', fontWeight: 800, letterSpacing: '0.5px', border: 'none', cursor: btn.disabled ? 'default' : 'pointer', background: btn.disabled ? 'rgba(255,255,255,0.04)' : btn.bg, color: btn.disabled ? 'rgba(255,255,255,0.18)' : btn.color, transition: 'all 0.15s' }}>
                           {btn.label}
                         </button>
                       ))}
@@ -751,14 +751,14 @@ function PartitaCard({ partita, currentUser, onVoteClick, onChiudiVoti, onScomme
                     )}
                   </div>
                   {stato === 'live' && currentUser?.role === 'admin' && (
-                    <div style={{ display: 'flex', gap: '0.25rem', marginTop: '0.3rem', paddingRight: '28px', justifyContent: 'flex-end' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.35rem', marginTop: '0.45rem', paddingRight: '28px' }}>
                       {[
-                        { label: '+G', field: 'gol', delta: 1, color: '#00ff88' },
-                        { label: '-G', field: 'gol', delta: -1, color: '#ff6b6b', disabled: !(liveEventi[id]?.gol > 0) },
-                        { label: '+A', field: 'assist', delta: 1, color: '#00d4ff' },
-                        { label: '-A', field: 'assist', delta: -1, color: '#ff9f43', disabled: !(liveEventi[id]?.assist > 0) },
+                        { label: '+G', field: 'gol', delta: 1, bg: 'rgba(0,255,136,0.15)', color: '#00ff88', disabled: false },
+                        { label: '−G', field: 'gol', delta: -1, bg: 'rgba(255,107,107,0.15)', color: '#ff6b6b', disabled: !(liveEventi[id]?.gol > 0) },
+                        { label: '+A', field: 'assist', delta: 1, bg: 'rgba(0,212,255,0.15)', color: '#00d4ff', disabled: false },
+                        { label: '−A', field: 'assist', delta: -1, bg: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.45)', disabled: !(liveEventi[id]?.assist > 0) },
                       ].map(btn => (
-                        <button key={btn.label} onClick={() => aggiornaEventoLive(id, btn.field, btn.delta)} disabled={btn.disabled || liveSaving} style={{ padding: '0.15rem 0.4rem', borderRadius: '5px', fontSize: '0.6rem', fontWeight: 800, border: 'none', cursor: btn.disabled ? 'default' : 'pointer', background: btn.disabled ? 'rgba(255,255,255,0.05)' : `rgba(${btn.color === '#00ff88' ? '0,255,136' : btn.color === '#ff6b6b' ? '255,107,107' : btn.color === '#00d4ff' ? '0,212,255' : '255,159,67'},0.15)`, color: btn.disabled ? 'rgba(255,255,255,0.2)' : btn.color, letterSpacing: '0.3px', transition: 'all 0.15s' }}>
+                        <button key={btn.label} onClick={() => aggiornaEventoLive(id, btn.field, btn.delta)} disabled={btn.disabled || liveSaving} style={{ padding: '0.5rem 0.25rem', minHeight: '40px', borderRadius: '8px', fontSize: '0.75rem', fontWeight: 800, letterSpacing: '0.5px', border: 'none', cursor: btn.disabled ? 'default' : 'pointer', background: btn.disabled ? 'rgba(255,255,255,0.04)' : btn.bg, color: btn.disabled ? 'rgba(255,255,255,0.18)' : btn.color, transition: 'all 0.15s' }}>
                           {btn.label}
                         </button>
                       ))}

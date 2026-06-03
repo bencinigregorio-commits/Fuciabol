@@ -178,7 +178,7 @@ function Statistiche() {
           left: 50%;
           transform: translateX(-50%);
           width: min(112px, 58%);
-          height: min(132px, 46%);
+          height: min(115px, 35%);
           z-index: 3;
           border-radius: 18px;
           overflow: hidden;
@@ -482,13 +482,13 @@ function FutStatCard({ giocatore, onClick }) {
       {/* Nome */}
       <div style={{
         position: 'absolute',
-        bottom: '72px',
+        bottom: '68px',
         left: 0, right: 0, textAlign: 'center', zIndex: 4, padding: '0 8px'
       }}>
         <div style={{
           fontSize: '0.82rem', fontWeight: 900, color: cfg.textDark,
           letterSpacing: '1.5px', textTransform: 'uppercase',
-          textShadow: '0 1px 0 rgba(255,255,255,0.3)',
+          textShadow: '0 1px 3px rgba(0,0,0,0.4), 0 1px 0 rgba(255,255,255,0.25)',
           whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'
         }}>
           {cognome}
