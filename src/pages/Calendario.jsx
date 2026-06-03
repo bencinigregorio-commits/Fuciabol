@@ -105,6 +105,26 @@ function Calendario({ currentUser }) {
     }
   }
 
+  async function avviaLive(partita) {
+    const { error } = await supabase.from('partite').update({
+      stato: 'live',
+      punteggio_a: 0,
+      punteggio_b: 0,
+      eventi: partita.eventi || {}
+    }).eq('id', partita.id)
+    if (error) alert('Errore: ' + error.message)
+    else caricaPartite()
+  }
+
+  async function chiudiLive(partita, apriVotazioni = false) {
+    const update = apriVotazioni
+      ? { stato: 'in_votazione', votazioni_aperte: true }
+      : { stato: 'chiusa', votazioni_aperte: false }
+    const { error } = await supabase.from('partite').update(update).eq('id', partita.id)
+    if (error) alert('Errore: ' + error.message)
+    else caricaPartite()
+  }
+
   const isAdmin = currentUser?.role === 'admin'
 
   return (
@@ -113,6 +133,14 @@ function Calendario({ currentUser }) {
         @keyframes iconGlowCal {
           0%, 100% { box-shadow: 0 0 14px rgba(0,212,255,0.18), 0 4px 18px rgba(0,0,0,0.4); }
           50% { box-shadow: 0 0 26px rgba(0,212,255,0.32), 0 4px 22px rgba(0,0,0,0.45); }
+        }
+        @keyframes livePulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.55; }
+        }
+        @keyframes liveCardGlow {
+          0%, 100% { box-shadow: 0 0 10px rgba(0,255,136,0.25), 0 4px 20px rgba(0,0,0,0.4); }
+          50% { box-shadow: 0 0 28px rgba(0,255,136,0.5), 0 4px 25px rgba(0,0,0,0.5); }
         }
       `}</style>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0', flexWrap: 'wrap', gap: '1rem' }}>
@@ -171,6 +199,8 @@ function Calendario({ currentUser }) {
               onChiudiVoti={() => chiudiVotazioni(partita)}
               onScommessaClick={() => setShowScommessa(partita)}
               onRisultatoClick={() => setShowRisultato(partita)}
+              onAvviaLive={() => avviaLive(partita)}
+              onChiudiLive={(apriVotazioni) => chiudiLive(partita, apriVotazioni)}
             />
           ))}
         </div>
@@ -418,15 +448,21 @@ function GazzettaFuciabol({ partite, giocatori, currentUser }) {
   )
 }
 
-function PartitaCard({ partita, currentUser, onVoteClick, onChiudiVoti, onScommessaClick, onRisultatoClick }) {
+function PartitaCard({ partita, currentUser, onVoteClick, onChiudiVoti, onScommessaClick, onRisultatoClick, onAvviaLive, onChiudiLive }) {
   const [giocatori, setGiocatori] = useState([])
   const [isHovered, setIsHovered] = useState(false)
   const [hasScommesso, setHasScommesso] = useState(false)
+  const [liveEventi, setLiveEventi] = useState(partita.eventi || {})
+  const [liveSaving, setLiveSaving] = useState(false)
 
   useEffect(() => {
     caricaNomi()
     if (currentUser?.id) caricaScommessa()
   }, [])
+
+  useEffect(() => {
+    setLiveEventi(partita.eventi || {})
+  }, [partita.id, partita.stato])
 
   async function caricaNomi() {
     const ids = [...partita.squadra_a, ...partita.squadra_b]
@@ -439,9 +475,24 @@ function PartitaCard({ partita, currentUser, onVoteClick, onChiudiVoti, onScomme
     if (data && data.length > 0) setHasScommesso(true)
   }
 
+  async function aggiornaEventoLive(playerId, field, delta) {
+    if (liveSaving) return
+    setLiveSaving(true)
+    const currentVal = liveEventi[playerId]?.[field] || 0
+    const newVal = Math.max(0, currentVal + delta)
+    const nuoviEventi = { ...liveEventi, [playerId]: { ...(liveEventi[playerId] || {}), [field]: newVal } }
+    const nuovoPunteggioA = partita.squadra_a.reduce((sum, id) => sum + (nuoviEventi[id]?.gol || 0), 0)
+    const nuovoPunteggioB = partita.squadra_b.reduce((sum, id) => sum + (nuoviEventi[id]?.gol || 0), 0)
+    setLiveEventi(nuoviEventi)
+    const { error } = await supabase.from('partite').update({
+      eventi: nuoviEventi, punteggio_a: nuovoPunteggioA, punteggio_b: nuovoPunteggioB
+    }).eq('id', partita.id)
+    if (error) { setLiveEventi(partita.eventi || {}); alert('Errore: ' + error.message) }
+    setLiveSaving(false)
+  }
+
   const getNome = (id) => giocatori.find(g => g.id === id)?.nome || `#${id}`
   const getFoto = (id) => giocatori.find(g => g.id === id)?.foto_url || null
-  const getOverall = (id) => giocatori.find(g => g.id === id)?.overall || 65
 
   const dataStr = new Date(partita.data).toLocaleDateString('it-IT', { day: 'numeric', month: 'short', year: 'numeric' })
   const stato = partita.stato || 'chiusa'
@@ -450,18 +501,28 @@ function PartitaCard({ partita, currentUser, onVoteClick, onChiudiVoti, onScomme
   const canVote = currentUser && (currentUser.role === 'admin' || isInSquadra)
   const canScommettere = currentUser?.role === 'player' && stato === 'pre_partita'
   const hasVoted = partita.votazioni?.some(v => v.voterId === (currentUser?.role === 'admin' ? 'admin' : currentUser?.id))
-  const isVittoriaA = partita.punteggio_a > partita.punteggio_b
-  const isVittoriaB = partita.punteggio_b > partita.punteggio_a
-  const isPareggio = stato !== 'pre_partita' && partita.punteggio_a === partita.punteggio_b
 
-  // Trova MVP (voto più alto)
+  const displayPunteggioA = stato === 'live'
+    ? partita.squadra_a.reduce((sum, id) => sum + (liveEventi[id]?.gol || 0), 0)
+    : (partita.punteggio_a ?? 0)
+  const displayPunteggioB = stato === 'live'
+    ? partita.squadra_b.reduce((sum, id) => sum + (liveEventi[id]?.gol || 0), 0)
+    : (partita.punteggio_b ?? 0)
+
+  const isVittoriaA = displayPunteggioA > displayPunteggioB
+  const isVittoriaB = displayPunteggioB > displayPunteggioA
+  const isPareggio = stato !== 'pre_partita' && stato !== 'live' && displayPunteggioA === displayPunteggioB
+
   const mvp = partita.voti_calcolati?.length > 0
     ? partita.voti_calcolati.reduce((best, v) => v.votoFinale > (best?.votoFinale || 0) ? v : best, null)
     : null
 
-  // Colori per stato
+  const marcatori = allPlayers.filter(id => (liveEventi[id]?.gol || 0) > 0)
+  const assistman = allPlayers.filter(id => (liveEventi[id]?.assist || 0) > 0)
+
   const statoCfg = {
     pre_partita: { color: '#ffd700', bg: 'rgba(255,215,0,0.08)', border: 'rgba(255,215,0,0.3)', label: '🟡 IN PROGRAMMA' },
+    live: { color: '#00ff88', bg: 'rgba(0,255,136,0.08)', border: 'rgba(0,255,136,0.35)', label: '● LIVE' },
     in_votazione: { color: '#00d4ff', bg: 'rgba(0,212,255,0.08)', border: 'rgba(0,212,255,0.3)', label: '🗳️ VOTAZIONI APERTE' },
     chiusa: { color: 'rgba(255,255,255,0.3)', bg: 'rgba(255,255,255,0.03)', border: 'rgba(255,255,255,0.08)', label: '✅ CHIUSA' },
   }
@@ -476,7 +537,10 @@ function PartitaCard({ partita, currentUser, onVoteClick, onChiudiVoti, onScomme
         overflow: 'hidden',
         transition: 'all 0.3s',
         transform: isHovered ? 'translateY(-4px)' : 'translateY(0)',
-        boxShadow: isHovered ? `0 12px 40px rgba(0,0,0,0.5), 0 0 0 1px ${sc.border}` : `0 4px 20px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.06)`,
+        boxShadow: stato === 'live'
+          ? '0 0 0 1.5px rgba(0,255,136,0.5), 0 0 24px rgba(0,255,136,0.2), 0 4px 20px rgba(0,0,0,0.4)'
+          : isHovered ? `0 12px 40px rgba(0,0,0,0.5), 0 0 0 1px ${sc.border}` : `0 4px 20px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.06)`,
+        animation: stato === 'live' ? 'liveCardGlow 2s ease-in-out infinite' : 'none',
       }}
     >
       {/* HEADER BAND */}
@@ -496,7 +560,8 @@ function PartitaCard({ partita, currentUser, onVoteClick, onChiudiVoti, onScomme
           </div>
           <div style={{
             padding: '0.2rem 0.7rem', borderRadius: '20px', fontSize: '0.7rem', fontWeight: 800,
-            background: sc.bg, color: sc.color, border: `1px solid ${sc.border}`, letterSpacing: '0.5px'
+            background: sc.bg, color: sc.color, border: `1px solid ${sc.border}`, letterSpacing: '0.5px',
+            animation: stato === 'live' ? 'livePulse 1.4s ease-in-out infinite' : 'none'
           }}>
             {sc.label}
           </div>
@@ -513,7 +578,7 @@ function PartitaCard({ partita, currentUser, onVoteClick, onChiudiVoti, onScomme
             <>
               {canScommettere && (
                 <button onClick={onScommessaClick} style={{
-                  padding: '0.45rem 1rem', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 700, border: 'none', cursor: 'pointer',
+                  padding: '0.45rem 1rem', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer',
                   background: hasScommesso ? 'rgba(0,212,255,0.15)' : 'linear-gradient(135deg, #ffd700, #ffa500)',
                   color: hasScommesso ? '#00d4ff' : '#0f1729',
                   border: hasScommesso ? '1px solid rgba(0,212,255,0.4)' : 'none',
@@ -523,12 +588,20 @@ function PartitaCard({ partita, currentUser, onVoteClick, onChiudiVoti, onScomme
                 </button>
               )}
               {currentUser?.role === 'admin' && (
-                <button onClick={onRisultatoClick} style={{
-                  padding: '0.45rem 1rem', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 700, border: 'none', cursor: 'pointer',
-                  background: 'linear-gradient(135deg, #00d4ff, #0099ff)', color: '#0f1729', transition: 'all 0.2s'
-                }}>
-                  📝 Risultato
-                </button>
+                <>
+                  <button onClick={onAvviaLive} style={{
+                    padding: '0.45rem 1rem', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 700, border: 'none', cursor: 'pointer',
+                    background: 'linear-gradient(135deg, #00ff88, #00cc66)', color: '#0a1a0f', transition: 'all 0.2s'
+                  }}>
+                    ▶ Avvia Live
+                  </button>
+                  <button onClick={onRisultatoClick} style={{
+                    padding: '0.45rem 1rem', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 700, border: 'none', cursor: 'pointer',
+                    background: 'linear-gradient(135deg, #00d4ff, #0099ff)', color: '#0f1729', transition: 'all 0.2s'
+                  }}>
+                    📝 Risultato
+                  </button>
+                </>
               )}
             </>
           )}
@@ -573,13 +646,18 @@ function PartitaCard({ partita, currentUser, onVoteClick, onChiudiVoti, onScomme
               <div style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.3)', letterSpacing: '1px' }}>DA GIOCARE</div>
             </div>
           ) : (
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.75rem', background: 'rgba(0,0,0,0.4)', border: `2px solid ${isPareggio ? 'rgba(255,215,0,0.3)' : 'rgba(0,212,255,0.2)'}`, borderRadius: '14px', padding: '0.5rem 1.25rem' }}>
-              <span style={{ fontSize: 'clamp(2rem, 8vw, 2.8rem)', fontWeight: 900, color: isVittoriaA ? '#00d4ff' : isPareggio ? '#ffd700' : 'rgba(255,255,255,0.5)' }}>{partita.punteggio_a}</span>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.75rem', background: stato === 'live' ? 'rgba(0,255,136,0.06)' : 'rgba(0,0,0,0.4)', border: stato === 'live' ? '2px solid rgba(0,255,136,0.4)' : `2px solid ${isPareggio ? 'rgba(255,215,0,0.3)' : 'rgba(0,212,255,0.2)'}`, borderRadius: '14px', padding: '0.5rem 1.25rem' }}>
+              <span style={{ fontSize: 'clamp(2rem, 8vw, 2.8rem)', fontWeight: 900, color: stato === 'live' ? '#00ff88' : isVittoriaA ? '#00d4ff' : isPareggio ? '#ffd700' : 'rgba(255,255,255,0.5)' }}>{displayPunteggioA}</span>
               <span style={{ fontSize: '1.2rem', color: 'rgba(255,255,255,0.2)', fontWeight: 300 }}>—</span>
-              <span style={{ fontSize: 'clamp(2rem, 8vw, 2.8rem)', fontWeight: 900, color: isVittoriaB ? '#00d4ff' : isPareggio ? '#ffd700' : 'rgba(255,255,255,0.5)' }}>{partita.punteggio_b}</span>
+              <span style={{ fontSize: 'clamp(2rem, 8vw, 2.8rem)', fontWeight: 900, color: stato === 'live' ? '#00ff88' : isVittoriaB ? '#00d4ff' : isPareggio ? '#ffd700' : 'rgba(255,255,255,0.5)' }}>{displayPunteggioB}</span>
             </div>
           )}
-          {stato !== 'pre_partita' && (
+          {stato === 'live' && (
+            <div style={{ fontSize: '0.65rem', color: '#00ff88', marginTop: '0.25rem', letterSpacing: '1px', fontWeight: 700, animation: 'livePulse 1.4s ease-in-out infinite' }}>
+              IN CORSO
+            </div>
+          )}
+          {stato !== 'pre_partita' && stato !== 'live' && (
             <div style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.25)', marginTop: '0.25rem', letterSpacing: '0.5px' }}>
               {isVittoriaA ? 'VINCE A' : isVittoriaB ? 'VINCE B' : 'PAREGGIO'}
             </div>
@@ -597,25 +675,41 @@ function PartitaCard({ partita, currentUser, onVoteClick, onChiudiVoti, onScomme
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
               {partita.squadra_a.map((id) => (
-                <div key={id} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                  <div style={{ width: '24px', height: '24px', borderRadius: '50%', overflow: 'hidden', flexShrink: 0, background: 'rgba(0,212,255,0.1)', border: '1px solid rgba(0,212,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.6rem' }}>
-                    {getFoto(id) ? <img src={getFoto(id)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top' }} /> : '👤'}
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {getNome(id).replace(/\s*\(.*?\)/g, '').trim()}
-                      {mvp?.playerId === id && <span style={{ marginLeft: '0.2rem', fontSize: '0.65rem', color: '#ffd700' }}>⭐</span>}
+                <div key={id}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    <div style={{ width: '24px', height: '24px', borderRadius: '50%', overflow: 'hidden', flexShrink: 0, background: 'rgba(0,212,255,0.1)', border: '1px solid rgba(0,212,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.6rem' }}>
+                      {getFoto(id) ? <img src={getFoto(id)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top' }} /> : '👤'}
                     </div>
-                    {(partita.eventi?.[id]?.gol > 0 || partita.eventi?.[id]?.assist > 0) && (
-                      <div style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.4)' }}>
-                        {partita.eventi[id]?.gol > 0 && `⚽${partita.eventi[id].gol} `}
-                        {partita.eventi[id]?.assist > 0 && `🎯${partita.eventi[id].assist}`}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {getNome(id).replace(/\s*\(.*?\)/g, '').trim()}
+                        {mvp?.playerId === id && <span style={{ marginLeft: '0.2rem', fontSize: '0.65rem', color: '#ffd700' }}>⭐</span>}
+                      </div>
+                      {(liveEventi[id]?.gol > 0 || liveEventi[id]?.assist > 0) && (
+                        <div style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.4)' }}>
+                          {liveEventi[id]?.gol > 0 && `⚽${liveEventi[id].gol} `}
+                          {liveEventi[id]?.assist > 0 && `🎯${liveEventi[id].assist}`}
+                        </div>
+                      )}
+                    </div>
+                    {partita.voti_calcolati?.find(v => v.playerId === id) && (
+                      <div style={{ fontSize: '0.7rem', fontWeight: 900, flexShrink: 0, color: partita.voti_calcolati.find(v => v.playerId === id).votoFinale >= 7 ? '#00d4ff' : partita.voti_calcolati.find(v => v.playerId === id).votoFinale >= 6 ? '#ffd700' : '#ef4444' }}>
+                        {partita.voti_calcolati.find(v => v.playerId === id).votoFinale.toFixed(1)}
                       </div>
                     )}
                   </div>
-                  {partita.voti_calcolati?.find(v => v.playerId === id) && (
-                    <div style={{ fontSize: '0.7rem', fontWeight: 900, flexShrink: 0, color: partita.voti_calcolati.find(v => v.playerId === id).votoFinale >= 7 ? '#00d4ff' : partita.voti_calcolati.find(v => v.playerId === id).votoFinale >= 6 ? '#ffd700' : '#ef4444' }}>
-                      {partita.voti_calcolati.find(v => v.playerId === id).votoFinale.toFixed(1)}
+                  {stato === 'live' && currentUser?.role === 'admin' && (
+                    <div style={{ display: 'flex', gap: '0.25rem', marginTop: '0.3rem', paddingLeft: '28px' }}>
+                      {[
+                        { label: '+G', field: 'gol', delta: 1, color: '#00ff88' },
+                        { label: '-G', field: 'gol', delta: -1, color: '#ff6b6b', disabled: !(liveEventi[id]?.gol > 0) },
+                        { label: '+A', field: 'assist', delta: 1, color: '#00d4ff' },
+                        { label: '-A', field: 'assist', delta: -1, color: '#ff9f43', disabled: !(liveEventi[id]?.assist > 0) },
+                      ].map(btn => (
+                        <button key={btn.label} onClick={() => aggiornaEventoLive(id, btn.field, btn.delta)} disabled={btn.disabled || liveSaving} style={{ padding: '0.15rem 0.4rem', borderRadius: '5px', fontSize: '0.6rem', fontWeight: 800, border: 'none', cursor: btn.disabled ? 'default' : 'pointer', background: btn.disabled ? 'rgba(255,255,255,0.05)' : `rgba(${btn.color === '#00ff88' ? '0,255,136' : btn.color === '#ff6b6b' ? '255,107,107' : btn.color === '#00d4ff' ? '0,212,255' : '255,159,67'},0.15)`, color: btn.disabled ? 'rgba(255,255,255,0.2)' : btn.color, letterSpacing: '0.3px', transition: 'all 0.15s' }}>
+                          {btn.label}
+                        </button>
+                      ))}
                     </div>
                   )}
                 </div>
@@ -633,30 +727,41 @@ function PartitaCard({ partita, currentUser, onVoteClick, onChiudiVoti, onScomme
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
               {partita.squadra_b.map((id) => (
-                <div key={id} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexDirection: 'row-reverse' }}>
-                  <div style={{ width: '24px', height: '24px', borderRadius: '50%', overflow: 'hidden', flexShrink: 0, background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.6rem' }}>
-                    {getFoto(id) ? <img src={getFoto(id)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top' }} /> : '👤'}
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0, textAlign: 'right' }}>
-                    <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {mvp?.playerId === id && <span style={{ marginRight: '0.2rem', fontSize: '0.65rem', color: '#ffd700' }}>⭐</span>}
-                      {getNome(id).replace(/\s*\(.*?\)/g, '').trim()}
+                <div key={id}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexDirection: 'row-reverse' }}>
+                    <div style={{ width: '24px', height: '24px', borderRadius: '50%', overflow: 'hidden', flexShrink: 0, background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.6rem' }}>
+                      {getFoto(id) ? <img src={getFoto(id)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top' }} /> : '👤'}
                     </div>
-                    {(partita.eventi?.[id]?.gol > 0 || partita.eventi?.[id]?.assist > 0) && (
-                      <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)' }}>
-                        {partita.eventi[id]?.gol > 0 && `⚽${partita.eventi[id].gol} `}
-                        {partita.eventi[id]?.assist > 0 && `🎯${partita.eventi[id].assist}`}
+                    <div style={{ flex: 1, minWidth: 0, textAlign: 'right' }}>
+                      <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {mvp?.playerId === id && <span style={{ marginRight: '0.2rem', fontSize: '0.65rem', color: '#ffd700' }}>⭐</span>}
+                        {getNome(id).replace(/\s*\(.*?\)/g, '').trim()}
+                      </div>
+                      {(liveEventi[id]?.gol > 0 || liveEventi[id]?.assist > 0) && (
+                        <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)' }}>
+                          {liveEventi[id]?.gol > 0 && `⚽${liveEventi[id].gol} `}
+                          {liveEventi[id]?.assist > 0 && `🎯${liveEventi[id].assist}`}
+                        </div>
+                      )}
+                    </div>
+                    {partita.voti_calcolati?.find(v => v.playerId === id) && (
+                      <div style={{ fontSize: '0.75rem', fontWeight: 900, color: partita.voti_calcolati.find(v => v.playerId === id).votoFinale >= 7 ? '#00d4ff' : partita.voti_calcolati.find(v => v.playerId === id).votoFinale >= 6 ? '#ffd700' : '#ef4444', minWidth: '28px', textAlign: 'left' }}>
+                        {partita.voti_calcolati.find(v => v.playerId === id).votoFinale.toFixed(1)}
                       </div>
                     )}
                   </div>
-                  {/* Voto finale */}
-                  {partita.voti_calcolati?.find(v => v.playerId === id) && (
-                    <div style={{
-                      fontSize: '0.75rem', fontWeight: 900,
-                      color: partita.voti_calcolati.find(v => v.playerId === id).votoFinale >= 7 ? '#00d4ff' : partita.voti_calcolati.find(v => v.playerId === id).votoFinale >= 6 ? '#ffd700' : '#ef4444',
-                      minWidth: '28px', textAlign: 'left'
-                    }}>
-                      {partita.voti_calcolati.find(v => v.playerId === id).votoFinale.toFixed(1)}
+                  {stato === 'live' && currentUser?.role === 'admin' && (
+                    <div style={{ display: 'flex', gap: '0.25rem', marginTop: '0.3rem', paddingRight: '28px', justifyContent: 'flex-end' }}>
+                      {[
+                        { label: '+G', field: 'gol', delta: 1, color: '#00ff88' },
+                        { label: '-G', field: 'gol', delta: -1, color: '#ff6b6b', disabled: !(liveEventi[id]?.gol > 0) },
+                        { label: '+A', field: 'assist', delta: 1, color: '#00d4ff' },
+                        { label: '-A', field: 'assist', delta: -1, color: '#ff9f43', disabled: !(liveEventi[id]?.assist > 0) },
+                      ].map(btn => (
+                        <button key={btn.label} onClick={() => aggiornaEventoLive(id, btn.field, btn.delta)} disabled={btn.disabled || liveSaving} style={{ padding: '0.15rem 0.4rem', borderRadius: '5px', fontSize: '0.6rem', fontWeight: 800, border: 'none', cursor: btn.disabled ? 'default' : 'pointer', background: btn.disabled ? 'rgba(255,255,255,0.05)' : `rgba(${btn.color === '#00ff88' ? '0,255,136' : btn.color === '#ff6b6b' ? '255,107,107' : btn.color === '#00d4ff' ? '0,212,255' : '255,159,67'},0.15)`, color: btn.disabled ? 'rgba(255,255,255,0.2)' : btn.color, letterSpacing: '0.3px', transition: 'all 0.15s' }}>
+                          {btn.label}
+                        </button>
+                      ))}
                     </div>
                   )}
                 </div>
@@ -664,6 +769,56 @@ function PartitaCard({ partita, currentUser, onVoteClick, onChiudiVoti, onScomme
             </div>
           </div>
         </div>
+
+        {/* LIVE: admin close controls */}
+        {stato === 'live' && currentUser?.role === 'admin' && (
+          <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.25rem', paddingTop: '1rem', borderTop: '1px solid rgba(0,255,136,0.15)', flexWrap: 'wrap' }}>
+            <button onClick={() => onChiudiLive(true)} style={{ flex: 1, minWidth: '130px', padding: '0.6rem 1rem', borderRadius: '10px', fontSize: '0.82rem', fontWeight: 700, border: '1px solid rgba(0,212,255,0.4)', cursor: 'pointer', background: 'rgba(0,212,255,0.1)', color: '#00d4ff', transition: 'all 0.2s' }}>
+              🗳️ Apri Votazioni
+            </button>
+            <button onClick={() => onChiudiLive(false)} style={{ flex: 1, minWidth: '130px', padding: '0.6rem 1rem', borderRadius: '10px', fontSize: '0.82rem', fontWeight: 700, border: '1px solid rgba(255,107,107,0.4)', cursor: 'pointer', background: 'rgba(255,107,107,0.08)', color: '#ff6b6b', transition: 'all 0.2s' }}>
+              ■ Chiudi Partita
+            </button>
+          </div>
+        )}
+
+        {/* CHIUSA: tabellino marcatori/assist/MVP */}
+        {stato === 'chiusa' && (marcatori.length > 0 || assistman.length > 0 || mvp) && (
+          <div style={{ marginTop: '1rem', paddingTop: '0.85rem', borderTop: '1px solid rgba(255,255,255,0.07)' }}>
+            {marcatori.length > 0 && (
+              <div style={{ marginBottom: '0.6rem' }}>
+                <div style={{ fontSize: '0.6rem', fontWeight: 800, color: 'rgba(255,255,255,0.3)', letterSpacing: '1.5px', textTransform: 'uppercase', marginBottom: '0.35rem' }}>Marcatori</div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
+                  {marcatori.map(id => (
+                    <span key={id} style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.75)', background: 'rgba(255,255,255,0.05)', borderRadius: '6px', padding: '0.15rem 0.5rem' }}>
+                      {getNome(id).replace(/\s*\(.*?\)/g, '').trim()} {'⚽'.repeat(Math.min(liveEventi[id]?.gol || 0, 5))}{(liveEventi[id]?.gol || 0) > 5 ? ` x${liveEventi[id].gol}` : ''}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+            {assistman.length > 0 && (
+              <div style={{ marginBottom: '0.6rem' }}>
+                <div style={{ fontSize: '0.6rem', fontWeight: 800, color: 'rgba(255,255,255,0.3)', letterSpacing: '1.5px', textTransform: 'uppercase', marginBottom: '0.35rem' }}>Assist</div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
+                  {assistman.map(id => (
+                    <span key={id} style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.75)', background: 'rgba(255,255,255,0.05)', borderRadius: '6px', padding: '0.15rem 0.5rem' }}>
+                      {getNome(id).replace(/\s*\(.*?\)/g, '').trim()} {'🎯'.repeat(Math.min(liveEventi[id]?.assist || 0, 5))}{(liveEventi[id]?.assist || 0) > 5 ? ` x${liveEventi[id].assist}` : ''}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+            {mvp && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.5rem', background: 'rgba(255,215,0,0.06)', border: '1px solid rgba(255,215,0,0.15)', borderRadius: '8px', padding: '0.4rem 0.75rem' }}>
+                <span style={{ fontSize: '0.7rem', color: '#ffd700' }}>⭐</span>
+                <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#ffd700' }}>MVP</span>
+                <span style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.7)' }}>{getNome(mvp.playerId).replace(/\s*\(.*?\)/g, '').trim()}</span>
+                <span style={{ fontSize: '0.72rem', fontWeight: 900, color: '#ffd700', marginLeft: 'auto' }}>{mvp.votoFinale.toFixed(1)}</span>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   )
