@@ -936,7 +936,7 @@ function ModalNuovaPartita({ onClose, onSaved }) {
   useEffect(() => { caricaGiocatori() }, [])
 
   async function caricaGiocatori() {
-    const { data } = await supabase.from('giocatori').select('id, nome').order('nome')
+    const { data } = await supabase.from('giocatori').select('id, nome, is_guest').order('nome')
     if (data) setGiocatori(data)
   }
 
@@ -1006,8 +1006,11 @@ function ModalNuovaPartita({ onClose, onSaved }) {
               const inA = squadraA.includes(g.id)
               const inB = squadraB.includes(g.id)
               return (
-                <div key={g.id} style={{ background: 'rgba(0, 0, 0, 0.3)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', padding: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                  <span style={{ flex: 1, fontSize: '0.9rem' }}>{g.nome}</span>
+                <div key={g.id} style={{ background: 'rgba(0, 0, 0, 0.3)', border: `1px solid ${g.is_guest ? 'rgba(255,165,0,0.18)' : 'rgba(255,255,255,0.1)'}`, borderRadius: '10px', padding: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <span style={{ flex: 1, fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.45rem', minWidth: 0 }}>
+                    <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{g.nome}</span>
+                    {g.is_guest && <span style={{ flexShrink: 0, fontSize: '0.6rem', fontWeight: 800, color: '#ffa500', background: 'rgba(255,165,0,0.12)', border: '1px solid rgba(255,165,0,0.35)', borderRadius: '4px', padding: '0.08rem 0.32rem', letterSpacing: '0.5px', textTransform: 'uppercase' }}>G</span>}
+                  </span>
                   <button onClick={() => toggleGiocatore(g.id, 'A')} style={{ padding: '0.5rem 1rem', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 700, border: 'none', cursor: 'pointer', background: inA ? '#3b82f6' : 'rgba(100, 116, 139, 0.3)', color: inA ? '#fff' : 'rgba(255, 255, 255, 0.5)', transition: 'all 0.2s' }}>A</button>
                   <button onClick={() => toggleGiocatore(g.id, 'B')} style={{ padding: '0.5rem 1rem', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 700, border: 'none', cursor: 'pointer', background: inB ? '#ef4444' : 'rgba(100, 116, 139, 0.3)', color: inB ? '#fff' : 'rgba(255, 255, 255, 0.5)', transition: 'all 0.2s' }}>B</button>
                 </div>
