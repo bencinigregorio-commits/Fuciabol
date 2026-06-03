@@ -623,9 +623,10 @@ function PartitaCard({ partita, currentUser, onVoteClick, onChiudiVoti, onScomme
 
           {/* LIVE MODE */}
           {stato === 'live' ? (
-            <div style={{ position: 'relative', zIndex: 1 }}>
+            <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+
               {/* Events feed */}
-              <div style={{ marginBottom: '1rem' }}>
+              <div>
                 {marcatori.length > 0 || assistman.length > 0 ? (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
                     {marcatori.map(id => (
@@ -650,9 +651,33 @@ function PartitaCard({ partita, currentUser, onVoteClick, onChiudiVoti, onScomme
                 )}
               </div>
 
-              {/* ADMIN controls */}
+              {/* Squadre — verticali, visibili a tutti */}
+              {[{ label: 'Squadra A', ids: partita.squadra_a, accent: '#00d4ff', accentBg: 'rgba(0,212,255,0.08)', accentBorder: 'rgba(0,212,255,0.18)' }, { label: 'Squadra B', ids: partita.squadra_b, accent: '#ef4444', accentBg: 'rgba(239,68,68,0.08)', accentBorder: 'rgba(239,68,68,0.18)' }].map(({ label, ids, accent, accentBg, accentBorder }) => (
+                <div key={label} style={{ background: accentBg, border: `1px solid ${accentBorder}`, borderRadius: '12px', padding: '0.65rem 0.75rem' }}>
+                  <div style={{ fontSize: '0.6rem', fontWeight: 800, letterSpacing: '1.5px', textTransform: 'uppercase', color: accent, marginBottom: '0.5rem' }}>{label}</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
+                    {ids.map(id => (
+                      <div key={id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <div style={{ width: '26px', height: '26px', borderRadius: '50%', overflow: 'hidden', flexShrink: 0, background: accentBg, border: `1px solid ${accentBorder}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.65rem' }}>
+                          {getFoto(id) ? <img src={getFoto(id)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top' }} /> : '👤'}
+                        </div>
+                        <span style={{ flex: 1, fontSize: '0.82rem', fontWeight: 600, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{getNome(id)}</span>
+                        {(liveEventi[id]?.gol > 0 || liveEventi[id]?.assist > 0) && (
+                          <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.45)', flexShrink: 0 }}>
+                            {liveEventi[id]?.gol > 0 && `⚽${liveEventi[id].gol}`}{liveEventi[id]?.gol > 0 && liveEventi[id]?.assist > 0 && ' '}{liveEventi[id]?.assist > 0 && `🎯${liveEventi[id].assist}`}
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+
+              {/* ADMIN: Controlli Live */}
               {currentUser?.role === 'admin' && (
-                <>
+                <div style={{ background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(0,255,136,0.14)', borderRadius: '14px', padding: '0.85rem 0.85rem 0.75rem' }}>
+                  <div style={{ fontSize: '0.58rem', fontWeight: 800, color: 'rgba(0,255,136,0.5)', letterSpacing: '1.5px', textTransform: 'uppercase', marginBottom: '0.7rem' }}>Controlli Live</div>
+
                   <button onClick={() => setShowGoalModal(true)} style={{ width: '100%', padding: '0.9rem', borderRadius: '12px', fontSize: '1rem', fontWeight: 900, border: 'none', cursor: 'pointer', marginBottom: '0.5rem', minHeight: '50px', background: 'linear-gradient(135deg, #00ff88, #00cc66)', color: '#0a1a0f', letterSpacing: '0.5px', boxShadow: '0 4px 14px rgba(0,255,136,0.3)' }}>
                     ⚽ + Gol
                   </button>
@@ -693,7 +718,7 @@ function PartitaCard({ partita, currentUser, onVoteClick, onChiudiVoti, onScomme
                     <button onClick={() => onChiudiLive(true)} style={{ flex: 1, padding: '0.65rem', borderRadius: '10px', fontSize: '0.82rem', fontWeight: 700, border: '1px solid rgba(0,212,255,0.35)', cursor: 'pointer', background: 'rgba(0,212,255,0.08)', color: '#00d4ff', minHeight: '44px' }}>🗳️ Apri Votazioni</button>
                     <button onClick={() => onChiudiLive(false)} style={{ flex: 1, padding: '0.65rem', borderRadius: '10px', fontSize: '0.82rem', fontWeight: 700, border: '1px solid rgba(255,107,107,0.35)', cursor: 'pointer', background: 'rgba(255,107,107,0.07)', color: '#ff6b6b', minHeight: '44px' }}>■ Chiudi Partita</button>
                   </div>
-                </>
+                </div>
               )}
             </div>
           ) : (
