@@ -150,32 +150,42 @@ function Admin() {
             + Nuovo Giocatore
           </button>
         </div>
-        <div style={{ display: 'grid', gap: '0.75rem' }}>
-          {giocatori.map(g => (
-            <div key={g.id} style={{ background: 'rgba(0, 0, 0, 0.3)', border: '1px solid rgba(255, 255, 255, 0.05)', borderRadius: '12px', padding: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                <div style={{ width: '45px', height: '45px', borderRadius: '50%', background: g.foto_url ? 'transparent' : 'linear-gradient(135deg, #00d4ff, #0099ff)', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem', border: '2px solid rgba(0, 212, 255, 0.3)' }}>
-                  {g.foto_url ? <img src={g.foto_url} alt={g.nome} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : '👤'}
-                </div>
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 700 }}>
-                    {g.nome}
-                    {g.is_guest && <span style={{ fontSize: '0.65rem', fontWeight: 800, color: '#ffa500', background: 'rgba(255,165,0,0.12)', border: '1px solid rgba(255,165,0,0.35)', borderRadius: '5px', padding: '0.1rem 0.4rem', letterSpacing: '0.5px', textTransform: 'uppercase' }}>GUEST</span>}
-                  </div>
-                  <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.5)' }}>{g.ruolo} • OVR {g.overall} • PIN: {g.pin} • 💰 {g.crediti ?? 500}</div>
-                </div>
-              </div>
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <button onClick={() => setEditingGiocatore(g)} style={{ background: 'rgba(0, 212, 255, 0.1)', border: '1px solid rgba(0, 212, 255, 0.3)', borderRadius: '8px', padding: '0.5rem 1rem', color: '#00d4ff', fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer' }}>
-                  ✏️ Modifica
-                </button>
-                <button onClick={() => eliminaGiocatore(g)} style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '8px', padding: '0.5rem 1rem', color: '#ef4444', fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer' }}>
-                  🗑️
-                </button>
-              </div>
+
+        {/* Giocatori fissi */}
+        {giocatori.filter(g => !g.is_guest).length > 0 && (
+          <>
+            <div style={{ fontSize: '0.7rem', fontWeight: 800, color: 'rgba(0,212,255,0.6)', letterSpacing: '1.5px', textTransform: 'uppercase', marginBottom: '0.75rem' }}>
+              👤 Giocatori Fissi ({giocatori.filter(g => !g.is_guest).length})
             </div>
-          ))}
-        </div>
+            <div style={{ display: 'grid', gap: '0.75rem', marginBottom: '1.5rem' }}>
+              {giocatori.filter(g => !g.is_guest).map(g => (
+                <GiocatoreRow key={g.id} g={g} onEdit={() => setEditingGiocatore(g)} onDelete={() => eliminaGiocatore(g)} />
+              ))}
+            </div>
+          </>
+        )}
+
+        {/* Guest / Ospiti */}
+        {giocatori.filter(g => g.is_guest).length > 0 ? (
+          <>
+            <div style={{ height: '1px', background: 'rgba(255,165,0,0.15)', marginBottom: '1.25rem' }} />
+            <div style={{ fontSize: '0.7rem', fontWeight: 800, color: 'rgba(255,165,0,0.6)', letterSpacing: '1.5px', textTransform: 'uppercase', marginBottom: '0.75rem' }}>
+              🎫 Guest / Ospiti ({giocatori.filter(g => g.is_guest).length})
+            </div>
+            <div style={{ display: 'grid', gap: '0.75rem' }}>
+              {giocatori.filter(g => g.is_guest).map(g => (
+                <GiocatoreRow key={g.id} g={g} onEdit={() => setEditingGiocatore(g)} onDelete={() => eliminaGiocatore(g)} />
+              ))}
+            </div>
+          </>
+        ) : (
+          giocatori.filter(g => !g.is_guest).length > 0 && (
+            <>
+              <div style={{ height: '1px', background: 'rgba(255,255,255,0.04)', marginBottom: '1rem' }} />
+              <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.2)', fontStyle: 'italic', textAlign: 'center', padding: '0.5rem 0' }}>Nessun guest aggiunto</div>
+            </>
+          )
+        )}
       </div>
 
       {/* FOTO GIOCATORI */}
@@ -261,6 +271,33 @@ function Admin() {
 
       {showNuovoGiocatore && <ModalGiocatore onClose={() => setShowNuovoGiocatore(false)} onSaved={() => { setShowNuovoGiocatore(false); caricaDati() }} />}
       {editingGiocatore && <ModalGiocatore giocatore={editingGiocatore} onClose={() => setEditingGiocatore(null)} onSaved={() => { setEditingGiocatore(null); caricaDati() }} />}
+    </div>
+  )
+}
+
+function GiocatoreRow({ g, onEdit, onDelete }) {
+  return (
+    <div style={{ background: g.is_guest ? 'rgba(255,165,0,0.04)' : 'rgba(0,0,0,0.3)', border: `1px solid ${g.is_guest ? 'rgba(255,165,0,0.12)' : 'rgba(255,255,255,0.05)'}`, borderRadius: '12px', padding: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+        <div style={{ width: '45px', height: '45px', borderRadius: '50%', background: g.foto_url ? 'transparent' : g.is_guest ? 'linear-gradient(135deg, rgba(255,165,0,0.4), rgba(255,100,0,0.4))' : 'linear-gradient(135deg, #00d4ff, #0099ff)', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem', border: `2px solid ${g.is_guest ? 'rgba(255,165,0,0.35)' : 'rgba(0,212,255,0.3)'}` }}>
+          {g.foto_url ? <img src={g.foto_url} alt={g.nome} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : '👤'}
+        </div>
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 700 }}>
+            {g.nome}
+            {g.is_guest && <span style={{ fontSize: '0.65rem', fontWeight: 800, color: '#ffa500', background: 'rgba(255,165,0,0.12)', border: '1px solid rgba(255,165,0,0.35)', borderRadius: '5px', padding: '0.1rem 0.4rem', letterSpacing: '0.5px', textTransform: 'uppercase' }}>GUEST</span>}
+          </div>
+          <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)' }}>{g.ruolo} • OVR {g.overall} • PIN: {g.pin} • 💰 {g.crediti ?? 500}</div>
+        </div>
+      </div>
+      <div style={{ display: 'flex', gap: '0.5rem' }}>
+        <button onClick={onEdit} style={{ background: 'rgba(0,212,255,0.1)', border: '1px solid rgba(0,212,255,0.3)', borderRadius: '8px', padding: '0.5rem 1rem', color: '#00d4ff', fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer' }}>
+          ✏️ Modifica
+        </button>
+        <button onClick={onDelete} style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '8px', padding: '0.5rem 1rem', color: '#ef4444', fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer' }}>
+          🗑️
+        </button>
+      </div>
     </div>
   )
 }
