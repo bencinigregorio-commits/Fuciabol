@@ -99,13 +99,26 @@ function Admin() {
 
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem' }}>
-        <div style={{ fontSize: '3rem' }}>⚙️</div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: 0 }}>
+        <div style={{
+          width: '52px', height: '52px', borderRadius: '16px', flexShrink: 0,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          background: 'linear-gradient(145deg, rgba(0,212,255,0.12), rgba(10,16,30,0.9))',
+          border: '1px solid rgba(0,212,255,0.28)',
+          boxShadow: '0 0 18px rgba(0,212,255,0.18), 0 4px 18px rgba(0,0,0,0.4)'
+        }}>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#00d4ff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/>
+            <path d="M15.54 8.46a5 5 0 0 1 0 7.07M8.46 8.46a5 5 0 0 0 0 7.07"/>
+          </svg>
+        </div>
         <div>
-          <h1 style={{ fontSize: '2.5rem', fontWeight: 900, marginBottom: '0.25rem' }}>Pannello Admin</h1>
-          <p style={{ color: 'rgba(255, 255, 255, 0.5)', fontSize: '0.95rem' }}>Gestione completa del sistema.</p>
+          <h1 style={{ margin: '0 0 0.3rem 0', fontSize: 'clamp(1.4rem, 5vw, 1.75rem)', fontWeight: 900, letterSpacing: '3px', lineHeight: 1, fontFamily: 'system-ui, -apple-system, sans-serif', textTransform: 'uppercase', background: 'linear-gradient(135deg, #fff 0%, #e0f8ff 55%, #00d4ff 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>Admin Room</h1>
+          <p style={{ margin: 0, color: 'rgba(255,255,255,0.38)', fontSize: '0.7rem', fontWeight: 600, letterSpacing: '1.5px', textTransform: 'uppercase' }}>Gestione completa del sistema.</p>
         </div>
       </div>
+      <div style={{ height: '1px', background: 'linear-gradient(90deg, rgba(0,212,255,0.55), rgba(0,212,255,0.1), transparent)', margin: '1.1rem 0 1.75rem' }} />
 
       {/* GESTIONE GIOCATORI */}
       <div style={{ background: 'rgba(15, 23, 41, 0.6)', border: '1px solid rgba(0, 212, 255, 0.2)', borderRadius: '15px', padding: '1.5rem', marginBottom: '2rem' }}>

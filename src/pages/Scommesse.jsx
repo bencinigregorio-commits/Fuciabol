@@ -132,14 +132,28 @@ function Scommesse() {
       `}</style>
 
       {/* Header con frase random */}
-      <div style={{
-        marginBottom: '2rem',
-        animation: 'fadeInDown 0.5s ease'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
-          <div style={{ fontSize: '3rem' }}>🎰</div>
-          <h1 style={{ fontSize: '2.5rem', fontWeight: 900 }}>Scommesse</h1>
+      <div style={{ marginBottom: '2rem', animation: 'fadeInDown 0.5s ease' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: 0 }}>
+          <div style={{
+            width: '52px', height: '52px', borderRadius: '16px', flexShrink: 0,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            background: 'linear-gradient(145deg, rgba(0,212,255,0.12), rgba(10,16,30,0.9))',
+            border: '1px solid rgba(0,212,255,0.28)',
+            boxShadow: '0 0 18px rgba(0,212,255,0.18), 0 4px 18px rgba(0,0,0,0.4)'
+          }}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#00d4ff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="2" y="3" width="20" height="14" rx="2"/>
+              <path d="M8 21h8M12 17v4"/>
+              <circle cx="12" cy="10" r="2"/>
+              <path d="M7 10h1M16 10h1"/>
+            </svg>
+          </div>
+          <div>
+            <h1 style={{ margin: '0 0 0.3rem 0', fontSize: 'clamp(1.4rem, 5vw, 1.75rem)', fontWeight: 900, letterSpacing: '3px', lineHeight: 1, fontFamily: 'system-ui, -apple-system, sans-serif', textTransform: 'uppercase', background: 'linear-gradient(135deg, #fff 0%, #e0f8ff 55%, #00d4ff 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>Scommesse</h1>
+            <p style={{ margin: 0, color: 'rgba(255,255,255,0.38)', fontSize: '0.7rem', fontWeight: 600, letterSpacing: '1.5px', textTransform: 'uppercase' }}>Piazza le tue scommesse, scala la classifica.</p>
+          </div>
         </div>
+        <div style={{ height: '1px', background: 'linear-gradient(90deg, rgba(0,212,255,0.55), rgba(0,212,255,0.1), transparent)', margin: '1.1rem 0 1.25rem' }} />
 
         {/* Frase random animata */}
         <div style={{

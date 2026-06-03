@@ -81,7 +81,9 @@ function Dashboard({ currentUser }) {
 
   if (loading || !giocatore) return (
     <div style={{ textAlign: 'center', padding: '4rem 1rem', color: 'rgba(255,255,255,0.5)' }}>
-      <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>⚡</div>
+      <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'linear-gradient(145deg, rgba(0,212,255,0.12), rgba(10,16,30,0.9))', border: '1px solid rgba(0,212,255,0.28)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem' }}>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#00d4ff" strokeWidth="2" strokeLinecap="round"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4"/></svg>
+      </div>
       <div>Caricamento...</div>
     </div>
   )
@@ -877,7 +879,7 @@ function Dashboard({ currentUser }) {
       <div className="card-grid">
         <section className="panel-card credits-card" style={{ animationDelay: '0.05s' }}>
           <div className="panel-header">
-            <h2 className="panel-title"><span className="icon">💰</span>Crediti disponibili</h2>
+            <h2 className="panel-title"><span className="icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#00d4ff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v2M12 15v2M9 10h4.5a1.5 1.5 0 0 1 0 3H10a1.5 1.5 0 0 0 0 3H15"/></svg></span>Crediti disponibili</h2>
           </div>
           <div className="credits-row">
             <div className="mini-metric">
@@ -898,7 +900,7 @@ function Dashboard({ currentUser }) {
         <section className="panel-card mission-card" style={{ animationDelay: '0.1s' }}>
           <div className="progress-top">
             <div>
-              <h2 className="panel-title"><span className="icon">📈</span>Missione OVR {nextOvr}</h2>
+              <h2 className="panel-title"><span className="icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#00d4ff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg></span>Missione OVR {nextOvr}</h2>
               <div className="form-label">Forma: {puntiForma >= 0 ? '+' : ''}{puntiForma}</div>
             </div>
             <div className="ovr-next">
@@ -916,7 +918,7 @@ function Dashboard({ currentUser }) {
 
         <section className="panel-card wide-card" style={{ animationDelay: '0.15s' }}>
           <div className="panel-header">
-            <h2 className="panel-title"><span className="icon">📊</span>Riepilogo stagione</h2>
+            <h2 className="panel-title"><span className="icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#00d4ff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="12" width="4" height="10" rx="1"/><rect x="9" y="7" width="4" height="15" rx="1"/><rect x="16" y="3" width="4" height="19" rx="1"/></svg></span>Riepilogo stagione</h2>
           </div>
           <div className="season-grid">
             <SeasonStat label="Partite" value={partite.length} color="#00d4ff" />
@@ -931,7 +933,7 @@ function Dashboard({ currentUser }) {
         <section className="panel-card wide-card match-card" style={{ animationDelay: '0.2s' }}>
           <div className="match-content">
             <div className="panel-header">
-              <h2 className="panel-title"><span className="icon">📅</span>Prossima partita</h2>
+              <h2 className="panel-title"><span className="icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#00d4ff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span>Prossima partita</h2>
               {prossimaPartita && <span className="meta-chip">{formatStatus(prossimaPartita.stato)}</span>}
             </div>
             {prossimaPartita ? (
@@ -941,7 +943,7 @@ function Dashboard({ currentUser }) {
                   <div className="vs-label">VS</div>
                   <TeamBox name="Fuciabol B" sub={getTeamSub(prossimaPartita, 'b')} />
                 </div>
-                <div className="match-date">📅 {formatDate(prossimaPartita.data)} {prossimaPartita.ora ? `· ${prossimaPartita.ora}` : ''}</div>
+                <div className="match-date">{formatDate(prossimaPartita.data)} {prossimaPartita.ora ? `· ${prossimaPartita.ora}` : ''}</div>
               </>
             ) : (
               <div className="empty-box">Nessuna partita in programma.</div>
@@ -951,7 +953,7 @@ function Dashboard({ currentUser }) {
 
         <section className={`panel-card wide-card performance-card ${ultimi5Voti.length === 1 ? 'single-vote' : ''}`} style={{ animationDelay: '0.25s' }}>
           <div className="panel-header">
-            <h2 className="panel-title"><span className="icon">⭐</span>Ultime prestazioni</h2>
+            <h2 className="panel-title"><span className="icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#00d4ff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></span>Ultime prestazioni</h2>
           </div>
           {ultimi5Voti.length > 0 ? (
             <div className="horizontal-list">
@@ -969,7 +971,7 @@ function Dashboard({ currentUser }) {
 
         <section className="panel-card wide-card" style={{ animationDelay: '0.3s' }}>
           <div className="panel-header">
-            <h2 className="panel-title"><span className="icon">🎰</span>Ultime scommesse</h2>
+            <h2 className="panel-title"><span className="icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#00d4ff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 22 12 12 22 2 12"/></svg></span>Ultime scommesse</h2>
           </div>
           {scommesse.length > 0 ? (
             <div style={{ display: 'grid', gap: '0.52rem' }}>
@@ -984,7 +986,7 @@ function Dashboard({ currentUser }) {
 
         <section className="panel-card wide-card" style={{ animationDelay: '0.35s' }}>
           <div className="panel-header">
-            <h2 className="panel-title"><span className="icon">📅</span>Ultime partite</h2>
+            <h2 className="panel-title"><span className="icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#00d4ff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span>Ultime partite</h2>
           </div>
           {partiteChiuse.length > 0 ? (
             <div style={{ display: 'grid', gap: '0.52rem' }}>
@@ -1013,7 +1015,7 @@ function MiniPlayerCard({ giocatore, cfg, cardType, cognome, partiteCount, golTo
         {giocatore.foto_url ? (
           <img src={giocatore.foto_url} alt={giocatore.nome} />
         ) : (
-          <div className="mini-placeholder">👤</div>
+          <div className="mini-placeholder"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="rgba(0,0,0,0.3)" strokeWidth="1.5" strokeLinecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg></div>
         )}
       </div>
 
