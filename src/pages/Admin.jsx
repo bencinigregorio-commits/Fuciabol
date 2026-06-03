@@ -79,6 +79,28 @@ function Admin() {
     else { alert('✓ Votazioni riaperte!'); caricaDati() }
   }
 
+  async function riapriLive(partita) {
+    const haVotiApplicati = partita.voti_calcolati && partita.voti_calcolati.length > 0
+    const msg = haVotiApplicati
+      ? 'Vuoi riaprire questa partita in modalità Live?\n\n⚠️ Attenzione: i voti erano già stati calcolati e applicati agli overall dei giocatori.\nSe dopo le correzioni richiudi aprendo le votazioni, i punti verranno calcolati una seconda volta.\n\nProcedere?'
+      : 'Vuoi riaprire questa partita in modalità Live per correggere gol/assist/tabellino?'
+    if (!confirm(msg)) return
+    const { error } = await supabase.from('partite').update({ stato: 'live' }).eq('id', partita.id)
+    if (error) alert('Errore: ' + error.message)
+    else { alert('✓ Partita riaperta in Live!'); caricaDati() }
+  }
+
+  async function riapriVotazioniDaChiusa(partita) {
+    const haVotiApplicati = partita.voti_calcolati && partita.voti_calcolati.length > 0
+    const msg = haVotiApplicati
+      ? '⚠️ Attenzione!\n\nI voti di questa partita erano già stati calcolati e applicati agli overall dei giocatori.\n\nSe riapri le votazioni e le richiudi di nuovo, i punti verranno calcolati una seconda volta — causando un doppio aggiornamento degli overall.\n\nProcedere comunque?'
+      : 'Vuoi riaprire le votazioni per questa partita?'
+    if (!confirm(msg)) return
+    const { error } = await supabase.from('partite').update({ votazioni_aperte: true, stato: 'in_votazione' }).eq('id', partita.id)
+    if (error) alert('Errore: ' + error.message)
+    else { alert('✓ Votazioni riaperte!'); caricaDati() }
+  }
+
   async function resetTutto() {
     if (!confirm('⚠️ ATTENZIONE!\n\nQuesta azione eliminerà:\n- TUTTE le partite\n- Tutti gli overall torneranno a 65\n- Tutto lo storico voti\n\nSei SICURO?')) return
     if (!confirm('ULTIMA CONFERMA: questa azione è IRREVERSIBILE!')) return
@@ -202,7 +224,10 @@ function Admin() {
                 <div>
                   <div style={{ fontWeight: 700, marginBottom: '0.25rem' }}>{new Date(p.data).toLocaleDateString('it-IT')}</div>
                   <div style={{ fontSize: '0.85rem', color: 'rgba(255, 255, 255, 0.5)' }}>
-                    {p.stato === 'pre_partita' ? '🟡 In programma' : p.stato === 'in_votazione' ? `🔵 In votazione • ${p.votazioni?.length || 0} voti` : `✅ Chiusa • ${p.punteggio_a}-${p.punteggio_b}`}
+                    {p.stato === 'pre_partita' ? '🟡 In programma'
+                      : p.stato === 'live' ? '🟢 Live'
+                      : p.stato === 'in_votazione' ? `🔵 In votazione • ${p.votazioni?.length || 0} voti`
+                      : `✅ Chiusa • ${p.punteggio_a}-${p.punteggio_b}`}
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
@@ -210,6 +235,16 @@ function Admin() {
                     <button onClick={() => riapriVotazioni(p)} style={{ background: 'rgba(0, 212, 255, 0.1)', border: '1px solid rgba(0, 212, 255, 0.3)', borderRadius: '8px', padding: '0.5rem 1rem', color: '#00d4ff', fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer' }}>
                       🔓 Riapri
                     </button>
+                  )}
+                  {p.stato === 'chiusa' && (
+                    <>
+                      <button onClick={() => riapriLive(p)} style={{ background: 'rgba(0, 255, 136, 0.08)', border: '1px solid rgba(0, 255, 136, 0.3)', borderRadius: '8px', padding: '0.5rem 1rem', color: '#00ff88', fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer' }}>
+                        ▶ Riapri Live
+                      </button>
+                      <button onClick={() => riapriVotazioniDaChiusa(p)} style={{ background: 'rgba(0, 212, 255, 0.08)', border: '1px solid rgba(0, 212, 255, 0.3)', borderRadius: '8px', padding: '0.5rem 1rem', color: '#00d4ff', fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer' }}>
+                        🗳️ Riapri Votazioni
+                      </button>
+                    </>
                   )}
                   <button onClick={() => eliminaPartita(p)} style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '8px', padding: '0.5rem 1rem', color: '#ef4444', fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer' }}>
                     🗑️ Elimina
