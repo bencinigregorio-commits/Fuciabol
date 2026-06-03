@@ -78,7 +78,9 @@ function Classifica() {
     }
   })
 
-  const classifica = [...giocatoriConStats].sort((a, b) => sortPlayers(a, b, activeFilter))
+  const classificaTutti = [...giocatoriConStats].sort((a, b) => sortPlayers(a, b, activeFilter))
+  const classifica = classificaTutti.filter(g => !g.is_guest)
+  const classificaGuest = classificaTutti.filter(g => g.is_guest)
   const top3 = classifica.slice(0, 3)
   const active = FILTERS.find(f => f.id === activeFilter)
 
@@ -677,7 +679,7 @@ function Classifica() {
             <h2>{getRankingTitle(activeFilter)}</h2>
             <p>{getRankingSubtitle(activeFilter)}</p>
           </div>
-          <div className="section-pill">{classifica.length} giocatori</div>
+          <div className="section-pill">{classifica.length} giocatori fissi</div>
         </div>
 
         <div className="rank-list">
@@ -692,6 +694,36 @@ function Classifica() {
           ))}
         </div>
       </section>
+
+      {/* Sezione Guest / Ospiti */}
+      {classificaGuest.length > 0 && (
+        <div style={{ marginTop: '2rem' }}>
+          {/* Divisore con label */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.1rem' }}>
+            <div style={{ flex: 1, height: '1px', background: 'rgba(255,165,0,0.18)' }} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', flexShrink: 0 }}>
+              <span style={{ fontSize: '0.7rem', fontWeight: 800, color: 'rgba(255,165,0,0.65)', letterSpacing: '1.5px', textTransform: 'uppercase' }}>🎫 Guest / Ospiti</span>
+              <span style={{ fontSize: '0.65rem', background: 'rgba(255,165,0,0.1)', border: '1px solid rgba(255,165,0,0.28)', borderRadius: '20px', padding: '0.1rem 0.5rem', color: 'rgba(255,165,0,0.7)', fontWeight: 700 }}>{classificaGuest.length}</span>
+            </div>
+            <div style={{ flex: 1, height: '1px', background: 'rgba(255,165,0,0.18)' }} />
+          </div>
+
+          <section style={{ borderRadius: '22px', background: 'linear-gradient(180deg, rgba(255,165,0,0.04), rgba(15,23,41,0.4))', border: '1px solid rgba(255,165,0,0.12)', padding: '0.9rem', opacity: 0.88 }}>
+            <div className="rank-list">
+              {classificaGuest.map((g, index) => (
+                <RankCard
+                  key={g.id}
+                  giocatore={g}
+                  position={index + 1}
+                  index={index}
+                  filter={activeFilter}
+                  isGuest
+                />
+              ))}
+            </div>
+          </section>
+        </div>
+      )}
     </div>
   )
 }
@@ -724,7 +756,7 @@ function PodioCard({ giocatore, position, filter }) {
   )
 }
 
-function RankCard({ giocatore, position, index, filter }) {
+function RankCard({ giocatore, position, index, filter, isGuest = false }) {
   const cleanName = getCleanName(giocatore.nome)
   const rankClass = getRankClass(position)
   const main = getMainValue(giocatore, filter)
@@ -740,7 +772,10 @@ function RankCard({ giocatore, position, index, filter }) {
         </div>
 
         <div className="rank-identity">
-          <div className="rank-name">{cleanName}</div>
+          <div className="rank-name" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }}>{cleanName}</span>
+            {isGuest && <span style={{ flexShrink: 0, fontSize: '0.55rem', fontWeight: 800, color: '#ffa500', background: 'rgba(255,165,0,0.12)', border: '1px solid rgba(255,165,0,0.35)', borderRadius: '4px', padding: '0.1rem 0.35rem', letterSpacing: '0.5px', textTransform: 'uppercase' }}>G</span>}
+          </div>
           <div className="rank-meta">{giocatore.ruolo || '—'} • OVR {giocatore.overall || 65}</div>
         </div>
 
