@@ -158,7 +158,10 @@ function Admin() {
                   {g.foto_url ? <img src={g.foto_url} alt={g.nome} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : '👤'}
                 </div>
                 <div>
-                  <div style={{ fontWeight: 700 }}>{g.nome}</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 700 }}>
+                    {g.nome}
+                    {g.is_guest && <span style={{ fontSize: '0.65rem', fontWeight: 800, color: '#ffa500', background: 'rgba(255,165,0,0.12)', border: '1px solid rgba(255,165,0,0.35)', borderRadius: '5px', padding: '0.1rem 0.4rem', letterSpacing: '0.5px', textTransform: 'uppercase' }}>GUEST</span>}
+                  </div>
                   <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.5)' }}>{g.ruolo} • OVR {g.overall} • PIN: {g.pin} • 💰 {g.crediti ?? 500}</div>
                 </div>
               </div>
@@ -268,6 +271,7 @@ function ModalGiocatore({ giocatore, onClose, onSaved }) {
   const [pin, setPin] = useState(giocatore?.pin || '')
   const [overall, setOverall] = useState(giocatore?.overall || 65)
   const [crediti, setCrediti] = useState(giocatore?.crediti || 500)
+  const [isGuest, setIsGuest] = useState(giocatore?.is_guest || false)
   const [loading, setLoading] = useState(false)
 
   const ruoli = ['ATT', 'CC', 'DC', 'POR', 'CC/DC', 'ATT/CC', 'DC/CC', 'POR/CC', 'DC/ATT', 'ATT/POR']
@@ -279,11 +283,11 @@ function ModalGiocatore({ giocatore, onClose, onSaved }) {
     setLoading(true)
     try {
       if (giocatore) {
-        const { error } = await supabase.from('giocatori').update({ nome, ruolo, pin, overall: parseInt(overall), crediti: parseInt(crediti) }).eq('id', giocatore.id)
+        const { error } = await supabase.from('giocatori').update({ nome, ruolo, pin, overall: parseInt(overall), crediti: parseInt(crediti), is_guest: isGuest }).eq('id', giocatore.id)
         if (error) { alert('Errore: ' + error.message); return }
         alert('✓ Giocatore aggiornato!')
       } else {
-        const { error } = await supabase.from('giocatori').insert([{ nome, ruolo, pin, overall: parseInt(overall), crediti: parseInt(crediti), forma_punti: 0, voti_storico: [] }])
+        const { error } = await supabase.from('giocatori').insert([{ nome, ruolo, pin, overall: parseInt(overall), crediti: parseInt(crediti), is_guest: isGuest, forma_punti: 0, voti_storico: [] }])
         if (error) { alert('Errore: ' + error.message); return }
         alert('✓ Giocatore aggiunto!')
       }
@@ -322,6 +326,17 @@ function ModalGiocatore({ giocatore, onClose, onSaved }) {
             <div>
               <label style={{ display: 'block', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)', marginBottom: '0.4rem', fontWeight: 600 }}>Crediti iniziali</label>
               <input type="number" value={crediti} onChange={e => setCrediti(e.target.value)} min={0} style={{ width: '100%', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(0,212,255,0.3)', borderRadius: '10px', padding: '0.75rem', color: '#fff', fontSize: '1rem', textAlign: 'center' }} />
+            </div>
+          </div>
+          <div>
+            <label style={{ display: 'block', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)', marginBottom: '0.6rem', fontWeight: 600 }}>Tipo giocatore</label>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+              <button type="button" onClick={() => setIsGuest(false)} style={{ padding: '0.75rem', borderRadius: '10px', fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer', border: `2px solid ${!isGuest ? 'rgba(0,212,255,0.7)' : 'rgba(255,255,255,0.1)'}`, background: !isGuest ? 'rgba(0,212,255,0.12)' : 'rgba(255,255,255,0.03)', color: !isGuest ? '#00d4ff' : 'rgba(255,255,255,0.4)', transition: 'all 0.18s' }}>
+                👤 Fisso
+              </button>
+              <button type="button" onClick={() => setIsGuest(true)} style={{ padding: '0.75rem', borderRadius: '10px', fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer', border: `2px solid ${isGuest ? 'rgba(255,165,0,0.7)' : 'rgba(255,255,255,0.1)'}`, background: isGuest ? 'rgba(255,165,0,0.1)' : 'rgba(255,255,255,0.03)', color: isGuest ? '#ffa500' : 'rgba(255,255,255,0.4)', transition: 'all 0.18s' }}>
+                🎫 Guest
+              </button>
             </div>
           </div>
         </div>
