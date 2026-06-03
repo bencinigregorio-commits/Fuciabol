@@ -454,6 +454,8 @@ function PartitaCard({ partita, currentUser, onVoteClick, onChiudiVoti, onScomme
   const [hasScommesso, setHasScommesso] = useState(false)
   const [liveEventi, setLiveEventi] = useState(partita.eventi || {})
   const [liveSaving, setLiveSaving] = useState(false)
+  const [showGoalModal, setShowGoalModal] = useState(false)
+  const [showCorreggi, setShowCorreggi] = useState(false)
 
   useEffect(() => {
     caricaNomi()
@@ -484,14 +486,25 @@ function PartitaCard({ partita, currentUser, onVoteClick, onChiudiVoti, onScomme
     const nuovoPunteggioA = partita.squadra_a.reduce((sum, id) => sum + (nuoviEventi[id]?.gol || 0), 0)
     const nuovoPunteggioB = partita.squadra_b.reduce((sum, id) => sum + (nuoviEventi[id]?.gol || 0), 0)
     setLiveEventi(nuoviEventi)
-    const { error } = await supabase.from('partite').update({
-      eventi: nuoviEventi, punteggio_a: nuovoPunteggioA, punteggio_b: nuovoPunteggioB
-    }).eq('id', partita.id)
+    const { error } = await supabase.from('partite').update({ eventi: nuoviEventi, punteggio_a: nuovoPunteggioA, punteggio_b: nuovoPunteggioB }).eq('id', partita.id)
     if (error) { setLiveEventi(partita.eventi || {}); alert('Errore: ' + error.message) }
     setLiveSaving(false)
   }
 
-  const getNome = (id) => giocatori.find(g => g.id === id)?.nome || `#${id}`
+  async function registraGol(scorerId, assistId) {
+    const nuoviEventi = { ...liveEventi }
+    nuoviEventi[scorerId] = { ...(nuoviEventi[scorerId] || {}), gol: (nuoviEventi[scorerId]?.gol || 0) + 1 }
+    if (assistId) {
+      nuoviEventi[assistId] = { ...(nuoviEventi[assistId] || {}), assist: (nuoviEventi[assistId]?.assist || 0) + 1 }
+    }
+    const nuovoPunteggioA = partita.squadra_a.reduce((sum, id) => sum + (nuoviEventi[id]?.gol || 0), 0)
+    const nuovoPunteggioB = partita.squadra_b.reduce((sum, id) => sum + (nuoviEventi[id]?.gol || 0), 0)
+    setLiveEventi(nuoviEventi)
+    const { error } = await supabase.from('partite').update({ eventi: nuoviEventi, punteggio_a: nuovoPunteggioA, punteggio_b: nuovoPunteggioB }).eq('id', partita.id)
+    if (error) { setLiveEventi(partita.eventi || {}); alert('Errore: ' + error.message) }
+  }
+
+  const getNome = (id) => (giocatori.find(g => g.id === id)?.nome || `#${id}`).replace(/\s*\(.*?\)/g, '').trim()
   const getFoto = (id) => giocatori.find(g => g.id === id)?.foto_url || null
 
   const dataStr = new Date(partita.data).toLocaleDateString('it-IT', { day: 'numeric', month: 'short', year: 'numeric' })
@@ -529,294 +542,384 @@ function PartitaCard({ partita, currentUser, onVoteClick, onChiudiVoti, onScomme
   const sc = statoCfg[stato] || statoCfg.chiusa
 
   return (
-    <div
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      style={{
-        borderRadius: '20px',
-        overflow: 'hidden',
-        transition: 'all 0.3s',
-        transform: isHovered ? 'translateY(-4px)' : 'translateY(0)',
-        boxShadow: stato === 'live'
-          ? '0 0 0 1.5px rgba(0,255,136,0.5), 0 0 24px rgba(0,255,136,0.2), 0 4px 20px rgba(0,0,0,0.4)'
-          : isHovered ? `0 12px 40px rgba(0,0,0,0.5), 0 0 0 1px ${sc.border}` : `0 4px 20px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.06)`,
-        animation: stato === 'live' ? 'liveCardGlow 2s ease-in-out infinite' : 'none',
-      }}
-    >
-      {/* HEADER BAND */}
-      <div style={{
-        background: `linear-gradient(135deg, rgba(10,16,30,0.98), rgba(15,23,41,0.98))`,
-        borderBottom: `1px solid ${sc.border}`,
-        padding: '0.65rem 0.85rem',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        flexWrap: 'wrap',
-        gap: '0.5rem',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.45)', fontWeight: 600, letterSpacing: '0.5px' }}>
-            📅 {dataStr.toUpperCase()}
-          </div>
-          <div style={{
-            padding: '0.2rem 0.7rem', borderRadius: '20px', fontSize: '0.7rem', fontWeight: 800,
-            background: sc.bg, color: sc.color, border: `1px solid ${sc.border}`, letterSpacing: '0.5px',
-            animation: stato === 'live' ? 'livePulse 1.4s ease-in-out infinite' : 'none'
-          }}>
-            {sc.label}
-          </div>
-          {partita.votazioni?.length > 0 && stato !== 'pre_partita' && (
-            <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.3)' }}>
-              {partita.votazioni.length} voti
+    <>
+      <div
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        style={{
+          borderRadius: '20px',
+          overflow: 'hidden',
+          transition: 'all 0.3s',
+          transform: isHovered ? 'translateY(-4px)' : 'translateY(0)',
+          boxShadow: stato === 'live'
+            ? '0 0 0 1.5px rgba(0,255,136,0.5), 0 0 24px rgba(0,255,136,0.2), 0 4px 20px rgba(0,0,0,0.4)'
+            : isHovered ? `0 12px 40px rgba(0,0,0,0.5), 0 0 0 1px ${sc.border}` : `0 4px 20px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.06)`,
+          animation: stato === 'live' ? 'liveCardGlow 2s ease-in-out infinite' : 'none',
+        }}
+      >
+        {/* HEADER BAND */}
+        <div style={{ background: 'linear-gradient(135deg, rgba(10,16,30,0.98), rgba(15,23,41,0.98))', borderBottom: `1px solid ${sc.border}`, padding: '0.65rem 0.85rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+            <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.45)', fontWeight: 600 }}>📅 {dataStr.toUpperCase()}</div>
+            <div style={{ padding: '0.2rem 0.7rem', borderRadius: '20px', fontSize: '0.7rem', fontWeight: 800, background: sc.bg, color: sc.color, border: `1px solid ${sc.border}`, animation: stato === 'live' ? 'livePulse 1.4s ease-in-out infinite' : 'none' }}>
+              {sc.label}
             </div>
-          )}
+            {partita.votazioni?.length > 0 && stato !== 'pre_partita' && stato !== 'live' && (
+              <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.3)' }}>{partita.votazioni.length} voti</div>
+            )}
+          </div>
+          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+            {stato === 'pre_partita' && (
+              <>
+                {canScommettere && (
+                  <button onClick={onScommessaClick} style={{ padding: '0.45rem 1rem', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer', background: hasScommesso ? 'rgba(0,212,255,0.15)' : 'linear-gradient(135deg, #ffd700, #ffa500)', color: hasScommesso ? '#00d4ff' : '#0f1729', border: hasScommesso ? '1px solid rgba(0,212,255,0.4)' : 'none' }}>
+                    {hasScommesso ? '✅ Scommesso' : '🎰 Scommetti'}
+                  </button>
+                )}
+                {currentUser?.role === 'admin' && (
+                  <>
+                    <button onClick={onAvviaLive} style={{ padding: '0.45rem 1rem', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 700, border: 'none', cursor: 'pointer', background: 'linear-gradient(135deg, #00ff88, #00cc66)', color: '#0a1a0f' }}>▶ Avvia Live</button>
+                    <button onClick={onRisultatoClick} style={{ padding: '0.45rem 1rem', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 700, border: 'none', cursor: 'pointer', background: 'linear-gradient(135deg, #00d4ff, #0099ff)', color: '#0f1729' }}>📝 Risultato</button>
+                  </>
+                )}
+              </>
+            )}
+            {stato === 'in_votazione' && (
+              <>
+                {canVote && (
+                  <button onClick={onVoteClick} style={{ padding: '0.45rem 1rem', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 700, border: 'none', cursor: 'pointer', background: hasVoted ? 'linear-gradient(135deg, #ffd700, #ffa500)' : 'linear-gradient(135deg, #00d4ff, #0099ff)', color: '#0f1729' }}>
+                    {hasVoted ? '✏️ Modifica voto' : '🗳️ Vota ora'}
+                  </button>
+                )}
+                {currentUser?.role === 'admin' && partita.votazioni?.length > 0 && (
+                  <button onClick={onChiudiVoti} style={{ padding: '0.45rem 1rem', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 700, border: 'none', cursor: 'pointer', background: 'linear-gradient(135deg, #9333ea, #7c3aed)', color: '#fff' }}>🔒 Chiudi</button>
+                )}
+              </>
+            )}
+          </div>
         </div>
 
-        {/* Bottoni azione */}
-        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-          {stato === 'pre_partita' && (
-            <>
-              {canScommettere && (
-                <button onClick={onScommessaClick} style={{
-                  padding: '0.45rem 1rem', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer',
-                  background: hasScommesso ? 'rgba(0,212,255,0.15)' : 'linear-gradient(135deg, #ffd700, #ffa500)',
-                  color: hasScommesso ? '#00d4ff' : '#0f1729',
-                  border: hasScommesso ? '1px solid rgba(0,212,255,0.4)' : 'none',
-                  transition: 'all 0.2s'
-                }}>
-                  {hasScommesso ? '✅ Scommesso' : '🎰 Scommetti'}
-                </button>
-              )}
+        {/* CORPO CARD */}
+        <div style={{ background: 'linear-gradient(135deg, rgba(15,23,41,0.97) 0%, rgba(10,16,30,0.98) 50%, rgba(15,23,41,0.97) 100%)', padding: '0.85rem', position: 'relative', overflow: 'hidden' }}>
+          <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at 50% 50%, rgba(0,212,255,0.04) 0%, transparent 70%)', pointerEvents: 'none' }} />
+
+          {/* PUNTEGGIO */}
+          <div style={{ textAlign: 'center', marginBottom: '0.85rem' }}>
+            {stato === 'pre_partita' ? (
+              <div style={{ display: 'inline-block', background: 'rgba(255,215,0,0.08)', border: '1px solid rgba(255,215,0,0.2)', borderRadius: '12px', padding: '0.5rem 1.5rem' }}>
+                <div style={{ fontSize: '1rem', fontWeight: 800, color: '#ffd700', letterSpacing: '2px' }}>VS</div>
+                <div style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.3)', letterSpacing: '1px' }}>DA GIOCARE</div>
+              </div>
+            ) : (
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.75rem', background: stato === 'live' ? 'rgba(0,255,136,0.06)' : 'rgba(0,0,0,0.4)', border: stato === 'live' ? '2px solid rgba(0,255,136,0.4)' : `2px solid ${isPareggio ? 'rgba(255,215,0,0.3)' : 'rgba(0,212,255,0.2)'}`, borderRadius: '14px', padding: '0.5rem 1.25rem' }}>
+                <span style={{ fontSize: 'clamp(2rem, 8vw, 2.8rem)', fontWeight: 900, color: stato === 'live' ? '#00ff88' : isVittoriaA ? '#00d4ff' : isPareggio ? '#ffd700' : 'rgba(255,255,255,0.5)' }}>{displayPunteggioA}</span>
+                <span style={{ fontSize: '1.2rem', color: 'rgba(255,255,255,0.2)', fontWeight: 300 }}>—</span>
+                <span style={{ fontSize: 'clamp(2rem, 8vw, 2.8rem)', fontWeight: 900, color: stato === 'live' ? '#00ff88' : isVittoriaB ? '#00d4ff' : isPareggio ? '#ffd700' : 'rgba(255,255,255,0.5)' }}>{displayPunteggioB}</span>
+              </div>
+            )}
+            {stato === 'live' && <div style={{ fontSize: '0.65rem', color: '#00ff88', marginTop: '0.25rem', letterSpacing: '1px', fontWeight: 700, animation: 'livePulse 1.4s ease-in-out infinite' }}>IN CORSO</div>}
+            {stato !== 'pre_partita' && stato !== 'live' && <div style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.25)', marginTop: '0.25rem' }}>{isVittoriaA ? 'VINCE A' : isVittoriaB ? 'VINCE B' : 'PAREGGIO'}</div>}
+          </div>
+
+          {/* LIVE MODE */}
+          {stato === 'live' ? (
+            <div style={{ position: 'relative', zIndex: 1 }}>
+              {/* Events feed */}
+              <div style={{ marginBottom: '1rem' }}>
+                {marcatori.length > 0 || assistman.length > 0 ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                    {marcatori.map(id => (
+                      <div key={`g${id}`} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.4rem 0.65rem', background: 'rgba(0,255,136,0.07)', borderRadius: '8px' }}>
+                        <span style={{ color: '#00ff88', fontSize: '0.9rem', flexShrink: 0 }}>⚽</span>
+                        <span style={{ fontSize: '0.88rem', fontWeight: 600, color: '#fff', flex: 1 }}>{getNome(id)}</span>
+                        {(liveEventi[id]?.gol || 0) > 1 && <span style={{ fontSize: '0.78rem', color: '#00ff88', fontWeight: 800 }}>×{liveEventi[id].gol}</span>}
+                        <span style={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.25)', background: 'rgba(255,255,255,0.06)', borderRadius: '3px', padding: '0.1rem 0.3rem' }}>{partita.squadra_a.includes(id) ? 'A' : 'B'}</span>
+                      </div>
+                    ))}
+                    {assistman.map(id => (
+                      <div key={`a${id}`} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.4rem 0.65rem', background: 'rgba(0,212,255,0.05)', borderRadius: '8px' }}>
+                        <span style={{ color: '#00d4ff', fontSize: '0.9rem', flexShrink: 0 }}>🎯</span>
+                        <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'rgba(255,255,255,0.8)', flex: 1 }}>{getNome(id)}</span>
+                        {(liveEventi[id]?.assist || 0) > 1 && <span style={{ fontSize: '0.78rem', color: '#00d4ff', fontWeight: 800 }}>×{liveEventi[id].assist}</span>}
+                        <span style={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.25)', background: 'rgba(255,255,255,0.06)', borderRadius: '3px', padding: '0.1rem 0.3rem' }}>{partita.squadra_a.includes(id) ? 'A' : 'B'}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div style={{ textAlign: 'center', color: 'rgba(255,255,255,0.22)', fontSize: '0.8rem', fontStyle: 'italic', padding: '0.5rem 0' }}>Nessun evento ancora</div>
+                )}
+              </div>
+
+              {/* ADMIN controls */}
               {currentUser?.role === 'admin' && (
                 <>
-                  <button onClick={onAvviaLive} style={{
-                    padding: '0.45rem 1rem', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 700, border: 'none', cursor: 'pointer',
-                    background: 'linear-gradient(135deg, #00ff88, #00cc66)', color: '#0a1a0f', transition: 'all 0.2s'
-                  }}>
-                    ▶ Avvia Live
+                  <button onClick={() => setShowGoalModal(true)} style={{ width: '100%', padding: '0.9rem', borderRadius: '12px', fontSize: '1rem', fontWeight: 900, border: 'none', cursor: 'pointer', marginBottom: '0.5rem', minHeight: '50px', background: 'linear-gradient(135deg, #00ff88, #00cc66)', color: '#0a1a0f', letterSpacing: '0.5px', boxShadow: '0 4px 14px rgba(0,255,136,0.3)' }}>
+                    ⚽ + Gol
                   </button>
-                  <button onClick={onRisultatoClick} style={{
-                    padding: '0.45rem 1rem', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 700, border: 'none', cursor: 'pointer',
-                    background: 'linear-gradient(135deg, #00d4ff, #0099ff)', color: '#0f1729', transition: 'all 0.2s'
-                  }}>
-                    📝 Risultato
+                  <button onClick={() => setShowCorreggi(!showCorreggi)} style={{ width: '100%', padding: '0.6rem', borderRadius: '10px', fontSize: '0.85rem', fontWeight: 700, border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer', marginBottom: '0.5rem', minHeight: '42px', background: showCorreggi ? 'rgba(255,255,255,0.07)' : 'transparent', color: 'rgba(255,255,255,0.5)', transition: 'all 0.2s' }}>
+                    ✏️ {showCorreggi ? 'Chiudi correzione' : 'Correggi eventi'}
                   </button>
+
+                  {showCorreggi && (
+                    <div style={{ background: 'rgba(0,0,0,0.3)', borderRadius: '12px', padding: '0.75rem', marginBottom: '0.75rem', border: '1px solid rgba(255,255,255,0.06)' }}>
+                      <div style={{ fontSize: '0.58rem', fontWeight: 800, color: 'rgba(255,255,255,0.25)', letterSpacing: '1.5px', textTransform: 'uppercase', marginBottom: '0.6rem' }}>CORREZIONE MANUALE</div>
+                      {['A', 'B'].map(team => {
+                        const squadra = team === 'A' ? partita.squadra_a : partita.squadra_b
+                        return (
+                          <div key={team} style={{ marginBottom: team === 'A' ? '0.7rem' : 0 }}>
+                            <div style={{ fontSize: '0.58rem', fontWeight: 700, color: team === 'A' ? 'rgba(0,212,255,0.55)' : 'rgba(239,68,68,0.55)', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '0.35rem' }}>Squadra {team}</div>
+                            {squadra.map(id => (
+                              <div key={id} style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', padding: '0.28rem 0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                                <span style={{ flex: 1, fontSize: '0.75rem', color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{getNome(id)}</span>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.2rem', flexShrink: 0 }}>
+                                  <span style={{ fontSize: '0.65rem', color: '#00ff88', minWidth: '24px', textAlign: 'center' }}>⚽{liveEventi[id]?.gol || 0}</span>
+                                  {[{ d: 1, c: '#00ff88' }, { d: -1, c: '#ff6b6b', dis: !(liveEventi[id]?.gol > 0) }].map((b, i) => (
+                                    <button key={i} onClick={() => aggiornaEventoLive(id, 'gol', b.d)} disabled={b.dis || liveSaving} style={{ minWidth: '28px', minHeight: '28px', borderRadius: '6px', fontSize: '0.7rem', fontWeight: 800, border: 'none', cursor: b.dis ? 'default' : 'pointer', background: b.dis ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.08)', color: b.dis ? 'rgba(255,255,255,0.12)' : b.c }}>{b.d > 0 ? '+' : '−'}</button>
+                                  ))}
+                                  <span style={{ fontSize: '0.65rem', color: '#00d4ff', minWidth: '24px', textAlign: 'center' }}>🎯{liveEventi[id]?.assist || 0}</span>
+                                  {[{ d: 1, c: '#00d4ff' }, { d: -1, c: 'rgba(255,255,255,0.38)', dis: !(liveEventi[id]?.assist > 0) }].map((b, i) => (
+                                    <button key={i} onClick={() => aggiornaEventoLive(id, 'assist', b.d)} disabled={b.dis || liveSaving} style={{ minWidth: '28px', minHeight: '28px', borderRadius: '6px', fontSize: '0.7rem', fontWeight: 800, border: 'none', cursor: b.dis ? 'default' : 'pointer', background: b.dis ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.08)', color: b.dis ? 'rgba(255,255,255,0.12)' : b.c }}>{b.d > 0 ? '+' : '−'}</button>
+                                  ))}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+
+                  <div style={{ display: 'flex', gap: '0.6rem', paddingTop: '0.75rem', borderTop: '1px solid rgba(0,255,136,0.12)' }}>
+                    <button onClick={() => onChiudiLive(true)} style={{ flex: 1, padding: '0.65rem', borderRadius: '10px', fontSize: '0.82rem', fontWeight: 700, border: '1px solid rgba(0,212,255,0.35)', cursor: 'pointer', background: 'rgba(0,212,255,0.08)', color: '#00d4ff', minHeight: '44px' }}>🗳️ Apri Votazioni</button>
+                    <button onClick={() => onChiudiLive(false)} style={{ flex: 1, padding: '0.65rem', borderRadius: '10px', fontSize: '0.82rem', fontWeight: 700, border: '1px solid rgba(255,107,107,0.35)', cursor: 'pointer', background: 'rgba(255,107,107,0.07)', color: '#ff6b6b', minHeight: '44px' }}>■ Chiudi Partita</button>
+                  </div>
                 </>
               )}
-            </>
-          )}
-          {stato === 'in_votazione' && (
+            </div>
+          ) : (
+            /* NON-LIVE: two-column grid */
             <>
-              {canVote && (
-                <button onClick={onVoteClick} style={{
-                  padding: '0.45rem 1rem', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 700, border: 'none', cursor: 'pointer',
-                  background: hasVoted ? 'linear-gradient(135deg, #ffd700, #ffa500)' : 'linear-gradient(135deg, #00d4ff, #0099ff)',
-                  color: '#0f1729', transition: 'all 0.2s'
-                }}>
-                  {hasVoted ? '✏️ Modifica voto' : '🗳️ Vota ora'}
-                </button>
-              )}
-              {currentUser?.role === 'admin' && partita.votazioni?.length > 0 && (
-                <button onClick={onChiudiVoti} style={{
-                  padding: '0.45rem 1rem', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 700, border: 'none', cursor: 'pointer',
-                  background: 'linear-gradient(135deg, #9333ea, #7c3aed)', color: '#fff', transition: 'all 0.2s'
-                }}>
-                  🔒 Chiudi
-                </button>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', position: 'relative' }}>
+                {/* SQUADRA A */}
+                <div style={{ borderRight: '1px solid rgba(255,255,255,0.06)', paddingRight: '0.75rem' }}>
+                  <div style={{ fontSize: '0.65rem', fontWeight: 800, letterSpacing: '1px', textTransform: 'uppercase', color: stato === 'chiusa' && isVittoriaA ? '#00d4ff' : 'rgba(255,255,255,0.4)', marginBottom: '0.6rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                    {stato === 'chiusa' && isVittoriaA && <span style={{ color: '#ffd700' }}>👑</span>}Squadra A
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    {partita.squadra_a.map((id) => (
+                      <div key={id} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                        <div style={{ width: '24px', height: '24px', borderRadius: '50%', overflow: 'hidden', flexShrink: 0, background: 'rgba(0,212,255,0.1)', border: '1px solid rgba(0,212,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.6rem' }}>
+                          {getFoto(id) ? <img src={getFoto(id)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top' }} /> : '👤'}
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {getNome(id)}{mvp?.playerId === id && <span style={{ marginLeft: '0.2rem', fontSize: '0.65rem', color: '#ffd700' }}>⭐</span>}
+                          </div>
+                          {(liveEventi[id]?.gol > 0 || liveEventi[id]?.assist > 0) && (
+                            <div style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.4)' }}>
+                              {liveEventi[id]?.gol > 0 && `⚽${liveEventi[id].gol} `}{liveEventi[id]?.assist > 0 && `🎯${liveEventi[id].assist}`}
+                            </div>
+                          )}
+                        </div>
+                        {partita.voti_calcolati?.find(v => v.playerId === id) && (
+                          <div style={{ fontSize: '0.7rem', fontWeight: 900, flexShrink: 0, color: partita.voti_calcolati.find(v => v.playerId === id).votoFinale >= 7 ? '#00d4ff' : partita.voti_calcolati.find(v => v.playerId === id).votoFinale >= 6 ? '#ffd700' : '#ef4444' }}>
+                            {partita.voti_calcolati.find(v => v.playerId === id).votoFinale.toFixed(1)}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                {/* SQUADRA B */}
+                <div style={{ paddingLeft: '0.75rem' }}>
+                  <div style={{ fontSize: '0.65rem', fontWeight: 800, letterSpacing: '1px', textTransform: 'uppercase', color: stato === 'chiusa' && isVittoriaB ? '#00d4ff' : 'rgba(255,255,255,0.4)', marginBottom: '0.6rem', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.3rem' }}>
+                    Squadra B{stato === 'chiusa' && isVittoriaB && <span style={{ color: '#ffd700' }}>👑</span>}
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    {partita.squadra_b.map((id) => (
+                      <div key={id} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexDirection: 'row-reverse' }}>
+                        <div style={{ width: '24px', height: '24px', borderRadius: '50%', overflow: 'hidden', flexShrink: 0, background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.6rem' }}>
+                          {getFoto(id) ? <img src={getFoto(id)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top' }} /> : '👤'}
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0, textAlign: 'right' }}>
+                          <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {mvp?.playerId === id && <span style={{ marginRight: '0.2rem', fontSize: '0.65rem', color: '#ffd700' }}>⭐</span>}{getNome(id)}
+                          </div>
+                          {(liveEventi[id]?.gol > 0 || liveEventi[id]?.assist > 0) && (
+                            <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)' }}>
+                              {liveEventi[id]?.gol > 0 && `⚽${liveEventi[id].gol} `}{liveEventi[id]?.assist > 0 && `🎯${liveEventi[id].assist}`}
+                            </div>
+                          )}
+                        </div>
+                        {partita.voti_calcolati?.find(v => v.playerId === id) && (
+                          <div style={{ fontSize: '0.75rem', fontWeight: 900, color: partita.voti_calcolati.find(v => v.playerId === id).votoFinale >= 7 ? '#00d4ff' : partita.voti_calcolati.find(v => v.playerId === id).votoFinale >= 6 ? '#ffd700' : '#ef4444', minWidth: '28px', textAlign: 'left' }}>
+                            {partita.voti_calcolati.find(v => v.playerId === id).votoFinale.toFixed(1)}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* CHIUSA: tabellino */}
+              {stato === 'chiusa' && (marcatori.length > 0 || assistman.length > 0 || mvp) && (
+                <div style={{ marginTop: '1rem', paddingTop: '0.85rem', borderTop: '1px solid rgba(255,255,255,0.07)' }}>
+                  {marcatori.length > 0 && (
+                    <div style={{ marginBottom: '0.6rem' }}>
+                      <div style={{ fontSize: '0.6rem', fontWeight: 800, color: 'rgba(255,255,255,0.3)', letterSpacing: '1.5px', textTransform: 'uppercase', marginBottom: '0.35rem' }}>Marcatori</div>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
+                        {marcatori.map(id => (
+                          <span key={id} style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.75)', background: 'rgba(255,255,255,0.05)', borderRadius: '6px', padding: '0.15rem 0.5rem' }}>
+                            {getNome(id)} {'⚽'.repeat(Math.min(liveEventi[id]?.gol || 0, 5))}{(liveEventi[id]?.gol || 0) > 5 ? ` ×${liveEventi[id].gol}` : ''}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {assistman.length > 0 && (
+                    <div style={{ marginBottom: '0.6rem' }}>
+                      <div style={{ fontSize: '0.6rem', fontWeight: 800, color: 'rgba(255,255,255,0.3)', letterSpacing: '1.5px', textTransform: 'uppercase', marginBottom: '0.35rem' }}>Assist</div>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
+                        {assistman.map(id => (
+                          <span key={id} style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.75)', background: 'rgba(255,255,255,0.05)', borderRadius: '6px', padding: '0.15rem 0.5rem' }}>
+                            {getNome(id)} {'🎯'.repeat(Math.min(liveEventi[id]?.assist || 0, 5))}{(liveEventi[id]?.assist || 0) > 5 ? ` ×${liveEventi[id].assist}` : ''}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {mvp && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(255,215,0,0.06)', border: '1px solid rgba(255,215,0,0.15)', borderRadius: '8px', padding: '0.4rem 0.75rem' }}>
+                      <span style={{ fontSize: '0.7rem', color: '#ffd700' }}>⭐</span>
+                      <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#ffd700' }}>MVP</span>
+                      <span style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.7)' }}>{getNome(mvp.playerId)}</span>
+                      <span style={{ fontSize: '0.72rem', fontWeight: 900, color: '#ffd700', marginLeft: 'auto' }}>{mvp.votoFinale.toFixed(1)}</span>
+                    </div>
+                  )}
+                </div>
               )}
             </>
           )}
         </div>
       </div>
 
-      {/* CORPO CARD - Match area */}
-      <div style={{
-        background: `linear-gradient(135deg, rgba(15,23,41,0.97) 0%, rgba(10,16,30,0.98) 50%, rgba(15,23,41,0.97) 100%)`,
-        padding: '0.85rem',
-        position: 'relative',
-        overflow: 'hidden',
-      }}>
-        <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at 50% 50%, rgba(0,212,255,0.04) 0%, transparent 70%)', pointerEvents: 'none' }} />
+      {/* GOAL MODAL — fuori dalla card per evitare clipping */}
+      {showGoalModal && (
+        <ModalGoalInput
+          partita={partita}
+          giocatori={giocatori}
+          liveEventi={liveEventi}
+          onConfirm={registraGol}
+          onClose={() => setShowGoalModal(false)}
+        />
+      )}
+    </>
+  )
+}
 
-        {/* PUNTEGGIO in cima */}
-        <div style={{ textAlign: 'center', marginBottom: '0.85rem' }}>
-          {stato === 'pre_partita' ? (
-            <div style={{ display: 'inline-block', background: 'rgba(255,215,0,0.08)', border: '1px solid rgba(255,215,0,0.2)', borderRadius: '12px', padding: '0.5rem 1.5rem' }}>
-              <div style={{ fontSize: '1rem', fontWeight: 800, color: '#ffd700', letterSpacing: '2px' }}>VS</div>
-              <div style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.3)', letterSpacing: '1px' }}>DA GIOCARE</div>
-            </div>
-          ) : (
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.75rem', background: stato === 'live' ? 'rgba(0,255,136,0.06)' : 'rgba(0,0,0,0.4)', border: stato === 'live' ? '2px solid rgba(0,255,136,0.4)' : `2px solid ${isPareggio ? 'rgba(255,215,0,0.3)' : 'rgba(0,212,255,0.2)'}`, borderRadius: '14px', padding: '0.5rem 1.25rem' }}>
-              <span style={{ fontSize: 'clamp(2rem, 8vw, 2.8rem)', fontWeight: 900, color: stato === 'live' ? '#00ff88' : isVittoriaA ? '#00d4ff' : isPareggio ? '#ffd700' : 'rgba(255,255,255,0.5)' }}>{displayPunteggioA}</span>
-              <span style={{ fontSize: '1.2rem', color: 'rgba(255,255,255,0.2)', fontWeight: 300 }}>—</span>
-              <span style={{ fontSize: 'clamp(2rem, 8vw, 2.8rem)', fontWeight: 900, color: stato === 'live' ? '#00ff88' : isVittoriaB ? '#00d4ff' : isPareggio ? '#ffd700' : 'rgba(255,255,255,0.5)' }}>{displayPunteggioB}</span>
-            </div>
-          )}
-          {stato === 'live' && (
-            <div style={{ fontSize: '0.65rem', color: '#00ff88', marginTop: '0.25rem', letterSpacing: '1px', fontWeight: 700, animation: 'livePulse 1.4s ease-in-out infinite' }}>
-              IN CORSO
-            </div>
-          )}
-          {stato !== 'pre_partita' && stato !== 'live' && (
-            <div style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.25)', marginTop: '0.25rem', letterSpacing: '0.5px' }}>
-              {isVittoriaA ? 'VINCE A' : isVittoriaB ? 'VINCE B' : 'PAREGGIO'}
-            </div>
-          )}
+function ModalGoalInput({ partita, giocatori, liveEventi, onConfirm, onClose }) {
+  const [step, setStep] = useState(1)
+  const [team, setTeam] = useState(null)
+  const [scorerId, setScorerId] = useState(null)
+  const [assistId, setAssistId] = useState(null)
+  const [saving, setSaving] = useState(false)
+
+  const getNome = (id) => (giocatori.find(g => g.id === id)?.nome || `#${id}`).replace(/\s*\(.*?\)/g, '').trim()
+  const squadra = team === 'A' ? partita.squadra_a : team === 'B' ? partita.squadra_b : []
+
+  async function conferma() {
+    setSaving(true)
+    await onConfirm(scorerId, assistId === 'nessuno' ? null : assistId)
+    setSaving(false)
+    onClose()
+  }
+
+  const titoli = { 1: 'CHI HA SEGNATO?', 2: 'SCEGLI MARCATORE', 3: 'ASSIST DI?', 4: 'CONFERMA GOL' }
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(0,0,0,0.82)', backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }} onClick={onClose}>
+      <div style={{ width: '100%', maxWidth: '480px', background: 'linear-gradient(180deg, rgba(12,18,35,0.99), rgba(8,13,28,1))', border: '1px solid rgba(0,255,136,0.22)', borderBottom: 'none', borderRadius: '22px 22px 0 0', padding: '1.25rem 1.25rem 2.5rem', maxHeight: '85vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
+
+        {/* Handle */}
+        <div style={{ width: '36px', height: '4px', background: 'rgba(255,255,255,0.13)', borderRadius: '2px', margin: '0 auto 1.1rem' }} />
+
+        {/* Header */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.9rem' }}>
+          <div style={{ fontSize: '0.9rem', fontWeight: 900, color: '#00ff88', letterSpacing: '1.5px', textTransform: 'uppercase' }}>⚽ {titoli[step]}</div>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.3)', fontSize: '1.5rem', cursor: 'pointer', lineHeight: 1, padding: '0.2rem 0.4rem' }}>×</button>
         </div>
 
-        {/* SQUADRE affiancate */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', position: 'relative' }}>
-
-          {/* SQUADRA A */}
-          <div style={{ borderRight: '1px solid rgba(255,255,255,0.06)', paddingRight: '0.75rem' }}>
-            <div style={{ fontSize: '0.65rem', fontWeight: 800, letterSpacing: '1px', textTransform: 'uppercase', color: stato === 'chiusa' && isVittoriaA ? '#00d4ff' : 'rgba(255,255,255,0.4)', marginBottom: '0.6rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-              {stato === 'chiusa' && isVittoriaA && <span style={{ color: '#ffd700' }}>👑</span>}
-              Squadra A
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              {partita.squadra_a.map((id) => (
-                <div key={id}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                    <div style={{ width: '24px', height: '24px', borderRadius: '50%', overflow: 'hidden', flexShrink: 0, background: 'rgba(0,212,255,0.1)', border: '1px solid rgba(0,212,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.6rem' }}>
-                      {getFoto(id) ? <img src={getFoto(id)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top' }} /> : '👤'}
-                    </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        {getNome(id).replace(/\s*\(.*?\)/g, '').trim()}
-                        {mvp?.playerId === id && <span style={{ marginLeft: '0.2rem', fontSize: '0.65rem', color: '#ffd700' }}>⭐</span>}
-                      </div>
-                      {(liveEventi[id]?.gol > 0 || liveEventi[id]?.assist > 0) && (
-                        <div style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.4)' }}>
-                          {liveEventi[id]?.gol > 0 && `⚽${liveEventi[id].gol} `}
-                          {liveEventi[id]?.assist > 0 && `🎯${liveEventi[id].assist}`}
-                        </div>
-                      )}
-                    </div>
-                    {partita.voti_calcolati?.find(v => v.playerId === id) && (
-                      <div style={{ fontSize: '0.7rem', fontWeight: 900, flexShrink: 0, color: partita.voti_calcolati.find(v => v.playerId === id).votoFinale >= 7 ? '#00d4ff' : partita.voti_calcolati.find(v => v.playerId === id).votoFinale >= 6 ? '#ffd700' : '#ef4444' }}>
-                        {partita.voti_calcolati.find(v => v.playerId === id).votoFinale.toFixed(1)}
-                      </div>
-                    )}
-                  </div>
-                  {stato === 'live' && currentUser?.role === 'admin' && (
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.35rem', marginTop: '0.45rem', paddingLeft: '28px' }}>
-                      {[
-                        { label: '+G', field: 'gol', delta: 1, bg: 'rgba(0,255,136,0.15)', color: '#00ff88', disabled: false },
-                        { label: '−G', field: 'gol', delta: -1, bg: 'rgba(255,107,107,0.15)', color: '#ff6b6b', disabled: !(liveEventi[id]?.gol > 0) },
-                        { label: '+A', field: 'assist', delta: 1, bg: 'rgba(0,212,255,0.15)', color: '#00d4ff', disabled: false },
-                        { label: '−A', field: 'assist', delta: -1, bg: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.45)', disabled: !(liveEventi[id]?.assist > 0) },
-                      ].map(btn => (
-                        <button key={btn.label} onClick={() => aggiornaEventoLive(id, btn.field, btn.delta)} disabled={btn.disabled || liveSaving} style={{ padding: '0.5rem 0.25rem', minHeight: '40px', borderRadius: '8px', fontSize: '0.75rem', fontWeight: 800, letterSpacing: '0.5px', border: 'none', cursor: btn.disabled ? 'default' : 'pointer', background: btn.disabled ? 'rgba(255,255,255,0.04)' : btn.bg, color: btn.disabled ? 'rgba(255,255,255,0.18)' : btn.color, transition: 'all 0.15s' }}>
-                          {btn.label}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-
-
-
-          {/* SQUADRA B */}
-          <div style={{ paddingLeft: '0.75rem' }}>
-            <div style={{ fontSize: '0.65rem', fontWeight: 800, letterSpacing: '1px', textTransform: 'uppercase', color: stato === 'chiusa' && isVittoriaB ? '#00d4ff' : 'rgba(255,255,255,0.4)', marginBottom: '0.6rem', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.3rem' }}>
-              Squadra B
-              {stato === 'chiusa' && isVittoriaB && <span style={{ color: '#ffd700' }}>👑</span>}
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              {partita.squadra_b.map((id) => (
-                <div key={id}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexDirection: 'row-reverse' }}>
-                    <div style={{ width: '24px', height: '24px', borderRadius: '50%', overflow: 'hidden', flexShrink: 0, background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.6rem' }}>
-                      {getFoto(id) ? <img src={getFoto(id)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top' }} /> : '👤'}
-                    </div>
-                    <div style={{ flex: 1, minWidth: 0, textAlign: 'right' }}>
-                      <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        {mvp?.playerId === id && <span style={{ marginRight: '0.2rem', fontSize: '0.65rem', color: '#ffd700' }}>⭐</span>}
-                        {getNome(id).replace(/\s*\(.*?\)/g, '').trim()}
-                      </div>
-                      {(liveEventi[id]?.gol > 0 || liveEventi[id]?.assist > 0) && (
-                        <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)' }}>
-                          {liveEventi[id]?.gol > 0 && `⚽${liveEventi[id].gol} `}
-                          {liveEventi[id]?.assist > 0 && `🎯${liveEventi[id].assist}`}
-                        </div>
-                      )}
-                    </div>
-                    {partita.voti_calcolati?.find(v => v.playerId === id) && (
-                      <div style={{ fontSize: '0.75rem', fontWeight: 900, color: partita.voti_calcolati.find(v => v.playerId === id).votoFinale >= 7 ? '#00d4ff' : partita.voti_calcolati.find(v => v.playerId === id).votoFinale >= 6 ? '#ffd700' : '#ef4444', minWidth: '28px', textAlign: 'left' }}>
-                        {partita.voti_calcolati.find(v => v.playerId === id).votoFinale.toFixed(1)}
-                      </div>
-                    )}
-                  </div>
-                  {stato === 'live' && currentUser?.role === 'admin' && (
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.35rem', marginTop: '0.45rem', paddingRight: '28px' }}>
-                      {[
-                        { label: '+G', field: 'gol', delta: 1, bg: 'rgba(0,255,136,0.15)', color: '#00ff88', disabled: false },
-                        { label: '−G', field: 'gol', delta: -1, bg: 'rgba(255,107,107,0.15)', color: '#ff6b6b', disabled: !(liveEventi[id]?.gol > 0) },
-                        { label: '+A', field: 'assist', delta: 1, bg: 'rgba(0,212,255,0.15)', color: '#00d4ff', disabled: false },
-                        { label: '−A', field: 'assist', delta: -1, bg: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.45)', disabled: !(liveEventi[id]?.assist > 0) },
-                      ].map(btn => (
-                        <button key={btn.label} onClick={() => aggiornaEventoLive(id, btn.field, btn.delta)} disabled={btn.disabled || liveSaving} style={{ padding: '0.5rem 0.25rem', minHeight: '40px', borderRadius: '8px', fontSize: '0.75rem', fontWeight: 800, letterSpacing: '0.5px', border: 'none', cursor: btn.disabled ? 'default' : 'pointer', background: btn.disabled ? 'rgba(255,255,255,0.04)' : btn.bg, color: btn.disabled ? 'rgba(255,255,255,0.18)' : btn.color, transition: 'all 0.15s' }}>
-                          {btn.label}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
+        {/* Step bar */}
+        <div style={{ display: 'flex', gap: '0.3rem', marginBottom: '1.25rem' }}>
+          {[1, 2, 3, 4].map(s => (
+            <div key={s} style={{ flex: 1, height: '3px', borderRadius: '2px', background: s <= step ? '#00ff88' : 'rgba(255,255,255,0.08)', transition: 'background 0.3s' }} />
+          ))}
         </div>
 
-        {/* LIVE: admin close controls */}
-        {stato === 'live' && currentUser?.role === 'admin' && (
-          <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.25rem', paddingTop: '1rem', borderTop: '1px solid rgba(0,255,136,0.15)', flexWrap: 'wrap' }}>
-            <button onClick={() => onChiudiLive(true)} style={{ flex: 1, minWidth: '130px', padding: '0.6rem 1rem', borderRadius: '10px', fontSize: '0.82rem', fontWeight: 700, border: '1px solid rgba(0,212,255,0.4)', cursor: 'pointer', background: 'rgba(0,212,255,0.1)', color: '#00d4ff', transition: 'all 0.2s' }}>
-              🗳️ Apri Votazioni
-            </button>
-            <button onClick={() => onChiudiLive(false)} style={{ flex: 1, minWidth: '130px', padding: '0.6rem 1rem', borderRadius: '10px', fontSize: '0.82rem', fontWeight: 700, border: '1px solid rgba(255,107,107,0.4)', cursor: 'pointer', background: 'rgba(255,107,107,0.08)', color: '#ff6b6b', transition: 'all 0.2s' }}>
-              ■ Chiudi Partita
-            </button>
+        {/* Step 1: team */}
+        {step === 1 && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            {[{ k: 'A', label: 'Squadra A', color: '#00d4ff', rgb: '0,212,255' }, { k: 'B', label: 'Squadra B', color: '#ef4444', rgb: '239,68,68' }].map(sq => (
+              <button key={sq.k} onClick={() => { setTeam(sq.k); setStep(2) }} style={{ padding: '1.1rem', borderRadius: '14px', fontSize: '1rem', fontWeight: 800, border: `2px solid ${sq.color}`, cursor: 'pointer', minHeight: '60px', background: `rgba(${sq.rgb},0.08)`, color: sq.color, letterSpacing: '0.5px', textTransform: 'uppercase' }}>
+                {sq.label}
+              </button>
+            ))}
           </div>
         )}
 
-        {/* CHIUSA: tabellino marcatori/assist/MVP */}
-        {stato === 'chiusa' && (marcatori.length > 0 || assistman.length > 0 || mvp) && (
-          <div style={{ marginTop: '1rem', paddingTop: '0.85rem', borderTop: '1px solid rgba(255,255,255,0.07)' }}>
-            {marcatori.length > 0 && (
-              <div style={{ marginBottom: '0.6rem' }}>
-                <div style={{ fontSize: '0.6rem', fontWeight: 800, color: 'rgba(255,255,255,0.3)', letterSpacing: '1.5px', textTransform: 'uppercase', marginBottom: '0.35rem' }}>Marcatori</div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
-                  {marcatori.map(id => (
-                    <span key={id} style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.75)', background: 'rgba(255,255,255,0.05)', borderRadius: '6px', padding: '0.15rem 0.5rem' }}>
-                      {getNome(id).replace(/\s*\(.*?\)/g, '').trim()} {'⚽'.repeat(Math.min(liveEventi[id]?.gol || 0, 5))}{(liveEventi[id]?.gol || 0) > 5 ? ` x${liveEventi[id].gol}` : ''}
-                    </span>
-                  ))}
+        {/* Step 2: scorer */}
+        {step === 2 && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            {squadra.map(id => (
+              <button key={id} onClick={() => { setScorerId(id); setStep(3) }} style={{ padding: '0.9rem 1rem', borderRadius: '12px', fontSize: '0.95rem', fontWeight: 700, border: '1px solid rgba(255,255,255,0.09)', cursor: 'pointer', minHeight: '54px', background: 'rgba(255,255,255,0.04)', color: '#fff', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <span style={{ fontSize: '1.1rem' }}>⚽</span>
+                <span style={{ flex: 1 }}>{getNome(id)}</span>
+                {(liveEventi[id]?.gol || 0) > 0 && <span style={{ fontSize: '0.72rem', color: '#00ff88', fontWeight: 800, background: 'rgba(0,255,136,0.1)', borderRadius: '5px', padding: '0.12rem 0.4rem' }}>{liveEventi[id].gol} gol</span>}
+              </button>
+            ))}
+            <button onClick={() => { setStep(1); setTeam(null) }} style={{ marginTop: '0.5rem', padding: '0.5rem', border: 'none', background: 'transparent', color: 'rgba(255,255,255,0.28)', cursor: 'pointer', fontSize: '0.82rem' }}>← Cambia squadra</button>
+          </div>
+        )}
+
+        {/* Step 3: assist */}
+        {step === 3 && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            <button onClick={() => { setAssistId('nessuno'); setStep(4) }} style={{ padding: '0.9rem 1rem', borderRadius: '12px', fontSize: '0.95rem', fontWeight: 700, border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer', minHeight: '54px', background: 'rgba(255,255,255,0.03)', color: 'rgba(255,255,255,0.38)', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <span style={{ opacity: 0.4, fontSize: '1.1rem' }}>—</span><span>Nessuno</span>
+            </button>
+            {squadra.filter(id => id !== scorerId).map(id => (
+              <button key={id} onClick={() => { setAssistId(id); setStep(4) }} style={{ padding: '0.9rem 1rem', borderRadius: '12px', fontSize: '0.95rem', fontWeight: 700, border: '1px solid rgba(0,212,255,0.12)', cursor: 'pointer', minHeight: '54px', background: 'rgba(0,212,255,0.04)', color: '#fff', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <span style={{ fontSize: '1.1rem' }}>🎯</span>
+                <span style={{ flex: 1 }}>{getNome(id)}</span>
+                {(liveEventi[id]?.assist || 0) > 0 && <span style={{ fontSize: '0.72rem', color: '#00d4ff', fontWeight: 800, background: 'rgba(0,212,255,0.1)', borderRadius: '5px', padding: '0.12rem 0.4rem' }}>{liveEventi[id].assist} ast</span>}
+              </button>
+            ))}
+            <button onClick={() => { setStep(2); setScorerId(null) }} style={{ marginTop: '0.5rem', padding: '0.5rem', border: 'none', background: 'transparent', color: 'rgba(255,255,255,0.28)', cursor: 'pointer', fontSize: '0.82rem' }}>← Cambia marcatore</button>
+          </div>
+        )}
+
+        {/* Step 4: confirm */}
+        {step === 4 && (
+          <div>
+            <div style={{ background: 'rgba(0,255,136,0.05)', border: '1px solid rgba(0,255,136,0.16)', borderRadius: '14px', padding: '1.25rem', marginBottom: '1.25rem' }}>
+              <div style={{ marginBottom: '0.9rem' }}>
+                <div style={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.28)', letterSpacing: '1.5px', textTransform: 'uppercase', marginBottom: '0.3rem' }}>Marcatore</div>
+                <div style={{ fontSize: '1.05rem', fontWeight: 800, color: '#00ff88' }}>⚽ {getNome(scorerId)}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.28)', letterSpacing: '1.5px', textTransform: 'uppercase', marginBottom: '0.3rem' }}>Assist</div>
+                <div style={{ fontSize: '1rem', fontWeight: 700, color: assistId === 'nessuno' ? 'rgba(255,255,255,0.3)' : '#00d4ff' }}>
+                  {assistId === 'nessuno' ? '— Nessuno' : `🎯 ${getNome(assistId)}`}
                 </div>
               </div>
-            )}
-            {assistman.length > 0 && (
-              <div style={{ marginBottom: '0.6rem' }}>
-                <div style={{ fontSize: '0.6rem', fontWeight: 800, color: 'rgba(255,255,255,0.3)', letterSpacing: '1.5px', textTransform: 'uppercase', marginBottom: '0.35rem' }}>Assist</div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
-                  {assistman.map(id => (
-                    <span key={id} style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.75)', background: 'rgba(255,255,255,0.05)', borderRadius: '6px', padding: '0.15rem 0.5rem' }}>
-                      {getNome(id).replace(/\s*\(.*?\)/g, '').trim()} {'🎯'.repeat(Math.min(liveEventi[id]?.assist || 0, 5))}{(liveEventi[id]?.assist || 0) > 5 ? ` x${liveEventi[id].assist}` : ''}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-            {mvp && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.5rem', background: 'rgba(255,215,0,0.06)', border: '1px solid rgba(255,215,0,0.15)', borderRadius: '8px', padding: '0.4rem 0.75rem' }}>
-                <span style={{ fontSize: '0.7rem', color: '#ffd700' }}>⭐</span>
-                <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#ffd700' }}>MVP</span>
-                <span style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.7)' }}>{getNome(mvp.playerId).replace(/\s*\(.*?\)/g, '').trim()}</span>
-                <span style={{ fontSize: '0.72rem', fontWeight: 900, color: '#ffd700', marginLeft: 'auto' }}>{mvp.votoFinale.toFixed(1)}</span>
-              </div>
-            )}
+            </div>
+            <div style={{ display: 'flex', gap: '0.75rem' }}>
+              <button onClick={conferma} disabled={saving} style={{ flex: 2, padding: '1rem', borderRadius: '14px', fontSize: '1rem', fontWeight: 900, border: 'none', cursor: saving ? 'default' : 'pointer', minHeight: '56px', background: saving ? 'rgba(0,255,136,0.18)' : 'linear-gradient(135deg, #00ff88, #00cc66)', color: '#0a1a0f', boxShadow: saving ? 'none' : '0 4px 14px rgba(0,255,136,0.3)' }}>
+                {saving ? '...' : '✓ Conferma Gol'}
+              </button>
+              <button onClick={() => { setStep(3); setAssistId(null) }} style={{ flex: 1, padding: '1rem', borderRadius: '14px', fontSize: '0.88rem', fontWeight: 700, border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer', minHeight: '56px', background: 'transparent', color: 'rgba(255,255,255,0.38)' }}>← Indietro</button>
+            </div>
           </div>
         )}
       </div>
