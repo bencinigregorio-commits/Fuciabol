@@ -564,7 +564,7 @@ function PartitaCard({ partita, currentUser, onVoteClick, onChiudiVoti, onScomme
             <div style={{ padding: '0.2rem 0.7rem', borderRadius: '20px', fontSize: '0.7rem', fontWeight: 800, background: sc.bg, color: sc.color, border: `1px solid ${sc.border}`, animation: stato === 'live' ? 'livePulse 1.4s ease-in-out infinite' : 'none' }}>
               {sc.label}
             </div>
-            {partita.votazioni?.length > 0 && stato !== 'pre_partita' && stato !== 'live' && (
+            {partita.votazioni?.length > 0 && stato === 'chiusa' && (
               <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.3)' }}>{partita.votazioni.length} voti</div>
             )}
           </div>
@@ -722,8 +722,72 @@ function PartitaCard({ partita, currentUser, onVoteClick, onChiudiVoti, onScomme
               )}
             </div>
           ) : (
-            /* NON-LIVE: two-column grid */
+            /* NON-LIVE: two-column grid + sezione votazioni */
             <>
+              {/* STATO VOTAZIONI — solo in_votazione */}
+              {stato === 'in_votazione' && (() => {
+                const allIds = [...partita.squadra_a, ...partita.squadra_b]
+                const voterId = currentUser?.role === 'admin' ? 'admin' : currentUser?.id
+                const hannoVotato = (partita.votazioni || []).filter(v => allIds.some(id => String(id) === String(v.voterId)) || v.voterId === 'admin')
+                const idHannoVotato = hannoVotato.map(v => String(v.voterId))
+                const mancano = allIds.filter(id => !idHannoVotato.includes(String(id)))
+                const hoVotatoIo = voterId != null && idHannoVotato.includes(String(voterId))
+                const totale = allIds.length
+                return (
+                  <div style={{ marginBottom: '0.85rem', background: 'rgba(0,212,255,0.04)', border: '1px solid rgba(0,212,255,0.12)', borderRadius: '12px', padding: '0.75rem 0.85rem' }}>
+                    {/* Header contatore */}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.6rem' }}>
+                      <div style={{ fontSize: '0.6rem', fontWeight: 800, color: 'rgba(0,212,255,0.6)', letterSpacing: '1.5px', textTransform: 'uppercase' }}>Stato votazioni</div>
+                      <div style={{ fontSize: '0.72rem', fontWeight: 900, color: hannoVotato.length === totale ? '#00ff88' : '#00d4ff' }}>
+                        {hannoVotato.length}/{totale}
+                      </div>
+                    </div>
+                    {/* Barra progresso */}
+                    <div style={{ height: '3px', background: 'rgba(255,255,255,0.07)', borderRadius: '2px', marginBottom: '0.65rem', overflow: 'hidden' }}>
+                      <div style={{ height: '100%', width: `${totale > 0 ? (hannoVotato.length / totale) * 100 : 0}%`, background: 'linear-gradient(90deg, #00d4ff, #00ff88)', borderRadius: '2px', transition: 'width 0.4s' }} />
+                    </div>
+                    {/* Hanno votato */}
+                    {hannoVotato.length > 0 && (
+                      <div style={{ marginBottom: mancano.length > 0 ? '0.55rem' : 0 }}>
+                        <div style={{ fontSize: '0.58rem', fontWeight: 700, color: 'rgba(0,255,136,0.55)', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '0.3rem' }}>✅ Hanno votato</div>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.3rem' }}>
+                          {hannoVotato.map(v => {
+                            const ts = v.timestamp ? new Date(v.timestamp).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) : null
+                            const nome = v.voterName || (v.voterId === 'admin' ? 'Admin' : `#${v.voterId}`)
+                            const isMe = String(v.voterId) === String(voterId)
+                            return (
+                              <span key={String(v.voterId)} style={{ fontSize: '0.7rem', fontWeight: isMe ? 800 : 600, color: isMe ? '#00ff88' : 'rgba(255,255,255,0.75)', background: isMe ? 'rgba(0,255,136,0.08)' : 'rgba(255,255,255,0.05)', border: `1px solid ${isMe ? 'rgba(0,255,136,0.25)' : 'rgba(255,255,255,0.07)'}`, borderRadius: '6px', padding: '0.15rem 0.5rem' }}>
+                                {nome}{ts ? <span style={{ opacity: 0.5, fontSize: '0.6rem', marginLeft: '0.25rem' }}>{ts}</span> : null}{isMe ? ' ✓' : ''}
+                              </span>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    )}
+                    {/* Mancano */}
+                    {mancano.length > 0 && (
+                      <div>
+                        <div style={{ fontSize: '0.58rem', fontWeight: 700, color: 'rgba(255,107,107,0.55)', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '0.3rem' }}>⏳ Mancano</div>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.3rem' }}>
+                          {mancano.map(id => {
+                            const isMe = String(id) === String(voterId)
+                            return (
+                              <span key={id} style={{ fontSize: '0.7rem', fontWeight: isMe ? 800 : 500, color: isMe ? '#ff6b6b' : 'rgba(255,255,255,0.38)', background: isMe ? 'rgba(255,107,107,0.08)' : 'rgba(255,255,255,0.03)', border: `1px solid ${isMe ? 'rgba(255,107,107,0.25)' : 'rgba(255,255,255,0.05)'}`, borderRadius: '6px', padding: '0.15rem 0.5rem' }}>
+                                {getNome(id)}{isMe ? ' (tu)' : ''}
+                              </span>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    )}
+                    {/* Messaggio stato personale */}
+                    {hoVotatoIo && (
+                      <div style={{ marginTop: '0.55rem', fontSize: '0.68rem', color: 'rgba(0,255,136,0.6)', fontStyle: 'italic' }}>Hai già inviato la tua votazione — puoi modificarla con il bottone qui sopra.</div>
+                    )}
+                  </div>
+                )
+              })()}
+
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', position: 'relative' }}>
                 {/* SQUADRA A */}
                 <div style={{ borderRight: '1px solid rgba(255,255,255,0.06)', paddingRight: '0.75rem' }}>
@@ -1331,7 +1395,7 @@ function ModalVotazioni({ partita, currentUser, onClose, onSaved }) {
       const votiInit = {}
       allIds.forEach(id => votiInit[id] = 6)
       const voterId = currentUser.role === 'admin' ? 'admin' : currentUser.id
-      const votoEsistente = partita.votazioni?.find(v => v.voterId === voterId)
+      const votoEsistente = partita.votazioni?.find(v => String(v.voterId) === String(voterId))
       if (votoEsistente) setVoti(votoEsistente.voti)
       else setVoti(votiInit)
     }
@@ -1344,11 +1408,23 @@ function ModalVotazioni({ partita, currentUser, onClose, onSaved }) {
 
   async function salvaVoti() {
     const voterId = currentUser.role === 'admin' ? 'admin' : currentUser.id
-    const votazioniAggiornate = (partita.votazioni || []).filter(v => v.voterId !== voterId)
-    votazioniAggiornate.push({ voterId, voterName: currentUser.nome, voti, timestamp: new Date().toISOString() })
-    const { error } = await supabase.from('partite').update({ votazioni: votazioniAggiornate }).eq('id', partita.id)
-    if (error) alert('Errore: ' + error.message)
-    else onSaved()
+
+    // Fetch fresco dal DB per non sovrascrivere voti di altri voter
+    const { data: partitaFresca, error: fetchErr } = await supabase
+      .from('partite')
+      .select('votazioni')
+      .eq('id', partita.id)
+      .single()
+    if (fetchErr) { alert('Errore nel recupero dati: ' + fetchErr.message); return }
+
+    // String() su entrambi i lati per evitare mismatch numero/stringa
+    const votazioniFresche = (partitaFresca.votazioni || []).filter(v => String(v.voterId) !== String(voterId))
+    votazioniFresche.push({ voterId, voterName: currentUser.nome, voti, timestamp: new Date().toISOString() })
+
+    const { error } = await supabase.from('partite').update({ votazioni: votazioniFresche }).eq('id', partita.id)
+    if (error) { alert('Errore: ' + error.message); return }
+    alert('✓ Voti salvati!')
+    onSaved()
   }
 
   if (loading) return null
