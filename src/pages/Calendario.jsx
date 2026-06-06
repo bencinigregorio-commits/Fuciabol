@@ -596,6 +596,27 @@ function PartitaCard({ partita, currentUser, onVoteClick, onChiudiVoti, onScomme
           </div>
         </div>
 
+        {/* INFO RIGA: ora / luogo / note */}
+        {(partita.ora || partita.luogo || partita.note) && (
+          <div style={{ background: 'rgba(0,0,0,0.25)', borderBottom: `1px solid ${sc.border}`, padding: '0.45rem 0.85rem', display: 'flex', flexWrap: 'wrap', gap: '0.5rem', alignItems: 'center' }}>
+            {partita.ora && (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.72rem', fontWeight: 700, color: 'rgba(255,255,255,0.65)', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '6px', padding: '0.18rem 0.55rem' }}>
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, opacity: 0.7 }}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                {partita.ora}
+              </span>
+            )}
+            {partita.luogo && (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.72rem', fontWeight: 700, color: 'rgba(255,255,255,0.65)', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '6px', padding: '0.18rem 0.55rem' }}>
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, opacity: 0.7 }}><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                {partita.luogo}
+              </span>
+            )}
+            {partita.note && (
+              <span style={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.38)', fontStyle: 'italic', letterSpacing: '0.2px' }}>{partita.note}</span>
+            )}
+          </div>
+        )}
+
         {/* CORPO CARD */}
         <div style={{ background: 'linear-gradient(135deg, rgba(15,23,41,0.97) 0%, rgba(10,16,30,0.98) 50%, rgba(15,23,41,0.97) 100%)', padding: '0.85rem', position: 'relative', overflow: 'hidden' }}>
           <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at 50% 50%, rgba(0,212,255,0.04) 0%, transparent 70%)', pointerEvents: 'none' }} />
