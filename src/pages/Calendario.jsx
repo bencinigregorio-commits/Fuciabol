@@ -450,6 +450,7 @@ function PartitaCard({ partita, currentUser, onVoteClick, onChiudiVoti, onScomme
   const [liveSaving, setLiveSaving] = useState(false)
   const [showGoalModal, setShowGoalModal] = useState(false)
   const [showCorreggi, setShowCorreggi] = useState(false)
+  const [disponibilita, setDisponibilita] = useState(partita.disponibilita || {})
 
   useEffect(() => {
     caricaNomi()
@@ -460,10 +461,29 @@ function PartitaCard({ partita, currentUser, onVoteClick, onChiudiVoti, onScomme
     setLiveEventi(partita.eventi || {})
   }, [partita.id, partita.stato])
 
+  useEffect(() => {
+    setDisponibilita(partita.disponibilita || {})
+  }, [partita.id])
+
   async function caricaNomi() {
     const ids = [...partita.squadra_a, ...partita.squadra_b]
-    const { data } = await supabase.from('giocatori').select('id, nome, foto_url, overall').in('id', ids)
+    const { data } = await supabase.from('giocatori').select('id, nome, foto_url, overall, is_guest').in('id', ids)
     if (data) setGiocatori(data)
+  }
+
+  async function salvaDisponibilita(nuovoStato) {
+    if (!currentUser?.id) return
+    const playerId = currentUser.id
+    const { data: partitaFresca, error: fetchErr } = await supabase
+      .from('partite').select('disponibilita').eq('id', partita.id).single()
+    if (fetchErr) { alert('Errore: ' + fetchErr.message); return }
+    const nuovaDisp = {
+      ...(partitaFresca.disponibilita || {}),
+      [playerId]: { stato: nuovoStato, updatedAt: new Date().toISOString() }
+    }
+    const { error } = await supabase.from('partite').update({ disponibilita: nuovaDisp }).eq('id', partita.id)
+    if (error) { alert('Errore: ' + error.message); return }
+    setDisponibilita(nuovaDisp)
   }
 
   async function caricaScommessa() {
@@ -906,6 +926,79 @@ function PartitaCard({ partita, currentUser, onVoteClick, onChiudiVoti, onScomme
                   )}
                 </div>
               )}
+
+              {/* DISPONIBILITÀ — solo pre_partita */}
+              {stato === 'pre_partita' && (() => {
+                const fissiInSquadra = [...partita.squadra_a, ...partita.squadra_b].filter(id => {
+                  const g = giocatori.find(x => x.id === id)
+                  return g && !g.is_guest
+                })
+                if (fissiInSquadra.length === 0) return null
+                const presenti = fissiInSquadra.filter(id => disponibilita[id]?.stato === 'presente')
+                const forse = fissiInSquadra.filter(id => disponibilita[id]?.stato === 'forse')
+                const assenti = fissiInSquadra.filter(id => disponibilita[id]?.stato === 'assente')
+                const nonRisposto = fissiInSquadra.filter(id => !disponibilita[id]?.stato)
+                const isPlayerFisso = currentUser && !currentUser.is_guest && fissiInSquadra.some(id => String(id) === String(currentUser.id))
+                const miaDisp = currentUser ? disponibilita[currentUser.id]?.stato : null
+                return (
+                  <div style={{ marginTop: '1rem', paddingTop: '0.85rem', borderTop: '1px solid rgba(255,255,255,0.07)' }}>
+                    <div style={{ fontSize: '0.6rem', fontWeight: 800, color: 'rgba(255,255,255,0.3)', letterSpacing: '1.5px', textTransform: 'uppercase', marginBottom: '0.65rem' }}>Disponibilità</div>
+
+                    {/* Counter chips riepilogo */}
+                    <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginBottom: '0.65rem' }}>
+                      {[
+                        { label: 'Presenti', count: presenti.length, color: '#00ff88', bg: 'rgba(0,255,136,0.08)', border: 'rgba(0,255,136,0.2)' },
+                        { label: 'In forse', count: forse.length, color: '#ffd700', bg: 'rgba(255,215,0,0.08)', border: 'rgba(255,215,0,0.2)' },
+                        { label: 'Assenti', count: assenti.length, color: '#ef4444', bg: 'rgba(239,68,68,0.08)', border: 'rgba(239,68,68,0.2)' },
+                        { label: 'Non risposto', count: nonRisposto.length, color: 'rgba(255,255,255,0.3)', bg: 'rgba(255,255,255,0.04)', border: 'rgba(255,255,255,0.08)' },
+                      ].map(s => (
+                        <div key={s.label} style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', background: s.bg, border: `1px solid ${s.border}`, borderRadius: '8px', padding: '0.18rem 0.5rem' }}>
+                          <span style={{ fontSize: '0.75rem', fontWeight: 900, color: s.color }}>{s.count}</span>
+                          <span style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.35)', fontWeight: 600 }}>{s.label}</span>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Lista nomi per gruppo */}
+                    {[
+                      { ids: presenti, color: '#00ff88', icon: '✓' },
+                      { ids: forse, color: '#ffd700', icon: '?' },
+                      { ids: assenti, color: '#ef4444', icon: '✗' },
+                      { ids: nonRisposto, color: 'rgba(255,255,255,0.25)', icon: '—' },
+                    ].filter(gr => gr.ids.length > 0).map((gr, gi) => (
+                      <div key={gi} style={{ display: 'flex', flexWrap: 'wrap', gap: '0.3rem', marginBottom: '0.3rem' }}>
+                        {gr.ids.map(id => {
+                          const isMe = String(id) === String(currentUser?.id)
+                          return (
+                            <span key={id} style={{ fontSize: '0.7rem', fontWeight: isMe ? 800 : 500, color: isMe ? gr.color : 'rgba(255,255,255,0.5)', background: isMe ? `${gr.color}18` : 'rgba(255,255,255,0.04)', border: `1px solid ${isMe ? gr.color + '40' : 'rgba(255,255,255,0.06)'}`, borderRadius: '6px', padding: '0.15rem 0.5rem' }}>
+                              {gr.icon} {getNome(id)}{isMe ? ' (tu)' : ''}
+                            </span>
+                          )
+                        })}
+                      </div>
+                    ))}
+
+                    {/* Bottoni azione — solo player fisso in squadra */}
+                    {isPlayerFisso && (
+                      <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem' }}>
+                        {[
+                          { val: 'presente', label: 'Ci sono', color: '#00ff88', rgb: '0,255,136' },
+                          { val: 'forse', label: 'In forse', color: '#ffd700', rgb: '255,215,0' },
+                          { val: 'assente', label: 'Non ci sono', color: '#ef4444', rgb: '239,68,68' },
+                        ].map(btn => {
+                          const isActive = miaDisp === btn.val
+                          return (
+                            <button key={btn.val} onClick={() => salvaDisponibilita(btn.val)}
+                              style={{ flex: 1, padding: '0.6rem 0.3rem', borderRadius: '10px', fontSize: '0.72rem', fontWeight: 700, border: `1px solid ${isActive ? btn.color : `rgba(${btn.rgb},0.2)`}`, cursor: 'pointer', minHeight: '44px', background: isActive ? `rgba(${btn.rgb},0.18)` : `rgba(${btn.rgb},0.05)`, color: isActive ? btn.color : `rgba(${btn.rgb},0.5)`, transition: 'all 0.15s' }}>
+                              {btn.label}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )
+              })()}
             </>
           )}
         </div>
