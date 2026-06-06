@@ -1016,6 +1016,9 @@ function ModalGoalInput({ partita, giocatori, liveEventi, onConfirm, onClose }) 
 function ModalNuovaPartita({ onClose, onSaved }) {
   const [giocatori, setGiocatori] = useState([])
   const [data, setData] = useState(new Date().toISOString().split('T')[0])
+  const [ora, setOra] = useState('')
+  const [luogo, setLuogo] = useState('')
+  const [note, setNote] = useState('')
   const [squadraA, setSquadraA] = useState([])
   const [squadraB, setSquadraB] = useState([])
 
@@ -1043,6 +1046,9 @@ function ModalNuovaPartita({ onClose, onSaved }) {
     }
     const { error } = await supabase.from('partite').insert({
       data,
+      ora: ora || null,
+      luogo: luogo || null,
+      note: note || null,
       squadra_a: squadraA,
       squadra_b: squadraB,
       punteggio_a: 0,
@@ -1064,10 +1070,29 @@ function ModalNuovaPartita({ onClose, onSaved }) {
           Inserisci solo le squadre. Il risultato lo aggiungerai dopo la partita.
         </p>
 
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.25rem' }}>
+          <div>
+            <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '0.5rem', color: 'rgba(255, 255, 255, 0.7)' }}>Data</label>
+            <input type="date" value={data} onChange={(e) => setData(e.target.value)}
+              style={{ width: '100%', background: 'rgba(0, 0, 0, 0.3)', border: '1px solid rgba(0, 212, 255, 0.3)', borderRadius: '12px', padding: '0.75rem', color: '#fff', outline: 'none', boxSizing: 'border-box' }} />
+          </div>
+          <div>
+            <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '0.5rem', color: 'rgba(255, 255, 255, 0.7)' }}>Ora</label>
+            <input type="time" value={ora} onChange={(e) => setOra(e.target.value)}
+              style={{ width: '100%', background: 'rgba(0, 0, 0, 0.3)', border: '1px solid rgba(0, 212, 255, 0.3)', borderRadius: '12px', padding: '0.75rem', color: '#fff', outline: 'none', boxSizing: 'border-box' }} />
+          </div>
+        </div>
+
+        <div style={{ marginBottom: '1.25rem' }}>
+          <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '0.5rem', color: 'rgba(255, 255, 255, 0.7)' }}>Luogo</label>
+          <input type="text" value={luogo} onChange={(e) => setLuogo(e.target.value)} placeholder="Es. Campo Sintex, Via Roma…"
+            style={{ width: '100%', background: 'rgba(0, 0, 0, 0.3)', border: '1px solid rgba(0, 212, 255, 0.3)', borderRadius: '12px', padding: '0.75rem', color: '#fff', outline: 'none', boxSizing: 'border-box' }} />
+        </div>
+
         <div style={{ marginBottom: '1.5rem' }}>
-          <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '0.5rem', color: 'rgba(255, 255, 255, 0.7)' }}>Data</label>
-          <input type="date" value={data} onChange={(e) => setData(e.target.value)}
-            style={{ width: '100%', background: 'rgba(0, 0, 0, 0.3)', border: '1px solid rgba(0, 212, 255, 0.3)', borderRadius: '12px', padding: '0.75rem', color: '#fff', outline: 'none' }} />
+          <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '0.5rem', color: 'rgba(255, 255, 255, 0.7)' }}>Note</label>
+          <textarea value={note} onChange={(e) => setNote(e.target.value)} placeholder="Info aggiuntive, variazioni, avvisi…" rows={2}
+            style={{ width: '100%', background: 'rgba(0, 0, 0, 0.3)', border: '1px solid rgba(0, 212, 255, 0.3)', borderRadius: '12px', padding: '0.75rem', color: '#fff', outline: 'none', resize: 'vertical', fontFamily: 'inherit', fontSize: '0.9rem', boxSizing: 'border-box' }} />
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
