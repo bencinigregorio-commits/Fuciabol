@@ -254,26 +254,20 @@ function GazzettaFuciabol({ partite, giocatori, currentUser }) {
   }, [partite, giocatori])
 
   function calcolaTopGiocatori() {
-    const scores = {}
-    partite.forEach(p => {
-      if (!p.voti_calcolati) return
-      p.voti_calcolati.forEach(v => {
-        if (!scores[v.playerId]) scores[v.playerId] = { voti: [], gol: 0, assist: 0 }
-        scores[v.playerId].voti.push(v.votoFinale)
-        scores[v.playerId].gol += p.eventi?.[v.playerId]?.gol || 0
-        scores[v.playerId].assist += p.eventi?.[v.playerId]?.assist || 0
+    // Solo l'ultima partita chiusa (partite[0] è già ordinato per data DESC)
+    const ultimaPartita = partite[0]
+    if (!ultimaPartita) return
+    const allIds = [...ultimaPartita.squadra_a, ...ultimaPartita.squadra_b]
+    const ranked = allIds
+      .map(id => {
+        const votoCalc = ultimaPartita.voti_calcolati?.find(v => v.playerId === id)
+        const gol = ultimaPartita.eventi?.[id]?.gol || 0
+        const assist = ultimaPartita.eventi?.[id]?.assist || 0
+        const giocatore = giocatori.find(g => g.id === id)
+        return { id, media: votoCalc?.votoFinale || 0, gol, assist, giocatore }
       })
-    })
-    const ranked = Object.entries(scores)
-      .map(([id, s]) => ({
-        id: parseInt(id),
-        media: s.voti.reduce((a, b) => a + b, 0) / s.voti.length,
-        gol: s.gol,
-        assist: s.assist,
-        giocatore: giocatori.find(g => g.id === parseInt(id))
-      }))
       .filter(x => x.giocatore)
-      .sort((a, b) => b.media - a.media)
+      .sort((a, b) => b.media - a.media || b.gol - a.gol || b.assist - a.assist)
       .slice(0, 3)
     setTopGiocatori(ranked)
   }
@@ -547,6 +541,9 @@ function PartitaCard({ partita, currentUser, onVoteClick, onChiudiVoti, onScomme
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
         style={{
+          width: '100%',
+          minWidth: 0,
+          boxSizing: 'border-box',
           borderRadius: '20px',
           overflow: 'hidden',
           transition: 'all 0.3s',
@@ -788,9 +785,9 @@ function PartitaCard({ partita, currentUser, onVoteClick, onChiudiVoti, onScomme
                 )
               })()}
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', position: 'relative' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', position: 'relative', minWidth: 0 }}>
                 {/* SQUADRA A */}
-                <div style={{ borderRight: '1px solid rgba(255,255,255,0.06)', paddingRight: '0.75rem' }}>
+                <div style={{ borderRight: '1px solid rgba(255,255,255,0.06)', paddingRight: '0.75rem', minWidth: 0 }}>
                   <div style={{ fontSize: '0.65rem', fontWeight: 800, letterSpacing: '1px', textTransform: 'uppercase', color: stato === 'chiusa' && isVittoriaA ? '#00d4ff' : 'rgba(255,255,255,0.4)', marginBottom: '0.6rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
                     {stato === 'chiusa' && isVittoriaA && <span style={{ color: '#ffd700' }}>👑</span>}Squadra A
                   </div>
@@ -820,7 +817,7 @@ function PartitaCard({ partita, currentUser, onVoteClick, onChiudiVoti, onScomme
                   </div>
                 </div>
                 {/* SQUADRA B */}
-                <div style={{ paddingLeft: '0.75rem' }}>
+                <div style={{ paddingLeft: '0.75rem', minWidth: 0 }}>
                   <div style={{ fontSize: '0.65rem', fontWeight: 800, letterSpacing: '1px', textTransform: 'uppercase', color: stato === 'chiusa' && isVittoriaB ? '#00d4ff' : 'rgba(255,255,255,0.4)', marginBottom: '0.6rem', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.3rem' }}>
                     Squadra B{stato === 'chiusa' && isVittoriaB && <span style={{ color: '#ffd700' }}>👑</span>}
                   </div>

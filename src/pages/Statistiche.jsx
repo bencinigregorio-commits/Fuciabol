@@ -85,7 +85,7 @@ function Statistiche() {
 
   async function caricaDati() {
     const { data: giocatoriData } = await supabase.from('giocatori').select('*').order('overall', { ascending: false })
-    const { data: partiteData } = await supabase.from('partite').select('*').eq('stato', 'chiusa')
+    const { data: partiteData } = await supabase.from('partite').select('*').eq('stato', 'chiusa').order('data', { ascending: false })
     if (giocatoriData) setGiocatori(giocatoriData)
     if (partiteData) setPartite(partiteData)
   }
