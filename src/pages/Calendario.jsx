@@ -1133,6 +1133,7 @@ function ModalNuovaPartita({ onClose, onSaved }) {
   const [ora, setOra] = useState('')
   const [luogo, setLuogo] = useState('')
   const [note, setNote] = useState('')
+  const [formato, setFormato] = useState('5v5')
   const [squadraA, setSquadraA] = useState([])
   const [squadraB, setSquadraB] = useState([])
 
@@ -1154,15 +1155,12 @@ function ModalNuovaPartita({ onClose, onSaved }) {
   }
 
   async function salvaPartita() {
-    if (squadraA.length === 0 || squadraB.length === 0) {
-      alert('Seleziona almeno 1 giocatore per squadra')
-      return
-    }
     const { error } = await supabase.from('partite').insert({
       data,
       ora: ora || null,
       luogo: luogo || null,
       note: note || null,
+      formato,
       squadra_a: squadraA,
       squadra_b: squadraB,
       punteggio_a: 0,
@@ -1181,7 +1179,7 @@ function ModalNuovaPartita({ onClose, onSaved }) {
       <div style={{ background: 'rgba(15, 23, 41, 0.95)', border: '1px solid rgba(0, 212, 255, 0.2)', borderRadius: '20px', padding: '2rem', maxWidth: '700px', width: '100%', maxHeight: '90vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
         <h2 style={{ fontSize: '2rem', fontWeight: 900, marginBottom: '0.5rem' }}>+ Nuova Partita</h2>
         <p style={{ color: 'rgba(255, 255, 255, 0.5)', fontSize: '0.9rem', marginBottom: '1.5rem' }}>
-          Inserisci solo le squadre. Il risultato lo aggiungerai dopo la partita.
+          Puoi creare la partita con squadre vuote — i giocatori si iscriveranno autonomamente.
         </p>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.25rem' }}>
@@ -1203,10 +1201,22 @@ function ModalNuovaPartita({ onClose, onSaved }) {
             style={{ width: '100%', background: 'rgba(0, 0, 0, 0.3)', border: '1px solid rgba(0, 212, 255, 0.3)', borderRadius: '12px', padding: '0.75rem', color: '#fff', outline: 'none', boxSizing: 'border-box' }} />
         </div>
 
-        <div style={{ marginBottom: '1.5rem' }}>
+        <div style={{ marginBottom: '1.25rem' }}>
           <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '0.5rem', color: 'rgba(255, 255, 255, 0.7)' }}>Note</label>
           <textarea value={note} onChange={(e) => setNote(e.target.value)} placeholder="Info aggiuntive, variazioni, avvisi…" rows={2}
             style={{ width: '100%', background: 'rgba(0, 0, 0, 0.3)', border: '1px solid rgba(0, 212, 255, 0.3)', borderRadius: '12px', padding: '0.75rem', color: '#fff', outline: 'none', resize: 'vertical', fontFamily: 'inherit', fontSize: '0.9rem', boxSizing: 'border-box' }} />
+        </div>
+
+        <div style={{ marginBottom: '1.5rem' }}>
+          <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '0.5rem', color: 'rgba(255, 255, 255, 0.7)' }}>Formato</label>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            {['5v5', '7v7', '8v8', '11v11'].map(f => (
+              <button key={f} type="button" onClick={() => setFormato(f)}
+                style={{ flex: 1, padding: '0.7rem 0.5rem', borderRadius: '10px', fontSize: '0.9rem', fontWeight: 800, border: `2px solid ${formato === f ? '#00d4ff' : 'rgba(0,212,255,0.2)'}`, cursor: 'pointer', background: formato === f ? 'rgba(0,212,255,0.18)' : 'rgba(0,0,0,0.3)', color: formato === f ? '#00d4ff' : 'rgba(255,255,255,0.4)', transition: 'all 0.15s', letterSpacing: '0.5px' }}>
+                {f}
+              </button>
+            ))}
+          </div>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
