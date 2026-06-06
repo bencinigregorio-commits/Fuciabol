@@ -450,7 +450,9 @@ function PartitaCard({ partita, currentUser, onVoteClick, onChiudiVoti, onScomme
   const [liveSaving, setLiveSaving] = useState(false)
   const [showGoalModal, setShowGoalModal] = useState(false)
   const [showCorreggi, setShowCorreggi] = useState(false)
-  const [disponibilita, setDisponibilita] = useState(partita.disponibilita || {})
+  const [squadraA, setSquadraA] = useState(partita.squadra_a || [])
+  const [squadraB, setSquadraB] = useState(partita.squadra_b || [])
+  const [slotSaving, setSlotSaving] = useState(false)
 
   useEffect(() => {
     caricaNomi()
@@ -462,28 +464,55 @@ function PartitaCard({ partita, currentUser, onVoteClick, onChiudiVoti, onScomme
   }, [partita.id, partita.stato])
 
   useEffect(() => {
-    setDisponibilita(partita.disponibilita || {})
+    setSquadraA(partita.squadra_a || [])
+    setSquadraB(partita.squadra_b || [])
   }, [partita.id])
 
   async function caricaNomi() {
-    const ids = [...partita.squadra_a, ...partita.squadra_b]
+    const ids = [...(partita.squadra_a || []), ...(partita.squadra_b || [])]
+    if (ids.length === 0) { setGiocatori([]); return }
     const { data } = await supabase.from('giocatori').select('id, nome, foto_url, overall, is_guest').in('id', ids)
     if (data) setGiocatori(data)
   }
 
-  async function salvaDisponibilita(nuovoStato) {
-    if (!currentUser?.id) return
+  async function iscrivitiSquadra(squadra) {
+    if (!currentUser?.id || slotSaving) return
+    setSlotSaving(true)
     const playerId = currentUser.id
-    const { data: partitaFresca, error: fetchErr } = await supabase
-      .from('partite').select('disponibilita').eq('id', partita.id).single()
-    if (fetchErr) { alert('Errore: ' + fetchErr.message); return }
-    const nuovaDisp = {
-      ...(partitaFresca.disponibilita || {}),
-      [playerId]: { stato: nuovoStato, updatedAt: new Date().toISOString() }
+    const { data: fresca, error: fetchErr } = await supabase
+      .from('partite').select('squadra_a, squadra_b').eq('id', partita.id).single()
+    if (fetchErr) { alert('Errore: ' + fetchErr.message); setSlotSaving(false); return }
+    let nuovaA = (fresca.squadra_a || []).filter(id => String(id) !== String(playerId))
+    let nuovaB = (fresca.squadra_b || []).filter(id => String(id) !== String(playerId))
+    if (squadra === 'A') nuovaA = [...nuovaA, playerId]
+    else nuovaB = [...nuovaB, playerId]
+    const { error } = await supabase.from('partite').update({ squadra_a: nuovaA, squadra_b: nuovaB }).eq('id', partita.id)
+    if (error) { alert('Errore: ' + error.message); setSlotSaving(false); return }
+    setSquadraA(nuovaA)
+    setSquadraB(nuovaB)
+    // ricarica nomi per includere eventualmente se stesso
+    const ids = [...new Set([...nuovaA, ...nuovaB])]
+    if (ids.length > 0) {
+      const { data } = await supabase.from('giocatori').select('id, nome, foto_url, overall, is_guest').in('id', ids)
+      if (data) setGiocatori(data)
     }
-    const { error } = await supabase.from('partite').update({ disponibilita: nuovaDisp }).eq('id', partita.id)
-    if (error) { alert('Errore: ' + error.message); return }
-    setDisponibilita(nuovaDisp)
+    setSlotSaving(false)
+  }
+
+  async function esciDallaPartita() {
+    if (!currentUser?.id || slotSaving) return
+    setSlotSaving(true)
+    const playerId = currentUser.id
+    const { data: fresca, error: fetchErr } = await supabase
+      .from('partite').select('squadra_a, squadra_b').eq('id', partita.id).single()
+    if (fetchErr) { alert('Errore: ' + fetchErr.message); setSlotSaving(false); return }
+    const nuovaA = (fresca.squadra_a || []).filter(id => String(id) !== String(playerId))
+    const nuovaB = (fresca.squadra_b || []).filter(id => String(id) !== String(playerId))
+    const { error } = await supabase.from('partite').update({ squadra_a: nuovaA, squadra_b: nuovaB }).eq('id', partita.id)
+    if (error) { alert('Errore: ' + error.message); setSlotSaving(false); return }
+    setSquadraA(nuovaA)
+    setSquadraB(nuovaB)
+    setSlotSaving(false)
   }
 
   async function caricaScommessa() {
@@ -523,8 +552,11 @@ function PartitaCard({ partita, currentUser, onVoteClick, onChiudiVoti, onScomme
 
   const dataStr = new Date(partita.data).toLocaleDateString('it-IT', { day: 'numeric', month: 'short', year: 'numeric' })
   const stato = partita.stato || 'chiusa'
-  const allPlayers = [...partita.squadra_a, ...partita.squadra_b]
-  const isInSquadra = allPlayers.includes(currentUser?.id)
+  // Per live/votazioni/chiusa usa i dati da partita (server); per pre_partita usa state locale aggiornabile
+  const currentSquadraA = stato === 'pre_partita' ? squadraA : (partita.squadra_a || [])
+  const currentSquadraB = stato === 'pre_partita' ? squadraB : (partita.squadra_b || [])
+  const allPlayers = [...currentSquadraA, ...currentSquadraB]
+  const isInSquadra = allPlayers.some(id => String(id) === String(currentUser?.id))
   const canVote = currentUser && (currentUser.role === 'admin' || isInSquadra)
   const canScommettere = currentUser?.role === 'player' && stato === 'pre_partita'
   const hasVoted = partita.votazioni?.some(v => v.voterId === (currentUser?.role === 'admin' ? 'admin' : currentUser?.id))
@@ -826,7 +858,7 @@ function PartitaCard({ partita, currentUser, onVoteClick, onChiudiVoti, onScomme
                 )
               })()}
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', position: 'relative', minWidth: 0 }}>
+              {stato !== 'pre_partita' && <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', position: 'relative', minWidth: 0 }}>
                 {/* SQUADRA A */}
                 <div style={{ borderRight: '1px solid rgba(255,255,255,0.06)', paddingRight: '0.75rem', minWidth: 0 }}>
                   <div style={{ fontSize: '0.65rem', fontWeight: 800, letterSpacing: '1px', textTransform: 'uppercase', color: stato === 'chiusa' && isVittoriaA ? '#00d4ff' : 'rgba(255,255,255,0.4)', marginBottom: '0.6rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
@@ -887,7 +919,7 @@ function PartitaCard({ partita, currentUser, onVoteClick, onChiudiVoti, onScomme
                     ))}
                   </div>
                 </div>
-              </div>
+              </div>}
 
               {/* CHIUSA: tabellino */}
               {stato === 'chiusa' && (marcatori.length > 0 || assistman.length > 0 || mvp) && (
@@ -927,73 +959,76 @@ function PartitaCard({ partita, currentUser, onVoteClick, onChiudiVoti, onScomme
                 </div>
               )}
 
-              {/* DISPONIBILITÀ — solo pre_partita */}
+              {/* SLOT SQUADRE — solo pre_partita */}
               {stato === 'pre_partita' && (() => {
-                const fissiInSquadra = [...partita.squadra_a, ...partita.squadra_b].filter(id => {
-                  const g = giocatori.find(x => x.id === id)
-                  return g && !g.is_guest
-                })
-                if (fissiInSquadra.length === 0) return null
-                const presenti = fissiInSquadra.filter(id => disponibilita[id]?.stato === 'presente')
-                const forse = fissiInSquadra.filter(id => disponibilita[id]?.stato === 'forse')
-                const assenti = fissiInSquadra.filter(id => disponibilita[id]?.stato === 'assente')
-                const nonRisposto = fissiInSquadra.filter(id => !disponibilita[id]?.stato)
-                const isPlayerFisso = currentUser && !currentUser.is_guest && fissiInSquadra.some(id => String(id) === String(currentUser.id))
-                const miaDisp = currentUser ? disponibilita[currentUser.id]?.stato : null
-                return (
-                  <div style={{ marginTop: '1rem', paddingTop: '0.85rem', borderTop: '1px solid rgba(255,255,255,0.07)' }}>
-                    <div style={{ fontSize: '0.6rem', fontWeight: 800, color: 'rgba(255,255,255,0.3)', letterSpacing: '1.5px', textTransform: 'uppercase', marginBottom: '0.65rem' }}>Disponibilità</div>
+                const maxPerSquadra = { '5v5': 5, '7v7': 7, '8v8': 8, '11v11': 11 }[partita.formato] || 5
+                const isPlayerFisso = currentUser && !currentUser.is_guest && currentUser.role !== 'admin'
+                const miaSquadra = squadraA.some(id => String(id) === String(currentUser?.id)) ? 'A'
+                  : squadraB.some(id => String(id) === String(currentUser?.id)) ? 'B' : null
 
-                    {/* Counter chips riepilogo */}
-                    <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginBottom: '0.65rem' }}>
-                      {[
-                        { label: 'Presenti', count: presenti.length, color: '#00ff88', bg: 'rgba(0,255,136,0.08)', border: 'rgba(0,255,136,0.2)' },
-                        { label: 'In forse', count: forse.length, color: '#ffd700', bg: 'rgba(255,215,0,0.08)', border: 'rgba(255,215,0,0.2)' },
-                        { label: 'Assenti', count: assenti.length, color: '#ef4444', bg: 'rgba(239,68,68,0.08)', border: 'rgba(239,68,68,0.2)' },
-                        { label: 'Non risposto', count: nonRisposto.length, color: 'rgba(255,255,255,0.3)', bg: 'rgba(255,255,255,0.04)', border: 'rgba(255,255,255,0.08)' },
-                      ].map(s => (
-                        <div key={s.label} style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', background: s.bg, border: `1px solid ${s.border}`, borderRadius: '8px', padding: '0.18rem 0.5rem' }}>
-                          <span style={{ fontSize: '0.75rem', fontWeight: 900, color: s.color }}>{s.count}</span>
-                          <span style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.35)', fontWeight: 600 }}>{s.label}</span>
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Lista nomi per gruppo */}
-                    {[
-                      { ids: presenti, color: '#00ff88', icon: '✓' },
-                      { ids: forse, color: '#ffd700', icon: '?' },
-                      { ids: assenti, color: '#ef4444', icon: '✗' },
-                      { ids: nonRisposto, color: 'rgba(255,255,255,0.25)', icon: '—' },
-                    ].filter(gr => gr.ids.length > 0).map((gr, gi) => (
-                      <div key={gi} style={{ display: 'flex', flexWrap: 'wrap', gap: '0.3rem', marginBottom: '0.3rem' }}>
-                        {gr.ids.map(id => {
-                          const isMe = String(id) === String(currentUser?.id)
-                          return (
-                            <span key={id} style={{ fontSize: '0.7rem', fontWeight: isMe ? 800 : 500, color: isMe ? gr.color : 'rgba(255,255,255,0.5)', background: isMe ? `${gr.color}18` : 'rgba(255,255,255,0.04)', border: `1px solid ${isMe ? gr.color + '40' : 'rgba(255,255,255,0.06)'}`, borderRadius: '6px', padding: '0.15rem 0.5rem' }}>
-                              {gr.icon} {getNome(id)}{isMe ? ' (tu)' : ''}
-                            </span>
+                const renderSlot = (ids, squadra, accent, accentBg, accentBorder) => {
+                  const slots = Array.from({ length: maxPerSquadra }, (_, i) => ids[i] ?? null)
+                  const piena = ids.length >= maxPerSquadra
+                  return (
+                    <div style={{ background: accentBg, border: `1px solid ${accentBorder}`, borderRadius: '12px', padding: '0.65rem 0.75rem', minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.55rem' }}>
+                        <div style={{ fontSize: '0.6rem', fontWeight: 800, letterSpacing: '1.5px', textTransform: 'uppercase', color: accent }}>Squadra {squadra}</div>
+                        <div style={{ fontSize: '0.62rem', fontWeight: 700, color: piena ? '#00ff88' : 'rgba(255,255,255,0.3)' }}>{ids.length}/{maxPerSquadra}</div>
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                        {slots.map((id, i) => {
+                          const isMe = id !== null && String(id) === String(currentUser?.id)
+                          return id !== null ? (
+                            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.3rem 0.4rem', borderRadius: '8px', background: isMe ? `${accent}18` : 'rgba(255,255,255,0.04)', border: `1px solid ${isMe ? accent + '40' : 'rgba(255,255,255,0.06)'}` }}>
+                              <div style={{ width: '20px', height: '20px', borderRadius: '50%', overflow: 'hidden', flexShrink: 0, background: accentBg, border: `1px solid ${accentBorder}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.55rem' }}>
+                                {getFoto(id) ? <img src={getFoto(id)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top' }} /> : '👤'}
+                              </div>
+                              <span style={{ flex: 1, fontSize: '0.75rem', fontWeight: isMe ? 800 : 600, color: isMe ? accent : '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                {getNome(id)}{isMe ? ' (tu)' : ''}
+                              </span>
+                            </div>
+                          ) : (
+                            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.3rem 0.4rem', borderRadius: '8px', background: 'rgba(255,255,255,0.02)', border: '1px dashed rgba(255,255,255,0.07)' }}>
+                              <div style={{ width: '20px', height: '20px', borderRadius: '50%', background: 'rgba(255,255,255,0.04)', border: '1px dashed rgba(255,255,255,0.1)', flexShrink: 0 }} />
+                              <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.2)', fontStyle: 'italic' }}>Slot libero</span>
+                              {isPlayerFisso && miaSquadra === null && !piena && (
+                                <button onClick={() => iscrivitiSquadra(squadra)} disabled={slotSaving}
+                                  style={{ marginLeft: 'auto', fontSize: '0.65rem', fontWeight: 800, padding: '0.18rem 0.5rem', borderRadius: '6px', border: `1px solid ${accent}60`, background: `${accent}12`, color: accent, cursor: slotSaving ? 'default' : 'pointer', flexShrink: 0 }}>
+                                  + Entra
+                                </button>
+                              )}
+                            </div>
                           )
                         })}
                       </div>
-                    ))}
+                    </div>
+                  )
+                }
 
-                    {/* Bottoni azione — solo player fisso in squadra */}
-                    {isPlayerFisso && (
-                      <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem' }}>
-                        {[
-                          { val: 'presente', label: 'Ci sono', color: '#00ff88', rgb: '0,255,136' },
-                          { val: 'forse', label: 'In forse', color: '#ffd700', rgb: '255,215,0' },
-                          { val: 'assente', label: 'Non ci sono', color: '#ef4444', rgb: '239,68,68' },
-                        ].map(btn => {
-                          const isActive = miaDisp === btn.val
-                          return (
-                            <button key={btn.val} onClick={() => salvaDisponibilita(btn.val)}
-                              style={{ flex: 1, padding: '0.6rem 0.3rem', borderRadius: '10px', fontSize: '0.72rem', fontWeight: 700, border: `1px solid ${isActive ? btn.color : `rgba(${btn.rgb},0.2)`}`, cursor: 'pointer', minHeight: '44px', background: isActive ? `rgba(${btn.rgb},0.18)` : `rgba(${btn.rgb},0.05)`, color: isActive ? btn.color : `rgba(${btn.rgb},0.5)`, transition: 'all 0.15s' }}>
-                              {btn.label}
-                            </button>
-                          )
-                        })}
+                return (
+                  <div style={{ marginTop: '1rem', paddingTop: '0.85rem', borderTop: '1px solid rgba(255,255,255,0.07)', display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+                    {renderSlot(squadraA, 'A', '#00d4ff', 'rgba(0,212,255,0.06)', 'rgba(0,212,255,0.14)')}
+                    {renderSlot(squadraB, 'B', '#ef4444', 'rgba(239,68,68,0.06)', 'rgba(239,68,68,0.14)')}
+
+                    {/* Azioni player: cambia squadra o esci */}
+                    {isPlayerFisso && miaSquadra !== null && (
+                      <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        {miaSquadra === 'A' && squadraB.length < ({ '5v5': 5, '7v7': 7, '8v8': 8, '11v11': 11 }[partita.formato] || 5) && (
+                          <button onClick={() => iscrivitiSquadra('B')} disabled={slotSaving}
+                            style={{ flex: 1, padding: '0.55rem', borderRadius: '10px', fontSize: '0.75rem', fontWeight: 700, border: '1px solid rgba(239,68,68,0.3)', cursor: slotSaving ? 'default' : 'pointer', minHeight: '40px', background: 'rgba(239,68,68,0.07)', color: '#ef4444' }}>
+                            Passa a Squadra B
+                          </button>
+                        )}
+                        {miaSquadra === 'B' && squadraA.length < ({ '5v5': 5, '7v7': 7, '8v8': 8, '11v11': 11 }[partita.formato] || 5) && (
+                          <button onClick={() => iscrivitiSquadra('A')} disabled={slotSaving}
+                            style={{ flex: 1, padding: '0.55rem', borderRadius: '10px', fontSize: '0.75rem', fontWeight: 700, border: '1px solid rgba(0,212,255,0.3)', cursor: slotSaving ? 'default' : 'pointer', minHeight: '40px', background: 'rgba(0,212,255,0.07)', color: '#00d4ff' }}>
+                            Passa a Squadra A
+                          </button>
+                        )}
+                        <button onClick={esciDallaPartita} disabled={slotSaving}
+                          style={{ flex: 1, padding: '0.55rem', borderRadius: '10px', fontSize: '0.75rem', fontWeight: 700, border: '1px solid rgba(255,107,107,0.2)', cursor: slotSaving ? 'default' : 'pointer', minHeight: '40px', background: 'rgba(255,107,107,0.05)', color: 'rgba(255,107,107,0.6)' }}>
+                          Esci dalla partita
+                        </button>
                       </div>
                     )}
                   </div>
