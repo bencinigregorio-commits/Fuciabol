@@ -453,10 +453,12 @@ function PartitaCard({ partita, currentUser, onVoteClick, onChiudiVoti, onScomme
   const [squadraA, setSquadraA] = useState(partita.squadra_a || [])
   const [squadraB, setSquadraB] = useState(partita.squadra_b || [])
   const [slotSaving, setSlotSaving] = useState(false)
+  const [allGiocatori, setAllGiocatori] = useState([])
 
   useEffect(() => {
     caricaNomi()
     if (currentUser?.id) caricaScommessa()
+    if (currentUser?.role === 'admin') caricaTuttiGiocatori()
   }, [])
 
   useEffect(() => {
@@ -473,6 +475,79 @@ function PartitaCard({ partita, currentUser, onVoteClick, onChiudiVoti, onScomme
     if (ids.length === 0) { setGiocatori([]); return }
     const { data } = await supabase.from('giocatori').select('id, nome, foto_url, overall, is_guest').in('id', ids)
     if (data) setGiocatori(data)
+  }
+
+  async function caricaTuttiGiocatori() {
+    const { data } = await supabase.from('giocatori').select('id, nome, is_guest').order('nome')
+    if (data) setAllGiocatori(data)
+  }
+
+  async function aggiornaCacheNomi(nuovaA, nuovaB) {
+    const ids = [...new Set([...nuovaA, ...nuovaB])]
+    if (ids.length === 0) { setGiocatori([]); return }
+    const { data } = await supabase.from('giocatori').select('id, nome, foto_url, overall, is_guest').in('id', ids)
+    if (data) setGiocatori(data)
+  }
+
+  async function adminSalvaSquadre(nuovaA, nuovaB) {
+    const { error } = await supabase.from('partite').update({ squadra_a: nuovaA, squadra_b: nuovaB }).eq('id', partita.id)
+    if (error) { alert('Errore: ' + error.message); return false }
+    setSquadraA(nuovaA)
+    setSquadraB(nuovaB)
+    await aggiornaCacheNomi(nuovaA, nuovaB)
+    return true
+  }
+
+  async function adminAggiungi(playerId, squadra) {
+    if (slotSaving) return
+    setSlotSaving(true)
+    const maxPerSquadra = { '5v5': 5, '7v7': 7, '8v8': 8, '11v11': 11 }[partita.formato] || 5
+    const { data: fresca, error: fetchErr } = await supabase
+      .from('partite').select('squadra_a, squadra_b').eq('id', partita.id).single()
+    if (fetchErr) { alert('Errore: ' + fetchErr.message); setSlotSaving(false); return }
+    let nuovaA = (fresca.squadra_a || []).filter(id => String(id) !== String(playerId))
+    let nuovaB = (fresca.squadra_b || []).filter(id => String(id) !== String(playerId))
+    if (squadra === 'A') {
+      if (nuovaA.length >= maxPerSquadra) { alert('Squadra A piena'); setSlotSaving(false); return }
+      nuovaA = [...nuovaA, playerId]
+    } else {
+      if (nuovaB.length >= maxPerSquadra) { alert('Squadra B piena'); setSlotSaving(false); return }
+      nuovaB = [...nuovaB, playerId]
+    }
+    await adminSalvaSquadre(nuovaA, nuovaB)
+    setSlotSaving(false)
+  }
+
+  async function adminRimuovi(playerId) {
+    if (slotSaving) return
+    setSlotSaving(true)
+    const { data: fresca, error: fetchErr } = await supabase
+      .from('partite').select('squadra_a, squadra_b').eq('id', partita.id).single()
+    if (fetchErr) { alert('Errore: ' + fetchErr.message); setSlotSaving(false); return }
+    const nuovaA = (fresca.squadra_a || []).filter(id => String(id) !== String(playerId))
+    const nuovaB = (fresca.squadra_b || []).filter(id => String(id) !== String(playerId))
+    await adminSalvaSquadre(nuovaA, nuovaB)
+    setSlotSaving(false)
+  }
+
+  async function adminSposta(playerId, versoDove) {
+    if (slotSaving) return
+    setSlotSaving(true)
+    const maxPerSquadra = { '5v5': 5, '7v7': 7, '8v8': 8, '11v11': 11 }[partita.formato] || 5
+    const { data: fresca, error: fetchErr } = await supabase
+      .from('partite').select('squadra_a, squadra_b').eq('id', partita.id).single()
+    if (fetchErr) { alert('Errore: ' + fetchErr.message); setSlotSaving(false); return }
+    let nuovaA = (fresca.squadra_a || []).filter(id => String(id) !== String(playerId))
+    let nuovaB = (fresca.squadra_b || []).filter(id => String(id) !== String(playerId))
+    if (versoDove === 'A') {
+      if (nuovaA.length >= maxPerSquadra) { alert('Squadra A piena'); setSlotSaving(false); return }
+      nuovaA = [...nuovaA, playerId]
+    } else {
+      if (nuovaB.length >= maxPerSquadra) { alert('Squadra B piena'); setSlotSaving(false); return }
+      nuovaB = [...nuovaB, playerId]
+    }
+    await adminSalvaSquadre(nuovaA, nuovaB)
+    setSlotSaving(false)
   }
 
   async function iscrivitiSquadra(squadra) {
@@ -1013,13 +1088,13 @@ function PartitaCard({ partita, currentUser, onVoteClick, onChiudiVoti, onScomme
                     {/* Azioni player: cambia squadra o esci */}
                     {isPlayerFisso && miaSquadra !== null && (
                       <div style={{ display: 'flex', gap: '0.5rem' }}>
-                        {miaSquadra === 'A' && squadraB.length < ({ '5v5': 5, '7v7': 7, '8v8': 8, '11v11': 11 }[partita.formato] || 5) && (
+                        {miaSquadra === 'A' && squadraB.length < maxPerSquadra && (
                           <button onClick={() => iscrivitiSquadra('B')} disabled={slotSaving}
                             style={{ flex: 1, padding: '0.55rem', borderRadius: '10px', fontSize: '0.75rem', fontWeight: 700, border: '1px solid rgba(239,68,68,0.3)', cursor: slotSaving ? 'default' : 'pointer', minHeight: '40px', background: 'rgba(239,68,68,0.07)', color: '#ef4444' }}>
                             Passa a Squadra B
                           </button>
                         )}
-                        {miaSquadra === 'B' && squadraA.length < ({ '5v5': 5, '7v7': 7, '8v8': 8, '11v11': 11 }[partita.formato] || 5) && (
+                        {miaSquadra === 'B' && squadraA.length < maxPerSquadra && (
                           <button onClick={() => iscrivitiSquadra('A')} disabled={slotSaving}
                             style={{ flex: 1, padding: '0.55rem', borderRadius: '10px', fontSize: '0.75rem', fontWeight: 700, border: '1px solid rgba(0,212,255,0.3)', cursor: slotSaving ? 'default' : 'pointer', minHeight: '40px', background: 'rgba(0,212,255,0.07)', color: '#00d4ff' }}>
                             Passa a Squadra A
@@ -1031,6 +1106,92 @@ function PartitaCard({ partita, currentUser, onVoteClick, onChiudiVoti, onScomme
                         </button>
                       </div>
                     )}
+
+                    {/* PANNELLO ADMIN SQUADRE */}
+                    {currentUser?.role === 'admin' && (() => {
+                      const iscritti = [...squadraA.map(id => ({ id, sq: 'A' })), ...squadraB.map(id => ({ id, sq: 'B' }))]
+                      const iscrittiIds = new Set(iscritti.map(x => String(x.id)))
+                      const nonIscritti = allGiocatori.filter(g => !iscrittiIds.has(String(g.id)))
+                      const fissiLiberi = nonIscritti.filter(g => !g.is_guest)
+                      const guestLiberi = nonIscritti.filter(g => g.is_guest)
+                      const getNomeAdmin = id => allGiocatori.find(g => String(g.id) === String(id))?.nome || giocatori.find(g => String(g.id) === String(id))?.nome || `#${id}`
+                      return (
+                        <div style={{ marginTop: '0.75rem', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(0,212,255,0.12)', borderRadius: '12px', padding: '0.75rem' }}>
+                          <div style={{ fontSize: '0.58rem', fontWeight: 800, color: 'rgba(0,212,255,0.5)', letterSpacing: '1.5px', textTransform: 'uppercase', marginBottom: '0.7rem' }}>Gestione admin squadre</div>
+
+                          {/* Iscritti — sposta/rimuovi */}
+                          {iscritti.length > 0 && (
+                            <div style={{ marginBottom: '0.7rem' }}>
+                              <div style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.3)', fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '0.4rem' }}>Iscritti</div>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                                {iscritti.map(({ id, sq }) => (
+                                  <div key={id} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', padding: '0.3rem 0.5rem' }}>
+                                    <span style={{ fontSize: '0.62rem', fontWeight: 800, color: sq === 'A' ? '#00d4ff' : '#ef4444', background: sq === 'A' ? 'rgba(0,212,255,0.12)' : 'rgba(239,68,68,0.12)', borderRadius: '4px', padding: '0.1rem 0.35rem', flexShrink: 0 }}>{sq}</span>
+                                    <span style={{ flex: 1, fontSize: '0.75rem', color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{getNomeAdmin(id)}</span>
+                                    <button onClick={() => adminSposta(id, sq === 'A' ? 'B' : 'A')} disabled={slotSaving}
+                                      style={{ fontSize: '0.62rem', fontWeight: 700, padding: '0.15rem 0.45rem', borderRadius: '5px', border: `1px solid ${sq === 'A' ? 'rgba(239,68,68,0.3)' : 'rgba(0,212,255,0.3)'}`, background: sq === 'A' ? 'rgba(239,68,68,0.07)' : 'rgba(0,212,255,0.07)', color: sq === 'A' ? '#ef4444' : '#00d4ff', cursor: slotSaving ? 'default' : 'pointer', flexShrink: 0 }}>
+                                      → {sq === 'A' ? 'B' : 'A'}
+                                    </button>
+                                    <button onClick={() => adminRimuovi(id)} disabled={slotSaving}
+                                      style={{ fontSize: '0.62rem', fontWeight: 700, padding: '0.15rem 0.45rem', borderRadius: '5px', border: '1px solid rgba(255,107,107,0.25)', background: 'rgba(255,107,107,0.06)', color: 'rgba(255,107,107,0.7)', cursor: slotSaving ? 'default' : 'pointer', flexShrink: 0 }}>
+                                      ✕
+                                    </button>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Non iscritti fissi */}
+                          {fissiLiberi.length > 0 && (
+                            <div style={{ marginBottom: guestLiberi.length > 0 ? '0.6rem' : 0 }}>
+                              <div style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.3)', fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '0.4rem' }}>Aggiungi giocatori</div>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                                {fissiLiberi.map(g => (
+                                  <div key={g.id} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: 'rgba(255,255,255,0.02)', borderRadius: '8px', padding: '0.3rem 0.5rem' }}>
+                                    <span style={{ flex: 1, fontSize: '0.75rem', color: 'rgba(255,255,255,0.6)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{g.nome}</span>
+                                    <button onClick={() => adminAggiungi(g.id, 'A')} disabled={slotSaving || squadraA.length >= maxPerSquadra}
+                                      style={{ fontSize: '0.62rem', fontWeight: 800, padding: '0.15rem 0.45rem', borderRadius: '5px', border: '1px solid rgba(0,212,255,0.3)', background: squadraA.length >= maxPerSquadra ? 'rgba(255,255,255,0.03)' : 'rgba(0,212,255,0.1)', color: squadraA.length >= maxPerSquadra ? 'rgba(255,255,255,0.2)' : '#00d4ff', cursor: slotSaving || squadraA.length >= maxPerSquadra ? 'default' : 'pointer', flexShrink: 0 }}>
+                                      + A
+                                    </button>
+                                    <button onClick={() => adminAggiungi(g.id, 'B')} disabled={slotSaving || squadraB.length >= maxPerSquadra}
+                                      style={{ fontSize: '0.62rem', fontWeight: 800, padding: '0.15rem 0.45rem', borderRadius: '5px', border: '1px solid rgba(239,68,68,0.3)', background: squadraB.length >= maxPerSquadra ? 'rgba(255,255,255,0.03)' : 'rgba(239,68,68,0.1)', color: squadraB.length >= maxPerSquadra ? 'rgba(255,255,255,0.2)' : '#ef4444', cursor: slotSaving || squadraB.length >= maxPerSquadra ? 'default' : 'pointer', flexShrink: 0 }}>
+                                      + B
+                                    </button>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Guest liberi */}
+                          {guestLiberi.length > 0 && (
+                            <div>
+                              <div style={{ fontSize: '0.6rem', color: 'rgba(255,165,0,0.5)', fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '0.4rem' }}>Aggiungi guest</div>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                                {guestLiberi.map(g => (
+                                  <div key={g.id} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: 'rgba(255,165,0,0.03)', borderRadius: '8px', padding: '0.3rem 0.5rem' }}>
+                                    <span style={{ flex: 1, fontSize: '0.75rem', color: 'rgba(255,165,0,0.65)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{g.nome}</span>
+                                    <button onClick={() => adminAggiungi(g.id, 'A')} disabled={slotSaving || squadraA.length >= maxPerSquadra}
+                                      style={{ fontSize: '0.62rem', fontWeight: 800, padding: '0.15rem 0.45rem', borderRadius: '5px', border: '1px solid rgba(0,212,255,0.25)', background: squadraA.length >= maxPerSquadra ? 'rgba(255,255,255,0.03)' : 'rgba(0,212,255,0.08)', color: squadraA.length >= maxPerSquadra ? 'rgba(255,255,255,0.2)' : '#00d4ff', cursor: slotSaving || squadraA.length >= maxPerSquadra ? 'default' : 'pointer', flexShrink: 0 }}>
+                                      + A
+                                    </button>
+                                    <button onClick={() => adminAggiungi(g.id, 'B')} disabled={slotSaving || squadraB.length >= maxPerSquadra}
+                                      style={{ fontSize: '0.62rem', fontWeight: 800, padding: '0.15rem 0.45rem', borderRadius: '5px', border: '1px solid rgba(239,68,68,0.25)', background: squadraB.length >= maxPerSquadra ? 'rgba(255,255,255,0.03)' : 'rgba(239,68,68,0.08)', color: squadraB.length >= maxPerSquadra ? 'rgba(255,255,255,0.2)' : '#ef4444', cursor: slotSaving || squadraB.length >= maxPerSquadra ? 'default' : 'pointer', flexShrink: 0 }}>
+                                      + B
+                                    </button>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {fissiLiberi.length === 0 && guestLiberi.length === 0 && iscritti.length > 0 && (
+                            <div style={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.2)', fontStyle: 'italic', textAlign: 'center', paddingTop: '0.3rem' }}>Tutti i giocatori sono già iscritti.</div>
+                          )}
+                        </div>
+                      )
+                    })()}
                   </div>
                 )
               })()}
