@@ -329,7 +329,7 @@ function Statistiche() {
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.75rem', marginBottom: '1.5rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.6rem', marginBottom: '1rem' }}>
                 {[
                   { label: 'Partite', value: g.partiteGiocate, color: '#fff' },
                   { label: 'Vittorie', value: g.vittorie, color: '#00d4ff' },
@@ -338,19 +338,21 @@ function Statistiche() {
                   { label: 'Gol', value: g.gol, color: '#00ff88' },
                   { label: 'Assist', value: g.assist, color: '#a78bfa' },
                 ].map(s => (
-                  <div key={s.label} style={{ background: 'rgba(0,0,0,0.3)', borderRadius: '12px', padding: '1rem', textAlign: 'center' }}>
-                    <div style={{ fontSize: '1.8rem', fontWeight: 900, color: s.color }}>{s.value}</div>
-                    <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginTop: '0.25rem' }}>{s.label}</div>
+                  <div key={s.label} style={{ background: 'linear-gradient(145deg, rgba(255,255,255,0.05), rgba(255,255,255,0.015))', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '15px', padding: '0.85rem 0.5rem', textAlign: 'center' }}>
+                    <div style={{ fontSize: '1.7rem', fontWeight: 950, color: s.color, lineHeight: 1 }}>{s.value}</div>
+                    <div style={{ fontSize: '0.58rem', fontWeight: 850, letterSpacing: '0.4px', textTransform: 'uppercase', color: 'rgba(255,255,255,0.38)', marginTop: '0.35rem' }}>{s.label}</div>
                   </div>
                 ))}
               </div>
 
-              <div style={{ background: 'rgba(0,0,0,0.3)', borderRadius: '12px', padding: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                <div style={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.5)' }}>Media Voti</div>
-                <div style={{ fontSize: '2rem', fontWeight: 900, color: '#ffd700' }}>{g.mediaVoti}</div>
+              <div style={{ background: 'radial-gradient(circle at 100% 0%, rgba(255,215,0,0.1), transparent 50%), linear-gradient(145deg, rgba(255,255,255,0.05), rgba(255,255,255,0.015))', border: '1px solid rgba(255,215,0,0.16)', borderRadius: '15px', padding: '0.85rem 1.1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.1rem' }}>
+                <div style={{ fontSize: '0.72rem', fontWeight: 850, letterSpacing: '0.6px', textTransform: 'uppercase', color: 'rgba(255,255,255,0.5)' }}>Media Voti</div>
+                <div style={{ fontSize: '1.9rem', fontWeight: 950, color: '#ffd700', lineHeight: 1 }}>{g.mediaVoti}</div>
               </div>
 
-              <button onClick={() => setSelected(null)} style={{ width: '100%', background: 'rgba(100,116,139,0.3)', border: 'none', borderRadius: '12px', padding: '0.75rem', color: '#fff', fontWeight: 700, cursor: 'pointer' }}>
+              <button onClick={() => setSelected(null)} style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '14px', padding: '0.9rem', color: 'rgba(255,255,255,0.75)', fontWeight: 850, fontSize: '0.9rem', letterSpacing: '1px', textTransform: 'uppercase', cursor: 'pointer', transition: 'all 0.18s ease' }}
+                onMouseOver={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; e.currentTarget.style.color = '#fff' }}
+                onMouseOut={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.color = 'rgba(255,255,255,0.75)' }}>
                 Chiudi
               </button>
             </div>
