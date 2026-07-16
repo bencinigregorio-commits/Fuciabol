@@ -1115,25 +1115,39 @@ function PartitaCard({ partita, currentUser, onVoteClick, onChiudiVoti, onScomme
                       const fissiLiberi = nonIscritti.filter(g => !g.is_guest)
                       const guestLiberi = nonIscritti.filter(g => g.is_guest)
                       const getNomeAdmin = id => allGiocatori.find(g => String(g.id) === String(id))?.nome || giocatori.find(g => String(g.id) === String(id))?.nome || `#${id}`
+                      const sectionLabel = { fontSize: '0.6rem', color: 'rgba(255,255,255,0.35)', fontWeight: 800, letterSpacing: '1.2px', textTransform: 'uppercase', marginBottom: '0.45rem' }
+                      const addBtn = (accent, squadra, playerId) => {
+                        const piena = (squadra === 'A' ? squadraA.length : squadraB.length) >= maxPerSquadra
+                        const disabled = slotSaving || piena
+                        return (
+                          <button onClick={() => adminAggiungi(playerId, squadra)} disabled={disabled}
+                            style={{ fontSize: '0.68rem', fontWeight: 850, minWidth: '38px', height: '30px', borderRadius: '9px', border: `1px solid ${accent}40`, background: piena ? 'rgba(255,255,255,0.03)' : `${accent}16`, color: piena ? 'rgba(255,255,255,0.2)' : accent, cursor: disabled ? 'default' : 'pointer', flexShrink: 0, transition: 'all 0.15s ease' }}>
+                            +{squadra}
+                          </button>
+                        )
+                      }
                       return (
-                        <div style={{ marginTop: '0.75rem', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(0,212,255,0.12)', borderRadius: '12px', padding: '0.75rem' }}>
-                          <div style={{ fontSize: '0.58rem', fontWeight: 800, color: 'rgba(0,212,255,0.5)', letterSpacing: '1.5px', textTransform: 'uppercase', marginBottom: '0.7rem' }}>Gestione admin squadre</div>
+                        <div style={{ marginTop: '0.75rem', background: 'radial-gradient(circle at 100% 0%, rgba(0,212,255,0.07), transparent 45%), rgba(0,0,0,0.28)', border: '1px solid rgba(0,212,255,0.16)', borderRadius: '16px', padding: '0.9rem' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', marginBottom: '0.85rem' }}>
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#00d4ff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                            <div style={{ fontSize: '0.62rem', fontWeight: 900, color: '#00d4ff', letterSpacing: '1.4px', textTransform: 'uppercase' }}>Gestione admin squadre</div>
+                          </div>
 
                           {/* Iscritti — sposta/rimuovi */}
                           {iscritti.length > 0 && (
-                            <div style={{ marginBottom: '0.7rem' }}>
-                              <div style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.3)', fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '0.4rem' }}>Iscritti</div>
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                            <div style={{ marginBottom: '0.8rem' }}>
+                              <div style={sectionLabel}>Iscritti</div>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
                                 {iscritti.map(({ id, sq }) => (
-                                  <div key={id} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', padding: '0.3rem 0.5rem' }}>
-                                    <span style={{ fontSize: '0.62rem', fontWeight: 800, color: sq === 'A' ? '#00d4ff' : '#ef4444', background: sq === 'A' ? 'rgba(0,212,255,0.12)' : 'rgba(239,68,68,0.12)', borderRadius: '4px', padding: '0.1rem 0.35rem', flexShrink: 0 }}>{sq}</span>
-                                    <span style={{ flex: 1, fontSize: '0.75rem', color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{getNomeAdmin(id)}</span>
+                                  <div key={id} style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', background: 'rgba(255,255,255,0.035)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '10px', padding: '0.35rem 0.5rem' }}>
+                                    <span style={{ fontSize: '0.62rem', fontWeight: 900, color: sq === 'A' ? '#00d4ff' : '#ef4444', background: sq === 'A' ? 'rgba(0,212,255,0.14)' : 'rgba(239,68,68,0.14)', borderRadius: '6px', padding: '0.15rem 0.4rem', flexShrink: 0 }}>{sq}</span>
+                                    <span style={{ flex: 1, fontSize: '0.78rem', fontWeight: 620, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{getNomeAdmin(id)}</span>
                                     <button onClick={() => adminSposta(id, sq === 'A' ? 'B' : 'A')} disabled={slotSaving}
-                                      style={{ fontSize: '0.62rem', fontWeight: 700, padding: '0.15rem 0.45rem', borderRadius: '5px', border: `1px solid ${sq === 'A' ? 'rgba(239,68,68,0.3)' : 'rgba(0,212,255,0.3)'}`, background: sq === 'A' ? 'rgba(239,68,68,0.07)' : 'rgba(0,212,255,0.07)', color: sq === 'A' ? '#ef4444' : '#00d4ff', cursor: slotSaving ? 'default' : 'pointer', flexShrink: 0 }}>
+                                      style={{ fontSize: '0.68rem', fontWeight: 800, height: '30px', padding: '0 0.55rem', borderRadius: '9px', border: `1px solid ${sq === 'A' ? 'rgba(239,68,68,0.35)' : 'rgba(0,212,255,0.35)'}`, background: sq === 'A' ? 'rgba(239,68,68,0.1)' : 'rgba(0,212,255,0.1)', color: sq === 'A' ? '#ef4444' : '#00d4ff', cursor: slotSaving ? 'default' : 'pointer', flexShrink: 0, transition: 'all 0.15s ease' }}>
                                       → {sq === 'A' ? 'B' : 'A'}
                                     </button>
                                     <button onClick={() => adminRimuovi(id)} disabled={slotSaving}
-                                      style={{ fontSize: '0.62rem', fontWeight: 700, padding: '0.15rem 0.45rem', borderRadius: '5px', border: '1px solid rgba(255,107,107,0.25)', background: 'rgba(255,107,107,0.06)', color: 'rgba(255,107,107,0.7)', cursor: slotSaving ? 'default' : 'pointer', flexShrink: 0 }}>
+                                      style={{ fontSize: '0.8rem', fontWeight: 700, width: '30px', height: '30px', borderRadius: '9px', border: '1px solid rgba(255,107,107,0.28)', background: 'rgba(255,107,107,0.08)', color: 'rgba(255,107,107,0.8)', cursor: slotSaving ? 'default' : 'pointer', flexShrink: 0, transition: 'all 0.15s ease' }}>
                                       ✕
                                     </button>
                                   </div>
@@ -1144,20 +1158,14 @@ function PartitaCard({ partita, currentUser, onVoteClick, onChiudiVoti, onScomme
 
                           {/* Non iscritti fissi */}
                           {fissiLiberi.length > 0 && (
-                            <div style={{ marginBottom: guestLiberi.length > 0 ? '0.6rem' : 0 }}>
-                              <div style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.3)', fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '0.4rem' }}>Aggiungi giocatori</div>
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                            <div style={{ marginBottom: guestLiberi.length > 0 ? '0.75rem' : 0 }}>
+                              <div style={sectionLabel}>Aggiungi giocatori</div>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
                                 {fissiLiberi.map(g => (
-                                  <div key={g.id} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: 'rgba(255,255,255,0.02)', borderRadius: '8px', padding: '0.3rem 0.5rem' }}>
-                                    <span style={{ flex: 1, fontSize: '0.75rem', color: 'rgba(255,255,255,0.6)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{g.nome}</span>
-                                    <button onClick={() => adminAggiungi(g.id, 'A')} disabled={slotSaving || squadraA.length >= maxPerSquadra}
-                                      style={{ fontSize: '0.62rem', fontWeight: 800, padding: '0.15rem 0.45rem', borderRadius: '5px', border: '1px solid rgba(0,212,255,0.3)', background: squadraA.length >= maxPerSquadra ? 'rgba(255,255,255,0.03)' : 'rgba(0,212,255,0.1)', color: squadraA.length >= maxPerSquadra ? 'rgba(255,255,255,0.2)' : '#00d4ff', cursor: slotSaving || squadraA.length >= maxPerSquadra ? 'default' : 'pointer', flexShrink: 0 }}>
-                                      + A
-                                    </button>
-                                    <button onClick={() => adminAggiungi(g.id, 'B')} disabled={slotSaving || squadraB.length >= maxPerSquadra}
-                                      style={{ fontSize: '0.62rem', fontWeight: 800, padding: '0.15rem 0.45rem', borderRadius: '5px', border: '1px solid rgba(239,68,68,0.3)', background: squadraB.length >= maxPerSquadra ? 'rgba(255,255,255,0.03)' : 'rgba(239,68,68,0.1)', color: squadraB.length >= maxPerSquadra ? 'rgba(255,255,255,0.2)' : '#ef4444', cursor: slotSaving || squadraB.length >= maxPerSquadra ? 'default' : 'pointer', flexShrink: 0 }}>
-                                      + B
-                                    </button>
+                                  <div key={g.id} style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.04)', borderRadius: '10px', padding: '0.35rem 0.5rem' }}>
+                                    <span style={{ flex: 1, fontSize: '0.78rem', fontWeight: 620, color: 'rgba(255,255,255,0.65)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{g.nome}</span>
+                                    {addBtn('#00d4ff', 'A', g.id)}
+                                    {addBtn('#ef4444', 'B', g.id)}
                                   </div>
                                 ))}
                               </div>
@@ -1167,19 +1175,13 @@ function PartitaCard({ partita, currentUser, onVoteClick, onChiudiVoti, onScomme
                           {/* Guest liberi */}
                           {guestLiberi.length > 0 && (
                             <div>
-                              <div style={{ fontSize: '0.6rem', color: 'rgba(255,165,0,0.5)', fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '0.4rem' }}>Aggiungi guest</div>
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                              <div style={{ ...sectionLabel, color: 'rgba(255,165,0,0.55)' }}>Aggiungi guest</div>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
                                 {guestLiberi.map(g => (
-                                  <div key={g.id} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: 'rgba(255,165,0,0.03)', borderRadius: '8px', padding: '0.3rem 0.5rem' }}>
-                                    <span style={{ flex: 1, fontSize: '0.75rem', color: 'rgba(255,165,0,0.65)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{g.nome}</span>
-                                    <button onClick={() => adminAggiungi(g.id, 'A')} disabled={slotSaving || squadraA.length >= maxPerSquadra}
-                                      style={{ fontSize: '0.62rem', fontWeight: 800, padding: '0.15rem 0.45rem', borderRadius: '5px', border: '1px solid rgba(0,212,255,0.25)', background: squadraA.length >= maxPerSquadra ? 'rgba(255,255,255,0.03)' : 'rgba(0,212,255,0.08)', color: squadraA.length >= maxPerSquadra ? 'rgba(255,255,255,0.2)' : '#00d4ff', cursor: slotSaving || squadraA.length >= maxPerSquadra ? 'default' : 'pointer', flexShrink: 0 }}>
-                                      + A
-                                    </button>
-                                    <button onClick={() => adminAggiungi(g.id, 'B')} disabled={slotSaving || squadraB.length >= maxPerSquadra}
-                                      style={{ fontSize: '0.62rem', fontWeight: 800, padding: '0.15rem 0.45rem', borderRadius: '5px', border: '1px solid rgba(239,68,68,0.25)', background: squadraB.length >= maxPerSquadra ? 'rgba(255,255,255,0.03)' : 'rgba(239,68,68,0.08)', color: squadraB.length >= maxPerSquadra ? 'rgba(255,255,255,0.2)' : '#ef4444', cursor: slotSaving || squadraB.length >= maxPerSquadra ? 'default' : 'pointer', flexShrink: 0 }}>
-                                      + B
-                                    </button>
+                                  <div key={g.id} style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', background: 'rgba(255,165,0,0.04)', border: '1px solid rgba(255,165,0,0.12)', borderRadius: '10px', padding: '0.35rem 0.5rem' }}>
+                                    <span style={{ flex: 1, fontSize: '0.78rem', fontWeight: 620, color: 'rgba(255,165,0,0.7)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{g.nome}</span>
+                                    {addBtn('#00d4ff', 'A', g.id)}
+                                    {addBtn('#ef4444', 'B', g.id)}
                                   </div>
                                 ))}
                               </div>
@@ -1187,7 +1189,7 @@ function PartitaCard({ partita, currentUser, onVoteClick, onChiudiVoti, onScomme
                           )}
 
                           {fissiLiberi.length === 0 && guestLiberi.length === 0 && iscritti.length > 0 && (
-                            <div style={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.2)', fontStyle: 'italic', textAlign: 'center', paddingTop: '0.3rem' }}>Tutti i giocatori sono già iscritti.</div>
+                            <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.25)', fontStyle: 'italic', textAlign: 'center', paddingTop: '0.3rem' }}>Tutti i giocatori sono già iscritti.</div>
                           )}
                         </div>
                       )
