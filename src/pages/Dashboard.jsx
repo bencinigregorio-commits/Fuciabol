@@ -371,6 +371,60 @@ function Dashboard({ currentUser }) {
           font-weight: 760;
         }
 
+        .kpi-strip {
+          display: grid;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 0.6rem;
+          margin-top: 1.15rem;
+        }
+
+        .kpi-tile {
+          position: relative;
+          overflow: hidden;
+          border-radius: 16px;
+          border: 1px solid rgba(255,255,255,0.08);
+          background: linear-gradient(160deg, rgba(255,255,255,0.06), rgba(255,255,255,0.015));
+          padding: 0.7rem 0.75rem 0.75rem;
+          display: flex;
+          flex-direction: column;
+          gap: 0.5rem;
+          min-width: 0;
+        }
+
+        .kpi-tile::before {
+          content: '';
+          position: absolute;
+          top: 0; left: 0; right: 0;
+          height: 2px;
+          background: linear-gradient(90deg, var(--cyan), transparent);
+        }
+
+        .kpi-ico {
+          width: 30px;
+          height: 30px;
+          border-radius: 10px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: rgba(0,212,255,0.12);
+          border: 1px solid rgba(0,212,255,0.2);
+        }
+
+        .kpi-val {
+          font-size: 1.55rem;
+          font-weight: 950;
+          line-height: 1;
+          letter-spacing: -0.8px;
+        }
+
+        .kpi-lab {
+          font-size: 0.58rem;
+          font-weight: 850;
+          letter-spacing: 0.6px;
+          text-transform: uppercase;
+          color: rgba(255,255,255,0.4);
+        }
+
         .card-grid {
           display: grid;
           grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -863,11 +917,30 @@ function Dashboard({ currentUser }) {
           <div className="hero-copy">
             <div className="eyebrow">Dashboard giocatore</div>
             <h1 className="hero-title">Ciao,<br /><span>{nome}!</span></h1>
-            <p className="hero-subtitle">Pronto a conquistare la vetta?</p>
-            <div className="hero-meta">
-              <span className="meta-chip">{giocatore.ruolo || 'Ruolo'} · OVR {currentOvr}</span>
-              <span className="meta-chip">Media {mediaVoti}</span>
-              <span className="meta-chip">{giocatore.crediti ?? 500} crediti</span>
+            <p className="hero-subtitle">{giocatore.ruolo || 'Giocatore'} · pronto a conquistare la vetta?</p>
+          </div>
+        </div>
+
+        <div className="kpi-strip">
+          <div className="kpi-tile">
+            <div className="kpi-ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#00d4ff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
+            <div>
+              <div className="kpi-val">{currentOvr}</div>
+              <div className="kpi-lab">Overall</div>
+            </div>
+          </div>
+          <div className="kpi-tile">
+            <div className="kpi-ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#00d4ff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>
+            <div>
+              <div className="kpi-val" style={{ color: '#00d4ff' }}>{mediaVoti}</div>
+              <div className="kpi-lab">Media voti</div>
+            </div>
+          </div>
+          <div className="kpi-tile">
+            <div className="kpi-ico" style={{ background: 'rgba(255,215,0,0.12)', borderColor: 'rgba(255,215,0,0.24)' }}><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#ffd700" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v2M12 15v2M9 10h4.5a1.5 1.5 0 0 1 0 3H10a1.5 1.5 0 0 0 0 3H15"/></svg></div>
+            <div>
+              <div className="kpi-val" style={{ color: '#ffd700' }}>{giocatore.crediti ?? 500}</div>
+              <div className="kpi-lab">Crediti</div>
             </div>
           </div>
         </div>
