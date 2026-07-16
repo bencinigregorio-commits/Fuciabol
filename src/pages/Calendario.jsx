@@ -1371,93 +1371,126 @@ function ModalNuovaPartita({ onClose, onSaved }) {
   const getNomeGiocatore = (id) => giocatori.find(g => g.id === id)?.nome || `#${id}`
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0, 0, 0, 0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', zIndex: 50, backdropFilter: 'blur(4px)' }} onClick={onClose}>
-      <div style={{ background: 'rgba(15, 23, 41, 0.95)', border: '1px solid rgba(0, 212, 255, 0.2)', borderRadius: '20px', padding: '2rem', maxWidth: '700px', width: '100%', maxHeight: '90vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
-        <h2 style={{ fontSize: '2rem', fontWeight: 900, marginBottom: '0.5rem' }}>+ Nuova Partita</h2>
-        <p style={{ color: 'rgba(255, 255, 255, 0.5)', fontSize: '0.9rem', marginBottom: '1.5rem' }}>
-          Puoi creare la partita con squadre vuote — i giocatori si iscriveranno autonomamente.
-        </p>
+    <div className="mnp-overlay" style={{ position: 'fixed', inset: 0, background: 'rgba(3, 7, 18, 0.82)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', zIndex: 50, backdropFilter: 'blur(8px)' }} onClick={onClose}>
+      <style>{`
+        @keyframes mnpIn { from { opacity: 0; transform: translateY(24px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        .mnp-modal { animation: mnpIn 0.28s ease both; }
+        .mnp-modal::-webkit-scrollbar { width: 8px; }
+        .mnp-modal::-webkit-scrollbar-thumb { background: rgba(0,212,255,0.2); border-radius: 8px; }
+        .mnp-input {
+          width: 100%; background: rgba(0,0,0,0.32); border: 1px solid rgba(255,255,255,0.1);
+          border-radius: 14px; padding: 0.85rem 0.95rem; color: #fff; outline: none;
+          box-sizing: border-box; font-family: inherit; font-size: 0.92rem; font-weight: 620;
+          transition: all 0.2s ease;
+        }
+        .mnp-input::placeholder { color: rgba(255,255,255,0.28); }
+        .mnp-input:focus { border-color: rgba(0,212,255,0.5); background: rgba(0,212,255,0.06); box-shadow: 0 0 0 3px rgba(0,212,255,0.12); }
+        .mnp-close { transition: all 0.18s ease; }
+        .mnp-close:hover { background: rgba(255,255,255,0.12) !important; color: #fff !important; }
+        .mnp-fmt { transition: all 0.15s ease; }
+        .mnp-fmt:hover { border-color: rgba(0,212,255,0.5) !important; }
+        .mnp-row { transition: border-color 0.18s ease, background 0.18s ease; }
+        .mnp-teambtn { transition: all 0.18s ease; }
+        .mnp-teambtn:hover { transform: translateY(-1px); }
+        .mnp-create { transition: all 0.2s ease; }
+        .mnp-create:hover { transform: translateY(-2px); box-shadow: 0 16px 38px rgba(0,212,255,0.4) !important; }
+        .mnp-cancel { transition: all 0.2s ease; }
+        .mnp-cancel:hover { background: rgba(255,255,255,0.1) !important; }
+      `}</style>
+      <div className="mnp-modal" style={{ background: 'radial-gradient(circle at 85% 0%, rgba(0,212,255,0.1), transparent 42%), linear-gradient(160deg, rgba(15,23,41,0.97), rgba(6,11,24,0.96))', border: '1px solid rgba(0,212,255,0.22)', borderRadius: '26px', padding: '1.6rem', maxWidth: '700px', width: '100%', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 30px 80px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.05)' }} onClick={e => e.stopPropagation()}>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.25rem' }}>
+        {/* Header */}
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.85rem', marginBottom: '1.5rem' }}>
+          <div style={{ width: '46px', height: '46px', borderRadius: '15px', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(145deg, rgba(0,212,255,0.16), rgba(10,16,30,0.9))', border: '1px solid rgba(0,212,255,0.3)', boxShadow: '0 0 18px rgba(0,212,255,0.18)' }}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00d4ff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M12 14v4M10 16h4"/></svg>
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <h2 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 950, letterSpacing: '0.3px', background: 'linear-gradient(135deg, #fff 0%, #e0f8ff 55%, #00d4ff 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>Nuova Partita</h2>
+            <p style={{ margin: '0.3rem 0 0', color: 'rgba(255,255,255,0.45)', fontSize: '0.82rem', fontWeight: 620, lineHeight: 1.35 }}>
+              Puoi creare la partita con squadre vuote — i giocatori si iscriveranno autonomamente.
+            </p>
+          </div>
+          <button className="mnp-close" onClick={onClose} style={{ flexShrink: 0, width: '34px', height: '34px', borderRadius: '11px', border: '1px solid rgba(255,255,255,0.09)', background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.55)', fontSize: '1.1rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1 }}>×</button>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.85rem', marginBottom: '1.1rem' }}>
           <div>
-            <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '0.5rem', color: 'rgba(255, 255, 255, 0.7)' }}>Data</label>
-            <input type="date" value={data} onChange={(e) => setData(e.target.value)}
-              style={{ width: '100%', background: 'rgba(0, 0, 0, 0.3)', border: '1px solid rgba(0, 212, 255, 0.3)', borderRadius: '12px', padding: '0.75rem', color: '#fff', outline: 'none', boxSizing: 'border-box' }} />
+            <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 850, letterSpacing: '0.6px', textTransform: 'uppercase', marginBottom: '0.5rem', color: 'rgba(255,255,255,0.55)' }}>Data</label>
+            <input className="mnp-input" type="date" value={data} onChange={(e) => setData(e.target.value)} />
           </div>
           <div>
-            <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '0.5rem', color: 'rgba(255, 255, 255, 0.7)' }}>Ora</label>
-            <input type="time" value={ora} onChange={(e) => setOra(e.target.value)}
-              style={{ width: '100%', background: 'rgba(0, 0, 0, 0.3)', border: '1px solid rgba(0, 212, 255, 0.3)', borderRadius: '12px', padding: '0.75rem', color: '#fff', outline: 'none', boxSizing: 'border-box' }} />
+            <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 850, letterSpacing: '0.6px', textTransform: 'uppercase', marginBottom: '0.5rem', color: 'rgba(255,255,255,0.55)' }}>Ora</label>
+            <input className="mnp-input" type="time" value={ora} onChange={(e) => setOra(e.target.value)} />
           </div>
         </div>
 
-        <div style={{ marginBottom: '1.25rem' }}>
-          <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '0.5rem', color: 'rgba(255, 255, 255, 0.7)' }}>Luogo</label>
-          <input type="text" value={luogo} onChange={(e) => setLuogo(e.target.value)} placeholder="Es. Campo Sintex, Via Roma…"
-            style={{ width: '100%', background: 'rgba(0, 0, 0, 0.3)', border: '1px solid rgba(0, 212, 255, 0.3)', borderRadius: '12px', padding: '0.75rem', color: '#fff', outline: 'none', boxSizing: 'border-box' }} />
+        <div style={{ marginBottom: '1.1rem' }}>
+          <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 850, letterSpacing: '0.6px', textTransform: 'uppercase', marginBottom: '0.5rem', color: 'rgba(255,255,255,0.55)' }}>Luogo</label>
+          <input className="mnp-input" type="text" value={luogo} onChange={(e) => setLuogo(e.target.value)} placeholder="Es. Campo Sintex, Via Roma…" />
         </div>
 
-        <div style={{ marginBottom: '1.25rem' }}>
-          <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '0.5rem', color: 'rgba(255, 255, 255, 0.7)' }}>Note</label>
-          <textarea value={note} onChange={(e) => setNote(e.target.value)} placeholder="Info aggiuntive, variazioni, avvisi…" rows={2}
-            style={{ width: '100%', background: 'rgba(0, 0, 0, 0.3)', border: '1px solid rgba(0, 212, 255, 0.3)', borderRadius: '12px', padding: '0.75rem', color: '#fff', outline: 'none', resize: 'vertical', fontFamily: 'inherit', fontSize: '0.9rem', boxSizing: 'border-box' }} />
+        <div style={{ marginBottom: '1.1rem' }}>
+          <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 850, letterSpacing: '0.6px', textTransform: 'uppercase', marginBottom: '0.5rem', color: 'rgba(255,255,255,0.55)' }}>Note</label>
+          <textarea className="mnp-input" value={note} onChange={(e) => setNote(e.target.value)} placeholder="Info aggiuntive, variazioni, avvisi…" rows={2} style={{ resize: 'vertical' }} />
         </div>
 
         <div style={{ marginBottom: '1.5rem' }}>
-          <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '0.5rem', color: 'rgba(255, 255, 255, 0.7)' }}>Formato</label>
+          <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 850, letterSpacing: '0.6px', textTransform: 'uppercase', marginBottom: '0.55rem', color: 'rgba(255,255,255,0.55)' }}>Formato</label>
           <div style={{ display: 'flex', gap: '0.5rem' }}>
             {['5v5', '7v7', '8v8', '11v11'].map(f => (
-              <button key={f} type="button" onClick={() => setFormato(f)}
-                style={{ flex: 1, padding: '0.7rem 0.5rem', borderRadius: '10px', fontSize: '0.9rem', fontWeight: 800, border: `2px solid ${formato === f ? '#00d4ff' : 'rgba(0,212,255,0.2)'}`, cursor: 'pointer', background: formato === f ? 'rgba(0,212,255,0.18)' : 'rgba(0,0,0,0.3)', color: formato === f ? '#00d4ff' : 'rgba(255,255,255,0.4)', transition: 'all 0.15s', letterSpacing: '0.5px' }}>
+              <button key={f} type="button" className="mnp-fmt" onClick={() => setFormato(f)}
+                style={{ flex: 1, padding: '0.7rem 0.5rem', borderRadius: '13px', fontSize: '0.9rem', fontWeight: 850, border: `2px solid ${formato === f ? '#00d4ff' : 'rgba(0,212,255,0.18)'}`, cursor: 'pointer', background: formato === f ? 'rgba(0,212,255,0.18)' : 'rgba(0,0,0,0.3)', color: formato === f ? '#00d4ff' : 'rgba(255,255,255,0.4)', letterSpacing: '0.5px', boxShadow: formato === f ? '0 0 16px rgba(0,212,255,0.16)' : 'none' }}>
                 {f}
               </button>
             ))}
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
-          <div style={{ background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.3)', borderRadius: '12px', padding: '1rem' }}>
-            <div style={{ color: '#3b82f6', fontWeight: 700, marginBottom: '0.75rem', textAlign: 'center' }}>SQUADRA A ({squadraA.length})</div>
-            <div style={{ fontSize: '0.85rem', minHeight: '60px' }}>
-              {squadraA.map(id => <div key={id} style={{ color: '#93c5fd', marginBottom: '0.25rem' }}>• {getNomeGiocatore(id)}</div>)}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.85rem', marginBottom: '1.1rem' }}>
+          <div style={{ background: 'linear-gradient(160deg, rgba(59,130,246,0.14), rgba(59,130,246,0.04))', border: '1px solid rgba(59,130,246,0.3)', borderRadius: '16px', padding: '0.9rem' }}>
+            <div style={{ color: '#93c5fd', fontWeight: 850, marginBottom: '0.65rem', textAlign: 'center', fontSize: '0.78rem', letterSpacing: '0.8px' }}>SQUADRA A · {squadraA.length}</div>
+            <div style={{ fontSize: '0.85rem', minHeight: '54px', display: 'flex', flexDirection: 'column', gap: '0.28rem' }}>
+              {squadraA.length === 0
+                ? <div style={{ color: 'rgba(255,255,255,0.28)', fontSize: '0.78rem', textAlign: 'center', paddingTop: '0.8rem' }}>Nessuno</div>
+                : squadraA.map(id => <div key={id} style={{ color: '#bfdbfe', fontWeight: 650, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>• {getNomeGiocatore(id)}</div>)}
             </div>
           </div>
-          <div style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '12px', padding: '1rem' }}>
-            <div style={{ color: '#ef4444', fontWeight: 700, marginBottom: '0.75rem', textAlign: 'center' }}>SQUADRA B ({squadraB.length})</div>
-            <div style={{ fontSize: '0.85rem', minHeight: '60px' }}>
-              {squadraB.map(id => <div key={id} style={{ color: '#fca5a5', marginBottom: '0.25rem' }}>• {getNomeGiocatore(id)}</div>)}
+          <div style={{ background: 'linear-gradient(160deg, rgba(239,68,68,0.14), rgba(239,68,68,0.04))', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '16px', padding: '0.9rem' }}>
+            <div style={{ color: '#fca5a5', fontWeight: 850, marginBottom: '0.65rem', textAlign: 'center', fontSize: '0.78rem', letterSpacing: '0.8px' }}>SQUADRA B · {squadraB.length}</div>
+            <div style={{ fontSize: '0.85rem', minHeight: '54px', display: 'flex', flexDirection: 'column', gap: '0.28rem' }}>
+              {squadraB.length === 0
+                ? <div style={{ color: 'rgba(255,255,255,0.28)', fontSize: '0.78rem', textAlign: 'center', paddingTop: '0.8rem' }}>Nessuno</div>
+                : squadraB.map(id => <div key={id} style={{ color: '#fecaca', fontWeight: 650, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>• {getNomeGiocatore(id)}</div>)}
             </div>
           </div>
         </div>
 
         <div style={{ marginBottom: '1.5rem' }}>
-          <div style={{ fontSize: '0.9rem', fontWeight: 700, marginBottom: '0.75rem' }}>Assegna giocatori:</div>
-          <div style={{ display: 'grid', gap: '0.5rem', maxHeight: '300px', overflowY: 'auto' }}>
+          <div style={{ fontSize: '0.72rem', fontWeight: 850, letterSpacing: '0.6px', textTransform: 'uppercase', marginBottom: '0.65rem', color: 'rgba(255,255,255,0.55)' }}>Assegna giocatori</div>
+          <div style={{ display: 'grid', gap: '0.45rem', maxHeight: '300px', overflowY: 'auto', paddingRight: '0.2rem' }}>
             {giocatori.map(g => {
               const inA = squadraA.includes(g.id)
               const inB = squadraB.includes(g.id)
               return (
-                <div key={g.id} style={{ background: 'rgba(0, 0, 0, 0.3)', border: `1px solid ${g.is_guest ? 'rgba(255,165,0,0.18)' : 'rgba(255,255,255,0.1)'}`, borderRadius: '10px', padding: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                  <span style={{ flex: 1, fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.45rem', minWidth: 0 }}>
+                <div key={g.id} className="mnp-row" style={{ background: 'rgba(0,0,0,0.28)', border: `1px solid ${inA ? 'rgba(59,130,246,0.4)' : inB ? 'rgba(239,68,68,0.4)' : g.is_guest ? 'rgba(255,165,0,0.18)' : 'rgba(255,255,255,0.08)'}`, borderRadius: '13px', padding: '0.6rem 0.7rem', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                  <span style={{ flex: 1, fontSize: '0.9rem', fontWeight: 650, display: 'flex', alignItems: 'center', gap: '0.45rem', minWidth: 0 }}>
                     <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{g.nome}</span>
                     {g.is_guest && <span style={{ flexShrink: 0, fontSize: '0.6rem', fontWeight: 800, color: '#ffa500', background: 'rgba(255,165,0,0.12)', border: '1px solid rgba(255,165,0,0.35)', borderRadius: '4px', padding: '0.08rem 0.32rem', letterSpacing: '0.5px', textTransform: 'uppercase' }}>G</span>}
                   </span>
-                  <button onClick={() => toggleGiocatore(g.id, 'A')} style={{ padding: '0.5rem 1rem', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 700, border: 'none', cursor: 'pointer', background: inA ? '#3b82f6' : 'rgba(100, 116, 139, 0.3)', color: inA ? '#fff' : 'rgba(255, 255, 255, 0.5)', transition: 'all 0.2s' }}>A</button>
-                  <button onClick={() => toggleGiocatore(g.id, 'B')} style={{ padding: '0.5rem 1rem', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 700, border: 'none', cursor: 'pointer', background: inB ? '#ef4444' : 'rgba(100, 116, 139, 0.3)', color: inB ? '#fff' : 'rgba(255, 255, 255, 0.5)', transition: 'all 0.2s' }}>B</button>
+                  <button className="mnp-teambtn" onClick={() => toggleGiocatore(g.id, 'A')} style={{ width: '38px', height: '34px', borderRadius: '10px', fontSize: '0.85rem', fontWeight: 850, border: 'none', cursor: 'pointer', background: inA ? 'linear-gradient(135deg, #3b82f6, #2563eb)' : 'rgba(255,255,255,0.06)', color: inA ? '#fff' : 'rgba(255,255,255,0.5)', boxShadow: inA ? '0 0 14px rgba(59,130,246,0.3)' : 'none' }}>A</button>
+                  <button className="mnp-teambtn" onClick={() => toggleGiocatore(g.id, 'B')} style={{ width: '38px', height: '34px', borderRadius: '10px', fontSize: '0.85rem', fontWeight: 850, border: 'none', cursor: 'pointer', background: inB ? 'linear-gradient(135deg, #ef4444, #dc2626)' : 'rgba(255,255,255,0.06)', color: inB ? '#fff' : 'rgba(255,255,255,0.5)', boxShadow: inB ? '0 0 14px rgba(239,68,68,0.3)' : 'none' }}>B</button>
                 </div>
               )
             })}
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: '1rem' }}>
-          <button onClick={salvaPartita} style={{ flex: 1, background: 'linear-gradient(135deg, #00d4ff, #0099ff)', border: 'none', borderRadius: '12px', padding: '1rem', color: '#0f1729', fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 15px rgba(0, 212, 255, 0.4)', transition: 'all 0.2s' }}
-            onMouseOver={(e) => e.target.style.transform = 'translateY(-2px)'} onMouseOut={(e) => e.target.style.transform = 'translateY(0)'}>
-            CREA PARTITA
+        <div style={{ display: 'flex', gap: '0.75rem' }}>
+          <button className="mnp-create" onClick={salvaPartita} style={{ flex: 1.4, background: 'linear-gradient(135deg, #00d4ff, #0099ff)', border: 'none', borderRadius: '15px', padding: '0.95rem', color: '#0f1729', fontWeight: 900, fontSize: '0.9rem', letterSpacing: '1px', textTransform: 'uppercase', cursor: 'pointer', boxShadow: '0 12px 30px rgba(0,212,255,0.28), inset 0 1px 0 rgba(255,255,255,0.25)' }}>
+            Crea partita
           </button>
-          <button onClick={onClose} style={{ flex: 1, background: 'rgba(100, 116, 139, 0.3)', border: 'none', borderRadius: '12px', padding: '1rem', color: '#fff', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s' }}
-            onMouseOver={(e) => e.target.style.background = 'rgba(100, 116, 139, 0.5)'} onMouseOut={(e) => e.target.style.background = 'rgba(100, 116, 139, 0.3)'}>
-            ANNULLA
+          <button className="mnp-cancel" onClick={onClose} style={{ flex: 1, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.09)', borderRadius: '15px', padding: '0.95rem', color: 'rgba(255,255,255,0.7)', fontWeight: 850, fontSize: '0.9rem', letterSpacing: '1px', textTransform: 'uppercase', cursor: 'pointer' }}>
+            Annulla
           </button>
         </div>
       </div>
