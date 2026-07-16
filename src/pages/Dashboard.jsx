@@ -177,33 +177,32 @@ function Dashboard({ currentUser }) {
         .hero-panel {
           position: relative;
           overflow: hidden;
-          border-radius: 30px;
-          border: 1px solid rgba(0,212,255,0.26);
+          border-radius: 28px;
+          border: 1px solid rgba(255,255,255,0.07);
           background:
-            radial-gradient(circle at 82% 18%, rgba(0,212,255,0.18), transparent 28%),
-            radial-gradient(circle at 10% 0%, rgba(0,212,255,0.12), transparent 34%),
-            linear-gradient(145deg, rgba(15,23,41,0.88), rgba(6,11,24,0.72));
-          box-shadow: 0 24px 70px rgba(0,0,0,0.32), inset 0 1px 0 rgba(255,255,255,0.04);
-          padding: 1rem;
+            radial-gradient(circle at 88% 8%, rgba(0,212,255,0.10), transparent 40%),
+            linear-gradient(150deg, rgba(17,26,46,0.9), rgba(9,14,28,0.85));
+          box-shadow: 0 20px 50px rgba(0,0,0,0.28);
+          padding: 1.5rem;
           animation: fadeInUp 0.42s ease both;
         }
 
         .hero-grid {
           display: grid;
           grid-template-columns: 122px minmax(0, 1fr);
-          gap: 1rem;
+          gap: 1.35rem;
           align-items: center;
         }
 
         .mini-card {
           width: 122px;
           height: 168px;
-          border-radius: 22px;
+          border-radius: 20px;
           position: relative;
           overflow: hidden;
-          border: 2px solid ${cfg.border};
+          border: 1.5px solid ${cfg.border};
           background: ${cfg.bg};
-          animation: cardGlow 3s ease-in-out infinite;
+          box-shadow: 0 14px 32px rgba(0,0,0,0.34), 0 0 0 1px rgba(255,255,255,0.04) inset;
           flex-shrink: 0;
         }
 
@@ -375,18 +374,16 @@ function Dashboard({ currentUser }) {
         .card-grid {
           display: grid;
           grid-template-columns: repeat(2, minmax(0, 1fr));
-          gap: 0.85rem;
-          margin-top: 0.9rem;
+          gap: 1rem;
+          margin-top: 1.1rem;
         }
 
         .panel-card {
-          border-radius: 22px;
-          border: 1px solid var(--border);
-          background:
-            radial-gradient(circle at 15% 0%, rgba(0,212,255,0.1), transparent 35%),
-            linear-gradient(145deg, rgba(15,23,41,0.76), rgba(8,13,26,0.66));
-          box-shadow: 0 18px 46px rgba(0,0,0,0.22), inset 0 1px 0 rgba(255,255,255,0.035);
-          padding: 0.95rem;
+          border-radius: 20px;
+          border: 1px solid rgba(255,255,255,0.06);
+          background: rgba(17,25,44,0.55);
+          box-shadow: 0 10px 30px rgba(0,0,0,0.16);
+          padding: 1.15rem;
           animation: fadeInUp 0.42s ease both;
         }
 
@@ -395,7 +392,7 @@ function Dashboard({ currentUser }) {
           align-items: center;
           justify-content: space-between;
           gap: 0.75rem;
-          margin-bottom: 0.8rem;
+          margin-bottom: 1rem;
         }
 
         .panel-title {
@@ -739,12 +736,12 @@ function Dashboard({ currentUser }) {
 
           .hero-panel {
             border-radius: 24px;
-            padding: 0.82rem;
+            padding: 1.1rem;
           }
 
           .hero-grid {
             grid-template-columns: 108px minmax(0, 1fr);
-            gap: 0.82rem;
+            gap: 1rem;
           }
 
           .mini-card {
@@ -788,12 +785,12 @@ function Dashboard({ currentUser }) {
           }
 
           .panel-card {
-            border-radius: 20px;
-            padding: 0.78rem;
+            border-radius: 18px;
+            padding: 0.95rem;
           }
 
           .panel-header {
-            margin-bottom: 0.65rem;
+            margin-bottom: 0.8rem;
           }
 
           .panel-title {
