@@ -37,6 +37,7 @@ function getCardType(overall) {
 function Dashboard({ currentUser }) {
   const [giocatore, setGiocatore] = useState(null)
   const [partite, setPartite] = useState([])
+  const [prossime, setProssime] = useState([])
   const [scommesse, setScommesse] = useState([])
   const [loading, setLoading] = useState(true)
 
@@ -74,6 +75,8 @@ function Dashboard({ currentUser }) {
           return [...squadraA, ...squadraB].includes(currentUser.id)
         })
       )
+      // Partite ancora aperte (non chiuse), anche quelle a cui il giocatore non si è ancora iscritto
+      setProssime(partiteData.filter(p => p.stato !== 'chiusa'))
     }
 
     setLoading(false)
@@ -102,10 +105,9 @@ function Dashboard({ currentUser }) {
 
   const partiteOrdinate = [...partite].sort((a, b) => new Date(b.data || 0) - new Date(a.data || 0))
   const partiteChiuse = partiteOrdinate.filter(p => p.stato === 'chiusa' || typeof p.punteggio_a === 'number')
-  const prossimaPartita = [...partite]
-    .filter(p => p.stato !== 'chiusa')
+  const prossimaPartita = [...prossime]
     .sort((a, b) => new Date(a.data || 0) - new Date(b.data || 0))[0]
-    || [...partite].sort((a, b) => new Date(a.data || 0) - new Date(b.data || 0))[0]
+    || [...partite].filter(p => p.stato !== 'chiusa').sort((a, b) => new Date(a.data || 0) - new Date(b.data || 0))[0]
 
   const ultimi5Voti = (giocatore.voti_storico || [])
     .slice(-5)

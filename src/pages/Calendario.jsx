@@ -1610,8 +1610,10 @@ function ModalScommessa({ partita, currentUser, onClose, onSaved }) {
   useEffect(() => { caricaDati() }, [])
 
   async function caricaDati() {
-    const allIds = [...partita.squadra_a, ...partita.squadra_b]
-    const { data: giocatoriData } = await supabase.from('giocatori').select('*').in('id', allIds)
+    const allIds = [...(partita.squadra_a || []), ...(partita.squadra_b || [])]
+    const { data: giocatoriData } = allIds.length > 0
+      ? await supabase.from('giocatori').select('*').in('id', allIds)
+      : { data: [] }
     const { data: giocatoreCorrente } = await supabase.from('giocatori').select('crediti').eq('id', currentUser.id).single()
     const { data: scommesseData } = await supabase.from('scommesse').select('*').eq('partita_id', partita.id).eq('giocatore_id', currentUser.id)
 
@@ -1628,7 +1630,7 @@ function ModalScommessa({ partita, currentUser, onClose, onSaved }) {
     setLoading(false)
   }
 
-  const allIds = [...partita.squadra_a, ...partita.squadra_b]
+  const allIds = [...(partita.squadra_a || []), ...(partita.squadra_b || [])]
   const quoteRisultato = giocatori.length > 0 ? calcolaQuoteRisultato(giocatori, partita.squadra_a, partita.squadra_b) : { squadra_a: 2.00, pareggio: 3.00, squadra_b: 2.00 }
   const quoteMigliore = giocatori.length > 0 ? calcolaQuoteMiglioreInCampo(giocatori, allIds) : {}
   const quoteCapo = calcolaQuoteCapocannoniere(allIds)
