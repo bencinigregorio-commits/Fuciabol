@@ -335,15 +335,20 @@ function Dashboard({ currentUser }) {
 
         .hero-title {
           margin: 0;
-          font-size: clamp(1.75rem, 8vw, 2.7rem);
+          font-size: clamp(2.1rem, 9.5vw, 3.4rem);
           font-weight: 950;
-          line-height: 0.96;
-          letter-spacing: -1.2px;
+          line-height: 0.92;
+          letter-spacing: -1.6px;
+          text-transform: uppercase;
+          font-style: italic;
         }
 
         .hero-title span {
-          color: var(--cyan);
-          text-shadow: 0 0 18px rgba(0,212,255,0.34);
+          background: linear-gradient(120deg, #00f0ff, #0099ff);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+          filter: drop-shadow(0 0 22px rgba(0,212,255,0.5));
         }
 
         .hero-subtitle {
@@ -395,26 +400,27 @@ function Dashboard({ currentUser }) {
           content: '';
           position: absolute;
           top: 0; left: 0; right: 0;
-          height: 2px;
-          background: linear-gradient(90deg, var(--cyan), transparent);
+          height: 3px;
+          background: linear-gradient(90deg, var(--cyan), rgba(0,212,255,0.1));
+          box-shadow: 0 0 12px rgba(0,212,255,0.5);
         }
 
         .kpi-ico {
-          width: 30px;
-          height: 30px;
+          width: 32px;
+          height: 32px;
           border-radius: 10px;
           display: flex;
           align-items: center;
           justify-content: center;
-          background: rgba(0,212,255,0.12);
-          border: 1px solid rgba(0,212,255,0.2);
+          background: linear-gradient(145deg, rgba(0,212,255,0.22), rgba(0,212,255,0.06));
+          border: 1px solid rgba(0,212,255,0.26);
         }
 
         .kpi-val {
-          font-size: 1.55rem;
+          font-size: 2rem;
           font-weight: 950;
           line-height: 1;
-          letter-spacing: -0.8px;
+          letter-spacing: -1.2px;
         }
 
         .kpi-lab {
@@ -433,12 +439,30 @@ function Dashboard({ currentUser }) {
         }
 
         .panel-card {
+          position: relative;
+          overflow: hidden;
           border-radius: 20px;
-          border: 1px solid rgba(255,255,255,0.06);
-          background: rgba(17,25,44,0.55);
-          box-shadow: 0 10px 30px rgba(0,0,0,0.16);
-          padding: 1.15rem;
+          border: 1px solid rgba(255,255,255,0.07);
+          background: linear-gradient(160deg, rgba(20,29,50,0.7), rgba(12,18,34,0.6));
+          box-shadow: 0 10px 30px rgba(0,0,0,0.18);
+          padding: 1.2rem;
           animation: fadeInUp 0.42s ease both;
+          transition: transform 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease;
+        }
+
+        .panel-card::before {
+          content: '';
+          position: absolute;
+          top: 0; left: 0; right: 0;
+          height: 2px;
+          background: linear-gradient(90deg, var(--cyan), rgba(0,212,255,0.06) 65%);
+          box-shadow: 0 0 10px rgba(0,212,255,0.35);
+        }
+
+        .panel-card:hover {
+          transform: translateY(-3px);
+          border-color: rgba(0,212,255,0.2);
+          box-shadow: 0 16px 40px rgba(0,0,0,0.26);
         }
 
         .panel-header {
@@ -446,29 +470,31 @@ function Dashboard({ currentUser }) {
           align-items: center;
           justify-content: space-between;
           gap: 0.75rem;
-          margin-bottom: 1rem;
+          margin-bottom: 1.1rem;
         }
 
         .panel-title {
           display: flex;
           align-items: center;
-          gap: 0.5rem;
+          gap: 0.6rem;
           margin: 0;
-          font-size: 0.88rem;
-          font-weight: 880;
-          color: rgba(255,255,255,0.9);
-          letter-spacing: 0.1px;
+          font-size: 0.82rem;
+          font-weight: 900;
+          color: #fff;
+          letter-spacing: 1.3px;
+          text-transform: uppercase;
         }
 
         .panel-title .icon {
-          width: 32px;
-          height: 32px;
+          width: 34px;
+          height: 34px;
           border-radius: 12px;
           display: flex;
           align-items: center;
           justify-content: center;
-          background: rgba(0,212,255,0.1);
-          border: 1px solid rgba(0,212,255,0.18);
+          background: linear-gradient(145deg, rgba(0,212,255,0.22), rgba(0,212,255,0.06));
+          border: 1px solid rgba(0,212,255,0.28);
+          box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
         }
 
         .credits-card {
@@ -494,18 +520,19 @@ function Dashboard({ currentUser }) {
         }
 
         .mini-metric {
-          border-radius: 16px;
-          padding: 0.68rem 0.48rem;
+          border-radius: 15px;
+          padding: 0.8rem 0.48rem;
           text-align: center;
-          background: rgba(255,255,255,0.045);
-          border: 1px solid rgba(255,255,255,0.055);
+          background: linear-gradient(160deg, rgba(255,255,255,0.06), rgba(255,255,255,0.015));
+          border: 1px solid rgba(255,255,255,0.06);
         }
 
         .mini-metric strong {
           display: block;
-          font-size: 1.15rem;
+          font-size: 1.35rem;
           font-weight: 950;
           line-height: 1;
+          letter-spacing: -0.5px;
         }
 
         .mini-metric span {
@@ -526,10 +553,11 @@ function Dashboard({ currentUser }) {
         .ovr-next {
           display: flex;
           align-items: center;
-          gap: 0.45rem;
-          font-size: 1.65rem;
+          gap: 0.5rem;
+          font-size: 2rem;
           font-weight: 950;
           line-height: 1;
+          letter-spacing: -1px;
         }
 
         .ovr-next .current { color: rgba(255,255,255,0.62); }
@@ -579,18 +607,25 @@ function Dashboard({ currentUser }) {
         }
 
         .season-stat {
-          border-radius: 15px;
-          background: rgba(255,255,255,0.045);
-          border: 1px solid rgba(255,255,255,0.055);
-          padding: 0.62rem 0.3rem;
+          border-radius: 14px;
+          background: linear-gradient(160deg, rgba(255,255,255,0.055), rgba(255,255,255,0.015));
+          border: 1px solid rgba(255,255,255,0.06);
+          padding: 0.75rem 0.3rem;
           text-align: center;
+          transition: transform 0.18s ease, border-color 0.18s ease;
+        }
+
+        .season-stat:hover {
+          transform: translateY(-2px);
+          border-color: rgba(0,212,255,0.18);
         }
 
         .season-stat strong {
           display: block;
-          font-size: 1.15rem;
+          font-size: 1.3rem;
           font-weight: 950;
           line-height: 1;
+          letter-spacing: -0.5px;
         }
 
         .season-stat span {
@@ -637,16 +672,16 @@ function Dashboard({ currentUser }) {
         }
 
         .team-logo {
-          width: 54px;
-          height: 54px;
-          margin: 0 auto 0.38rem auto;
+          width: 60px;
+          height: 60px;
+          margin: 0 auto 0.45rem auto;
           border-radius: 50%;
-          background: radial-gradient(circle, rgba(0,212,255,0.22), rgba(0,0,0,0.55));
-          border: 1px solid rgba(0,212,255,0.3);
+          background: radial-gradient(circle, rgba(0,212,255,0.28), rgba(0,0,0,0.55));
+          border: 1.5px solid rgba(0,212,255,0.36);
           display: flex;
           align-items: center;
           justify-content: center;
-          box-shadow: 0 0 22px rgba(0,212,255,0.16);
+          box-shadow: 0 0 26px rgba(0,212,255,0.2);
           overflow: hidden;
         }
 
@@ -673,10 +708,15 @@ function Dashboard({ currentUser }) {
         }
 
         .vs-label {
-          font-size: 1.55rem;
+          font-size: 1.9rem;
           font-weight: 950;
-          color: var(--cyan);
-          text-shadow: 0 0 18px rgba(0,212,255,0.42);
+          font-style: italic;
+          letter-spacing: -1px;
+          background: linear-gradient(135deg, #fff, #00d4ff);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+          filter: drop-shadow(0 0 14px rgba(0,212,255,0.4));
         }
 
         .match-date {
@@ -705,20 +745,21 @@ function Dashboard({ currentUser }) {
         .horizontal-list::-webkit-scrollbar { display: none; }
 
         .performance-chip {
-          min-width: 76px;
-          border-radius: 17px;
-          padding: 0.72rem 0.58rem;
+          min-width: 78px;
+          border-radius: 16px;
+          padding: 0.8rem 0.58rem;
           text-align: center;
-          border: 1px solid rgba(0,212,255,0.28);
-          background: rgba(0,212,255,0.08);
+          border: 1px solid rgba(0,212,255,0.24);
+          background: linear-gradient(160deg, rgba(0,212,255,0.14), rgba(0,212,255,0.03));
         }
 
         .performance-chip strong {
           display: block;
           color: var(--cyan);
-          font-size: 1.35rem;
+          font-size: 1.5rem;
           font-weight: 950;
           line-height: 1;
+          letter-spacing: -0.5px;
         }
 
         .performance-chip span {
@@ -734,10 +775,17 @@ function Dashboard({ currentUser }) {
           align-items: center;
           justify-content: space-between;
           gap: 0.75rem;
-          border-radius: 17px;
-          padding: 0.78rem;
-          background: rgba(255,255,255,0.04);
-          border: 1px solid rgba(255,255,255,0.055);
+          border-radius: 15px;
+          padding: 0.8rem;
+          background: rgba(255,255,255,0.035);
+          border: 1px solid rgba(255,255,255,0.05);
+          transition: background 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+        }
+
+        .list-row:hover {
+          background: rgba(0,212,255,0.05);
+          border-color: rgba(0,212,255,0.16);
+          transform: translateX(2px);
         }
 
         .list-main {

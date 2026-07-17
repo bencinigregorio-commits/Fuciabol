@@ -152,14 +152,24 @@ function Classifica() {
         }
 
         .podio-section, .ranking-section {
-          border-radius: 26px;
+          position: relative;
+          border-radius: 24px;
           background:
-            radial-gradient(circle at 5% 0%, rgba(0,212,255,0.13), transparent 30%),
+            radial-gradient(circle at 5% 0%, rgba(0,212,255,0.1), transparent 32%),
             linear-gradient(180deg, rgba(15,23,41,0.78), rgba(15,23,41,0.45));
           border: 1px solid rgba(255,255,255,0.07);
-          box-shadow: 0 20px 55px rgba(0,0,0,0.24);
+          box-shadow: 0 16px 44px rgba(0,0,0,0.22);
           overflow: hidden;
           animation: fadeInUp 0.45s ease both;
+        }
+
+        .podio-section::before, .ranking-section::before {
+          content: '';
+          position: absolute;
+          top: 0; left: 0; right: 0;
+          height: 2px;
+          background: linear-gradient(90deg, #00d4ff, rgba(0,212,255,0.06) 65%);
+          box-shadow: 0 0 10px rgba(0,212,255,0.35);
         }
 
         .podio-section {
@@ -180,9 +190,10 @@ function Classifica() {
 
         .section-header h2 {
           margin: 0;
-          font-size: 1.05rem;
+          font-size: 1rem;
           font-weight: 950;
-          letter-spacing: -0.2px;
+          letter-spacing: 0.8px;
+          text-transform: uppercase;
         }
 
         .section-header p {
@@ -335,13 +346,19 @@ function Classifica() {
         .rank-card {
           position: relative;
           overflow: hidden;
-          border-radius: 21px;
+          border-radius: 18px;
           border: 1px solid rgba(255,255,255,0.075);
           background:
             linear-gradient(135deg, rgba(255,255,255,0.055), rgba(255,255,255,0.02)),
             rgba(5,10,23,0.34);
-          padding: 0.76rem;
+          padding: 0.8rem;
           animation: fadeInUp 0.32s ease both;
+          transition: transform 0.18s ease, border-color 0.18s ease;
+        }
+
+        .rank-card:hover {
+          transform: translateX(3px);
+          border-color: rgba(0,212,255,0.2);
         }
 
         .rank-card.gold {
