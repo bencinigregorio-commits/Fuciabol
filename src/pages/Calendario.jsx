@@ -10,6 +10,7 @@ function Calendario({ currentUser }) {
   const [showVoting, setShowVoting] = useState(null)
   const [showScommessa, setShowScommessa] = useState(null)
   const [showRisultato, setShowRisultato] = useState(null)
+  const [showPassate, setShowPassate] = useState(false)
 
   useEffect(() => { caricaPartite(); caricaGiocatori() }, [])
 
@@ -188,23 +189,52 @@ function Calendario({ currentUser }) {
         <div style={{ background: 'rgba(15, 23, 41, 0.6)', border: '1px solid rgba(255, 255, 255, 0.05)', borderRadius: '20px', padding: '3rem', textAlign: 'center', color: 'rgba(255, 255, 255, 0.5)' }}>
           Nessuna partita registrata
         </div>
-      ) : (
-        <div style={{ display: 'grid', gap: '1.5rem' }}>
-          {partite.map(partita => (
-            <PartitaCard
-              key={partita.id}
-              partita={partita}
-              currentUser={currentUser}
-              onVoteClick={() => setShowVoting(partita)}
-              onChiudiVoti={() => chiudiVotazioni(partita)}
-              onScommessaClick={() => setShowScommessa(partita)}
-              onRisultatoClick={() => setShowRisultato(partita)}
-              onAvviaLive={() => avviaLive(partita)}
-              onChiudiLive={(apriVotazioni) => chiudiLive(partita, apriVotazioni)}
-            />
-          ))}
-        </div>
-      )}
+      ) : (() => {
+        const renderCard = (partita) => (
+          <PartitaCard
+            key={partita.id}
+            partita={partita}
+            currentUser={currentUser}
+            onVoteClick={() => setShowVoting(partita)}
+            onChiudiVoti={() => chiudiVotazioni(partita)}
+            onScommessaClick={() => setShowScommessa(partita)}
+            onRisultatoClick={() => setShowRisultato(partita)}
+            onAvviaLive={() => avviaLive(partita)}
+            onChiudiLive={(apriVotazioni) => chiudiLive(partita, apriVotazioni)}
+          />
+        )
+        const attive = partite.filter(p => p.stato !== 'chiusa')
+        const chiuse = partite.filter(p => p.stato === 'chiusa') // già ordinate per data desc
+        const ultimaChiusa = chiuse[0]
+        const passate = chiuse.slice(1)
+        return (
+          <div style={{ display: 'grid', gap: '1.5rem' }}>
+            {attive.map(renderCard)}
+            {ultimaChiusa && renderCard(ultimaChiusa)}
+
+            {passate.length > 0 && (
+              <div>
+                <button
+                  onClick={() => setShowPassate(v => !v)}
+                  style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem', background: showPassate ? 'rgba(0,212,255,0.06)' : 'rgba(255,255,255,0.03)', border: `1px solid ${showPassate ? 'rgba(0,212,255,0.2)' : 'rgba(255,255,255,0.07)'}`, borderRadius: '14px', padding: '0.9rem 1.1rem', color: 'rgba(255,255,255,0.72)', fontWeight: 850, fontSize: '0.78rem', letterSpacing: '1px', textTransform: 'uppercase', cursor: 'pointer', transition: 'all 0.18s ease', fontFamily: 'inherit' }}
+                >
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '0.55rem' }}>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#00d4ff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+                    Partite passate
+                    <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#00d4ff', background: 'rgba(0,212,255,0.12)', border: '1px solid rgba(0,212,255,0.28)', borderRadius: '999px', padding: '0.05rem 0.5rem' }}>{passate.length}</span>
+                  </span>
+                  <span style={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.55)', transform: showPassate ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s ease' }}>▾</span>
+                </button>
+                {showPassate && (
+                  <div style={{ display: 'grid', gap: '1.5rem', marginTop: '1.5rem' }}>
+                    {passate.map(renderCard)}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )
+      })()}
 
       {showModal && (
         <ModalNuovaPartita
