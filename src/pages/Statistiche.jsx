@@ -85,7 +85,7 @@ function Statistiche() {
 
   async function caricaDati() {
     const { data: giocatoriData } = await supabase.from('giocatori').select('*').order('overall', { ascending: false })
-    const { data: partiteData } = await supabase.from('partite').select('*').eq('stato', 'chiusa').order('data', { ascending: false })
+    const { data: partiteData } = await supabase.from('partite').select('*').eq('stato', 'chiusa').order('data', { ascending: false }).order('id', { ascending: false })
     if (giocatoriData) setGiocatori(giocatoriData)
     if (partiteData) setPartite(partiteData)
   }
@@ -119,7 +119,7 @@ function Statistiche() {
       ? (votiStorico.reduce((sum, v) => sum + v.votoFinale, 0) / votiStorico.length).toFixed(2)
       : '-'
     const winRate = partiteGiocate > 0 ? ((vittorie / partiteGiocate) * 100).toFixed(0) : 0
-    const isIF = g.id === miglioreUltimaPartita
+    const isIF = miglioreUltimaPartita != null && String(g.id) === String(miglioreUltimaPartita)
     return { ...g, gol, assist, partiteGiocate, vittorie, pareggi, sconfitte, mediaVoti, winRate, isIF }
   })
 
