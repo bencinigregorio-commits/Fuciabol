@@ -90,13 +90,17 @@ function Statistiche() {
     if (partiteData) setPartite(partiteData)
   }
 
-  // Trova il miglior giocatore dell'ultima partita chiusa
+  // Trova il miglior giocatore FISSO dell'ultima partita chiusa (i guest non ricevono l'IF)
+  const guestIds = new Set(giocatori.filter(g => g.is_guest).map(g => String(g.id)))
   const ultimaPartita = partite.length > 0 ? partite[0] : null
   let miglioreUltimaPartita = null
   if (ultimaPartita?.voti_calcolati?.length > 0) {
-    const maxVoto = Math.max(...ultimaPartita.voti_calcolati.map(v => v.votoFinale))
-    const migliore = ultimaPartita.voti_calcolati.find(v => v.votoFinale === maxVoto)
-    miglioreUltimaPartita = migliore?.playerId
+    const votiFissi = ultimaPartita.voti_calcolati.filter(v => !guestIds.has(String(v.playerId)))
+    if (votiFissi.length > 0) {
+      const maxVoto = Math.max(...votiFissi.map(v => v.votoFinale))
+      const migliore = votiFissi.find(v => v.votoFinale === maxVoto)
+      miglioreUltimaPartita = migliore?.playerId
+    }
   }
 
   const giocatoriConStats = giocatori.map(g => {
