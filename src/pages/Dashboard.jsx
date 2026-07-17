@@ -335,15 +335,20 @@ function Dashboard({ currentUser }) {
 
         .hero-title {
           margin: 0;
-          font-size: clamp(1.75rem, 8vw, 2.7rem);
+          font-size: clamp(2.1rem, 9.5vw, 3.4rem);
           font-weight: 950;
-          line-height: 0.96;
-          letter-spacing: -1.2px;
+          line-height: 0.92;
+          letter-spacing: -1.6px;
+          text-transform: uppercase;
+          font-style: italic;
         }
 
         .hero-title span {
-          color: var(--cyan);
-          text-shadow: 0 0 18px rgba(0,212,255,0.34);
+          background: linear-gradient(120deg, #00f0ff, #0099ff);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+          filter: drop-shadow(0 0 22px rgba(0,212,255,0.5));
         }
 
         .hero-subtitle {
@@ -395,26 +400,27 @@ function Dashboard({ currentUser }) {
           content: '';
           position: absolute;
           top: 0; left: 0; right: 0;
-          height: 2px;
-          background: linear-gradient(90deg, var(--cyan), transparent);
+          height: 3px;
+          background: linear-gradient(90deg, var(--cyan), rgba(0,212,255,0.1));
+          box-shadow: 0 0 12px rgba(0,212,255,0.5);
         }
 
         .kpi-ico {
-          width: 30px;
-          height: 30px;
+          width: 32px;
+          height: 32px;
           border-radius: 10px;
           display: flex;
           align-items: center;
           justify-content: center;
-          background: rgba(0,212,255,0.12);
-          border: 1px solid rgba(0,212,255,0.2);
+          background: linear-gradient(145deg, rgba(0,212,255,0.22), rgba(0,212,255,0.06));
+          border: 1px solid rgba(0,212,255,0.26);
         }
 
         .kpi-val {
-          font-size: 1.55rem;
+          font-size: 2rem;
           font-weight: 950;
           line-height: 1;
-          letter-spacing: -0.8px;
+          letter-spacing: -1.2px;
         }
 
         .kpi-lab {
@@ -447,9 +453,10 @@ function Dashboard({ currentUser }) {
         .panel-card::before {
           content: '';
           position: absolute;
-          top: 0; left: 1.2rem; right: 1.2rem;
-          height: 1px;
-          background: linear-gradient(90deg, rgba(0,212,255,0.5), transparent 70%);
+          top: 0; left: 0; right: 0;
+          height: 2px;
+          background: linear-gradient(90deg, var(--cyan), rgba(0,212,255,0.06) 65%);
+          box-shadow: 0 0 10px rgba(0,212,255,0.35);
         }
 
         .panel-card:hover {
@@ -471,10 +478,11 @@ function Dashboard({ currentUser }) {
           align-items: center;
           gap: 0.6rem;
           margin: 0;
-          font-size: 0.9rem;
+          font-size: 0.82rem;
           font-weight: 900;
           color: #fff;
-          letter-spacing: 0.2px;
+          letter-spacing: 1.3px;
+          text-transform: uppercase;
         }
 
         .panel-title .icon {
@@ -545,10 +553,11 @@ function Dashboard({ currentUser }) {
         .ovr-next {
           display: flex;
           align-items: center;
-          gap: 0.45rem;
-          font-size: 1.65rem;
+          gap: 0.5rem;
+          font-size: 2rem;
           font-weight: 950;
           line-height: 1;
+          letter-spacing: -1px;
         }
 
         .ovr-next .current { color: rgba(255,255,255,0.62); }
