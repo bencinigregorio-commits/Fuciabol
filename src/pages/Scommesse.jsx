@@ -193,8 +193,8 @@ function Scommesse() {
       {/* Hall of Fame */}
       {conScommesse.length > 0 && (
         <div style={{ marginBottom: '2rem' }}>
-          <h2 style={{ fontSize: '1.3rem', fontWeight: 700, marginBottom: '1rem', color: 'rgba(255, 255, 255, 0.7)' }}>
-            🏅 Hall of Fame (e of Shame)
+          <h2 style={{ fontSize: '1.05rem', fontWeight: 950, marginBottom: '1rem', color: '#fff', letterSpacing: '0.8px', textTransform: 'uppercase' }}>
+            🏅 Hall of Fame <span style={{ color: 'rgba(255,255,255,0.4)' }}>(e of Shame)</span>
           </h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
             {giocatoriConStats.map((g, i) => {
@@ -250,12 +250,14 @@ function Scommesse() {
       {/* Classifica Crediti */}
       <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch', borderRadius: '15px' }}>
       <div style={{
+        position: 'relative',
         minWidth: '640px',
         background: 'rgba(15, 23, 41, 0.6)',
         border: '1px solid rgba(255, 255, 255, 0.05)',
         borderRadius: '15px',
         overflow: 'hidden'
       }}>
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: 'linear-gradient(90deg, #00d4ff, rgba(0,212,255,0.06) 65%)', boxShadow: '0 0 10px rgba(0,212,255,0.35)' }} />
         <div style={{
           display: 'grid',
           gridTemplateColumns: '60px 1fr 100px 80px 80px 80px 100px',

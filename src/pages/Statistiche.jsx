@@ -234,7 +234,7 @@ function Statistiche() {
           { label: 'ARGENTO', desc: 'OVR 65-74', bg: CARD_CONFIGS.silver.labelBg, color: CARD_CONFIGS.silver.labelColor },
           { label: 'BRONZO', desc: 'OVR 64-', bg: CARD_CONFIGS.bronze.labelBg, color: CARD_CONFIGS.bronze.labelColor },
         ].map(t => (
-          <div key={t.label} style={{ background: t.bg, border: `1px solid ${t.color}`, borderRadius: '8px', padding: '0.3rem 0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <div key={t.label} style={{ background: t.bg, border: `1px solid ${t.color}`, borderRadius: '999px', padding: '0.32rem 0.8rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <span style={{ fontSize: '0.75rem', fontWeight: 800, color: t.color }}>{t.label}</span>
             <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)' }}>{t.desc}</span>
           </div>
