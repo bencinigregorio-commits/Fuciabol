@@ -90,9 +90,12 @@ function Scommesse() {
     }
   })
 
-  const conScommesse = giocatoriConStats.filter(g => g.totScommesse > 0)
+  const fissi = giocatoriConStats.filter(g => !g.is_guest)
+  const guest = giocatoriConStats.filter(g => g.is_guest)
+  const conScommesse = fissi.filter(g => g.totScommesse > 0)
 
   const getTitolo = (g) => {
+    if (g.is_guest) return null
     if (conScommesse.length === 0) return null
 
     const maxROI = Math.max(...conScommesse.map(x => x.roi))
@@ -197,7 +200,7 @@ function Scommesse() {
             🏅 Hall of Fame <span style={{ color: 'rgba(255,255,255,0.4)' }}>(e of Shame)</span>
           </h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
-            {giocatoriConStats.map((g, i) => {
+            {fissi.map((g, i) => {
               const titolo = getTitolo(g)
               if (!titolo) return null
               return (
@@ -278,104 +281,158 @@ function Scommesse() {
           <div style={{ textAlign: 'center' }}>ROI</div>
         </div>
 
-        {giocatoriConStats.map((g, index) => {
-          const titolo = getTitolo(g)
-          return (
-            <div
-              key={g.id}
-              style={{
-                display: 'grid',
-                gridTemplateColumns: '60px 1fr 100px 80px 80px 80px 100px',
-                padding: '1rem 1.5rem',
-                alignItems: 'center',
-                borderBottom: '1px solid rgba(255, 255, 255, 0.03)',
-                transition: 'all 0.2s',
-                animation: `fadeInDown 0.3s ease ${index * 0.05}s both`
-              }}
-              onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255, 215, 0, 0.03)'}
-              onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
-            >
-              <div style={{
-                width: '35px',
-                height: '35px',
-                borderRadius: '50%',
-                background: index === 0
-                  ? 'linear-gradient(135deg, #ffd700, #ffa500)'
-                  : index === 1
-                  ? 'linear-gradient(135deg, #c0c0c0, #a8a8a8)'
-                  : index === 2
-                  ? 'linear-gradient(135deg, #cd7f32, #b87333)'
-                  : 'rgba(255, 255, 255, 0.05)',
-                border: `1px solid ${index < 3 ? 'transparent' : 'rgba(255, 255, 255, 0.1)'}`,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '0.9rem',
-                fontWeight: 700,
-                color: index < 3 ? '#0f1729' : 'rgba(255, 255, 255, 0.5)'
-              }}>
-                {index + 1}
-              </div>
-
-              <div>
-                <div style={{ fontWeight: 700, fontSize: '1rem', marginBottom: '0.2rem' }}>{g.nome}</div>
-                {titolo && (
-                  <div style={{ fontSize: '0.75rem', color: '#ffd700', fontWeight: 600 }}>
-                    {titolo.emoji} {titolo.titolo}
-                  </div>
-                )}
-              </div>
-
-              <div style={{ textAlign: 'center' }}>
-                <div style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '0.25rem',
-                  background: 'rgba(255, 215, 0, 0.1)',
-                  border: '1px solid rgba(255, 215, 0, 0.3)',
-                  borderRadius: '20px',
-                  padding: '0.25rem 0.75rem',
-                  fontSize: '1rem',
-                  fontWeight: 900,
-                  color: '#ffd700'
-                }}>
-                  💰 {g.crediti ?? 500}
-                </div>
-              </div>
-
-              <div style={{ textAlign: 'center', fontSize: '0.9rem' }}>
-                <span style={{ color: '#00d4ff', fontWeight: 700 }}>{g.totVinte}</span>
-                <span style={{ color: 'rgba(255, 255, 255, 0.3)' }}>/</span>
-                <span style={{ color: '#ef4444', fontWeight: 700 }}>{g.totPerse}</span>
-              </div>
-
-              <div style={{ textAlign: 'center' }}>
-                <span style={{
-                  fontSize: '0.9rem',
-                  fontWeight: 700,
-                  color: g.percVincite >= 50 ? '#00d4ff' : g.percVincite > 0 ? '#ffd700' : 'rgba(255, 255, 255, 0.3)'
-                }}>
-                  {g.totScommesse > 0 ? `${g.percVincite.toFixed(0)}%` : '-'}
-                </span>
-              </div>
-
-              <div style={{ textAlign: 'center', fontSize: '0.9rem', color: 'rgba(255, 255, 255, 0.5)', fontWeight: 600 }}>
-                {g.totScommesse}
-              </div>
-
-              <div style={{ textAlign: 'center' }}>
-                <span style={{
-                  fontSize: '0.9rem',
-                  fontWeight: 700,
-                  color: g.roi > 0 ? '#00d4ff' : g.roi < 0 ? '#ef4444' : 'rgba(255, 255, 255, 0.3)'
-                }}>
-                  {g.totScommesse > 0 ? `${g.roi > 0 ? '+' : ''}${g.roi.toFixed(0)}%` : '-'}
-                </span>
-              </div>
-            </div>
-          )
-        })}
+        {fissi.map((g, index) => (
+          <RigaClassifica key={g.id} g={g} index={index} titolo={getTitolo(g)} />
+        ))}
       </div>
+      </div>
+
+      {/* Sezione Guest / Ospiti — fuori dalla classifica */}
+      {guest.length > 0 && (
+        <div style={{ marginTop: '2rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.1rem' }}>
+            <div style={{ flex: 1, height: '1px', background: 'rgba(255,165,0,0.18)' }} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', flexShrink: 0 }}>
+              <span style={{ fontSize: '0.7rem', fontWeight: 800, color: 'rgba(255,165,0,0.65)', letterSpacing: '1.5px', textTransform: 'uppercase' }}>🎫 Guest / Ospiti</span>
+              <span style={{ fontSize: '0.65rem', background: 'rgba(255,165,0,0.1)', border: '1px solid rgba(255,165,0,0.28)', borderRadius: '20px', padding: '0.1rem 0.5rem', color: 'rgba(255,165,0,0.7)', fontWeight: 700 }}>{guest.length}</span>
+            </div>
+            <div style={{ flex: 1, height: '1px', background: 'rgba(255,165,0,0.18)' }} />
+          </div>
+
+          <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch', borderRadius: '15px' }}>
+          <div style={{
+            position: 'relative',
+            minWidth: '640px',
+            background: 'linear-gradient(180deg, rgba(255,165,0,0.04), rgba(15,23,41,0.4))',
+            border: '1px solid rgba(255,165,0,0.12)',
+            borderRadius: '15px',
+            overflow: 'hidden',
+            opacity: 0.9
+          }}>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: '60px 1fr 100px 80px 80px 80px 100px',
+              padding: '1rem 1.5rem',
+              borderBottom: '1px solid rgba(255,255,255,0.05)',
+              fontSize: '0.75rem',
+              fontWeight: 700,
+              color: 'rgba(255,165,0,0.5)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px'
+            }}>
+              <div>POS.</div>
+              <div>GUEST</div>
+              <div style={{ textAlign: 'center' }}>CREDITI</div>
+              <div style={{ textAlign: 'center' }}>V/P</div>
+              <div style={{ textAlign: 'center' }}>WIN%</div>
+              <div style={{ textAlign: 'center' }}>TOT</div>
+              <div style={{ textAlign: 'center' }}>ROI</div>
+            </div>
+            {guest.map((g, index) => (
+              <RigaClassifica key={g.id} g={g} index={index} titolo={getTitolo(g)} isGuest />
+            ))}
+          </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function RigaClassifica({ g, index, titolo, isGuest = false }) {
+  return (
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: '60px 1fr 100px 80px 80px 80px 100px',
+        padding: '1rem 1.5rem',
+        alignItems: 'center',
+        borderBottom: '1px solid rgba(255, 255, 255, 0.03)',
+        transition: 'all 0.2s',
+        animation: `fadeInDown 0.3s ease ${index * 0.05}s both`
+      }}
+      onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255, 215, 0, 0.03)'}
+      onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+    >
+      <div style={{
+        width: '35px',
+        height: '35px',
+        borderRadius: '50%',
+        background: !isGuest && index === 0
+          ? 'linear-gradient(135deg, #ffd700, #ffa500)'
+          : !isGuest && index === 1
+          ? 'linear-gradient(135deg, #c0c0c0, #a8a8a8)'
+          : !isGuest && index === 2
+          ? 'linear-gradient(135deg, #cd7f32, #b87333)'
+          : 'rgba(255, 255, 255, 0.05)',
+        border: `1px solid ${!isGuest && index < 3 ? 'transparent' : 'rgba(255, 255, 255, 0.1)'}`,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontSize: '0.9rem',
+        fontWeight: 700,
+        color: !isGuest && index < 3 ? '#0f1729' : 'rgba(255, 255, 255, 0.5)'
+      }}>
+        {index + 1}
+      </div>
+
+      <div>
+        <div style={{ fontWeight: 700, fontSize: '1rem', marginBottom: '0.2rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+          <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{g.nome}</span>
+          {isGuest && <span style={{ flexShrink: 0, fontSize: '0.55rem', fontWeight: 800, color: '#ffa500', background: 'rgba(255,165,0,0.12)', border: '1px solid rgba(255,165,0,0.35)', borderRadius: '4px', padding: '0.1rem 0.35rem', letterSpacing: '0.5px', textTransform: 'uppercase' }}>G</span>}
+        </div>
+        {!isGuest && titolo && (
+          <div style={{ fontSize: '0.75rem', color: '#ffd700', fontWeight: 600 }}>
+            {titolo.emoji} {titolo.titolo}
+          </div>
+        )}
+      </div>
+
+      <div style={{ textAlign: 'center' }}>
+        <div style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '0.25rem',
+          background: 'rgba(255, 215, 0, 0.1)',
+          border: '1px solid rgba(255, 215, 0, 0.3)',
+          borderRadius: '20px',
+          padding: '0.25rem 0.75rem',
+          fontSize: '1rem',
+          fontWeight: 900,
+          color: '#ffd700'
+        }}>
+          💰 {g.crediti ?? 500}
+        </div>
+      </div>
+
+      <div style={{ textAlign: 'center', fontSize: '0.9rem' }}>
+        <span style={{ color: '#00d4ff', fontWeight: 700 }}>{g.totVinte}</span>
+        <span style={{ color: 'rgba(255, 255, 255, 0.3)' }}>/</span>
+        <span style={{ color: '#ef4444', fontWeight: 700 }}>{g.totPerse}</span>
+      </div>
+
+      <div style={{ textAlign: 'center' }}>
+        <span style={{
+          fontSize: '0.9rem',
+          fontWeight: 700,
+          color: g.percVincite >= 50 ? '#00d4ff' : g.percVincite > 0 ? '#ffd700' : 'rgba(255, 255, 255, 0.3)'
+        }}>
+          {g.totScommesse > 0 ? `${g.percVincite.toFixed(0)}%` : '-'}
+        </span>
+      </div>
+
+      <div style={{ textAlign: 'center', fontSize: '0.9rem', color: 'rgba(255, 255, 255, 0.5)', fontWeight: 600 }}>
+        {g.totScommesse}
+      </div>
+
+      <div style={{ textAlign: 'center' }}>
+        <span style={{
+          fontSize: '0.9rem',
+          fontWeight: 700,
+          color: g.roi > 0 ? '#00d4ff' : g.roi < 0 ? '#ef4444' : 'rgba(255, 255, 255, 0.3)'
+        }}>
+          {g.totScommesse > 0 ? `${g.roi > 0 ? '+' : ''}${g.roi.toFixed(0)}%` : '-'}
+        </span>
       </div>
     </div>
   )
