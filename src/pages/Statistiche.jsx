@@ -80,6 +80,8 @@ function Statistiche() {
   const [giocatori, setGiocatori] = useState([])
   const [partite, setPartite] = useState([])
   const [selected, setSelected] = useState(null)
+  const [showLegenda, setShowLegenda] = useState(false)
+  const [showGuest, setShowGuest] = useState(false)
 
   useEffect(() => { caricaDati() }, [])
 
@@ -230,19 +232,31 @@ function Statistiche() {
       </div>
       <div style={{ height: '1px', background: 'linear-gradient(90deg, rgba(0,212,255,0.55), rgba(0,212,255,0.1), transparent)', margin: '1.1rem 0 1.5rem' }} />
 
-      {/* Legenda tipi card */}
-      <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '2rem', flexWrap: 'wrap', animation: 'fadeInUp 0.4s ease 0.1s both' }}>
-        {[
-          { label: 'IN FORM', desc: 'MVP ultima partita', bg: CARD_CONFIGS.if.labelBg, color: CARD_CONFIGS.if.labelColor },
-          { label: 'ORO', desc: 'OVR 75+', bg: CARD_CONFIGS.gold.labelBg, color: CARD_CONFIGS.gold.labelColor },
-          { label: 'ARGENTO', desc: 'OVR 65-74', bg: CARD_CONFIGS.silver.labelBg, color: CARD_CONFIGS.silver.labelColor },
-          { label: 'BRONZO', desc: 'OVR 64-', bg: CARD_CONFIGS.bronze.labelBg, color: CARD_CONFIGS.bronze.labelColor },
-        ].map(t => (
-          <div key={t.label} style={{ background: t.bg, border: `1px solid ${t.color}`, borderRadius: '999px', padding: '0.32rem 0.8rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <span style={{ fontSize: '0.75rem', fontWeight: 800, color: t.color }}>{t.label}</span>
-            <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)' }}>{t.desc}</span>
+      {/* Legenda tipi card — collassabile */}
+      <div style={{ marginBottom: showLegenda ? '2rem' : '1.5rem', animation: 'fadeInUp 0.4s ease 0.1s both' }}>
+        <button
+          onClick={() => setShowLegenda(v => !v)}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '999px', padding: '0.4rem 0.85rem', color: 'rgba(255,255,255,0.65)', fontWeight: 800, fontSize: '0.7rem', letterSpacing: '1px', textTransform: 'uppercase', cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.18s ease' }}
+        >
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#00d4ff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+          Legenda card
+          <span style={{ transform: showLegenda ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s ease' }}>▾</span>
+        </button>
+        {showLegenda && (
+          <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.9rem', flexWrap: 'wrap' }}>
+            {[
+              { label: 'IN FORM', desc: 'MVP ultima partita', bg: CARD_CONFIGS.if.labelBg, color: CARD_CONFIGS.if.labelColor },
+              { label: 'ORO', desc: 'OVR 75+', bg: CARD_CONFIGS.gold.labelBg, color: CARD_CONFIGS.gold.labelColor },
+              { label: 'ARGENTO', desc: 'OVR 65-74', bg: CARD_CONFIGS.silver.labelBg, color: CARD_CONFIGS.silver.labelColor },
+              { label: 'BRONZO', desc: 'OVR 64-', bg: CARD_CONFIGS.bronze.labelBg, color: CARD_CONFIGS.bronze.labelColor },
+            ].map(t => (
+              <div key={t.label} style={{ background: t.bg, border: `1px solid ${t.color}`, borderRadius: '999px', padding: '0.32rem 0.8rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: 800, color: t.color }}>{t.label}</span>
+                <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)' }}>{t.desc}</span>
+              </div>
+            ))}
           </div>
-        ))}
+        )}
       </div>
 
       {/* Grid card giocatori fissi */}
@@ -265,32 +279,35 @@ function Statistiche() {
       {/* Sezione Guest / Ospiti */}
       {guest.length > 0 && (
         <div style={{ marginTop: '2.5rem', animation: 'fadeInUp 0.4s ease 0.2s both' }}>
-          {/* Divisore + intestazione */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.25rem' }}>
+          {/* Divisore + intestazione cliccabile */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: showGuest ? '1.25rem' : 0 }}>
             <div style={{ flex: 1, height: '1px', background: 'rgba(255,165,0,0.18)' }} />
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexShrink: 0 }}>
+            <button onClick={() => setShowGuest(v => !v)} style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexShrink: 0, background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: '0.2rem 0' }}>
               <span style={{ fontSize: '0.7rem', fontWeight: 800, color: 'rgba(255,165,0,0.65)', letterSpacing: '1.5px', textTransform: 'uppercase' }}>🎫 Guest / Ospiti</span>
               <span style={{ fontSize: '0.65rem', background: 'rgba(255,165,0,0.1)', border: '1px solid rgba(255,165,0,0.28)', borderRadius: '20px', padding: '0.1rem 0.5rem', color: 'rgba(255,165,0,0.7)', fontWeight: 700 }}>{guest.length}</span>
-            </div>
+              <span style={{ fontSize: '0.8rem', color: 'rgba(255,165,0,0.6)', transform: showGuest ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s ease' }}>▾</span>
+            </button>
             <div style={{ flex: 1, height: '1px', background: 'rgba(255,165,0,0.18)' }} />
           </div>
 
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(min(140px, 26vw), 1fr))',
-            gap: '0.75rem',
-            justifyItems: 'center',
-            opacity: 0.82,
-          }}>
-            {guest.map((g, i) => (
-              <div key={g.id} style={{ animation: `fadeInUp 0.4s ease ${i * 0.05}s both`, width: '100%', maxWidth: '175px' }}>
-                <FutStatCard
-                  giocatore={g}
-                  onClick={() => setSelected(selected === g.id ? null : g.id)}
-                />
-              </div>
-            ))}
-          </div>
+          {showGuest && (
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(min(140px, 26vw), 1fr))',
+              gap: '0.75rem',
+              justifyItems: 'center',
+              opacity: 0.82,
+            }}>
+              {guest.map((g, i) => (
+                <div key={g.id} style={{ animation: `fadeInUp 0.4s ease ${i * 0.05}s both`, width: '100%', maxWidth: '175px' }}>
+                  <FutStatCard
+                    giocatore={g}
+                    onClick={() => setSelected(selected === g.id ? null : g.id)}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
