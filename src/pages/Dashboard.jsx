@@ -34,7 +34,7 @@ function getCardType(overall) {
   return 'bronze'
 }
 
-function Dashboard({ currentUser }) {
+function Dashboard({ currentUser, onNavigate }) {
   const [giocatore, setGiocatore] = useState(null)
   const [partite, setPartite] = useState([])
   const [prossime, setProssime] = useState([])
@@ -1068,11 +1068,26 @@ function Dashboard({ currentUser }) {
                   const inA = (prossimaPartita.squadra_a || []).some(id => String(id) === String(currentUser?.id))
                   const inB = (prossimaPartita.squadra_b || []).some(id => String(id) === String(currentUser?.id))
                   const iscritto = inA || inB
+                  if (iscritto) {
+                    return (
+                      <div style={{ marginTop: '0.7rem', display: 'flex', justifyContent: 'center' }}>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.72rem', fontWeight: 800, letterSpacing: '0.3px', padding: '0.35rem 0.7rem', borderRadius: '999px', border: '1px solid rgba(0,255,136,0.35)', background: 'rgba(0,255,136,0.1)', color: '#00ff88' }}>
+                          ✓ Sei iscritto · Squadra {inA ? 'A' : 'B'}
+                        </span>
+                      </div>
+                    )
+                  }
                   return (
                     <div style={{ marginTop: '0.7rem', display: 'flex', justifyContent: 'center' }}>
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.72rem', fontWeight: 800, letterSpacing: '0.3px', padding: '0.35rem 0.7rem', borderRadius: '999px', border: `1px solid ${iscritto ? 'rgba(0,255,136,0.35)' : 'rgba(255,215,0,0.3)'}`, background: iscritto ? 'rgba(0,255,136,0.1)' : 'rgba(255,215,0,0.08)', color: iscritto ? '#00ff88' : '#ffd700' }}>
-                        {iscritto ? `✓ Sei iscritto · Squadra ${inA ? 'A' : 'B'}` : '○ Non sei ancora iscritto — vai al Calendario'}
-                      </span>
+                      <button
+                        onClick={() => onNavigate?.('calendario')}
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: '0.45rem', fontSize: '0.72rem', fontWeight: 850, letterSpacing: '0.3px', padding: '0.45rem 0.85rem', borderRadius: '999px', border: '1px solid rgba(255,215,0,0.35)', background: 'rgba(255,215,0,0.1)', color: '#ffd700', cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.18s ease' }}
+                        onMouseOver={(e) => { e.currentTarget.style.background = 'rgba(255,215,0,0.18)' }}
+                        onMouseOut={(e) => { e.currentTarget.style.background = 'rgba(255,215,0,0.1)' }}
+                      >
+                        Non sei ancora iscritto — Iscriviti
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+                      </button>
                     </div>
                   )
                 })()}
