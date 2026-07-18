@@ -1063,7 +1063,19 @@ function Dashboard({ currentUser }) {
                   <div className="vs-label">VS</div>
                   <TeamBox name="Fuciabol B" sub={getTeamSub(prossimaPartita, 'b')} />
                 </div>
-                <div className="match-date">{formatDate(prossimaPartita.data)} {prossimaPartita.ora ? `· ${prossimaPartita.ora}` : ''}</div>
+                <div className="match-date">{formatDate(prossimaPartita.data)}{prossimaPartita.ora ? ` · ${prossimaPartita.ora}` : ''}{prossimaPartita.luogo ? ` · ${prossimaPartita.luogo}` : ''}</div>
+                {prossimaPartita.stato === 'pre_partita' && (() => {
+                  const inA = (prossimaPartita.squadra_a || []).some(id => String(id) === String(currentUser?.id))
+                  const inB = (prossimaPartita.squadra_b || []).some(id => String(id) === String(currentUser?.id))
+                  const iscritto = inA || inB
+                  return (
+                    <div style={{ marginTop: '0.7rem', display: 'flex', justifyContent: 'center' }}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.72rem', fontWeight: 800, letterSpacing: '0.3px', padding: '0.35rem 0.7rem', borderRadius: '999px', border: `1px solid ${iscritto ? 'rgba(0,255,136,0.35)' : 'rgba(255,215,0,0.3)'}`, background: iscritto ? 'rgba(0,255,136,0.1)' : 'rgba(255,215,0,0.08)', color: iscritto ? '#00ff88' : '#ffd700' }}>
+                        {iscritto ? `✓ Sei iscritto · Squadra ${inA ? 'A' : 'B'}` : '○ Non sei ancora iscritto — vai al Calendario'}
+                      </span>
+                    </div>
+                  )
+                })()}
               </>
             ) : (
               <div className="empty-box">Nessuna partita in programma.</div>
@@ -1269,7 +1281,8 @@ function formatStatus(status) {
 function getTeamSub(partita, side) {
   const squadra = side === 'a' ? partita.squadra_a : partita.squadra_b
   const count = Array.isArray(squadra) ? squadra.length : 0
-  return count > 0 ? `${count} giocatori` : 'Da definire'
+  const max = { '5v5': 5, '7v7': 7, '8v8': 8, '11v11': 11 }[partita.formato] || 5
+  return `${count}/${max} giocatori`
 }
 
 function hexToRgba(hex, alpha) {
