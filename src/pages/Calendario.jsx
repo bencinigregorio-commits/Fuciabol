@@ -655,6 +655,21 @@ function PartitaCard({ partita, currentUser, onVoteClick, onChiudiVoti, onScomme
   const getNome = (id) => (giocatori.find(g => g.id === id)?.nome || `#${id}`).replace(/\s*\(.*?\)/g, '').trim()
   const getFoto = (id) => giocatori.find(g => g.id === id)?.foto_url || null
 
+  function condividiWhatsApp() {
+    const fmt = partita.formato ? ` (${partita.formato})` : ''
+    const lines = [`⚽ *CONVOCAZIONE FUCIABOL*${fmt}`, `📅 ${dataStr}`]
+    if (partita.ora) lines.push(`🕐 ${partita.ora}`)
+    if (partita.luogo) lines.push(`📍 ${partita.luogo}`)
+    if (partita.note) lines.push(`📝 ${partita.note}`)
+    lines.push('', `🔵 *Squadra A* (${currentSquadraA.length})`)
+    currentSquadraA.forEach((id, i) => lines.push(`${i + 1}. ${getNome(id)}`))
+    if (currentSquadraA.length === 0) lines.push('—')
+    lines.push('', `🔴 *Squadra B* (${currentSquadraB.length})`)
+    currentSquadraB.forEach((id, i) => lines.push(`${i + 1}. ${getNome(id)}`))
+    if (currentSquadraB.length === 0) lines.push('—')
+    window.open(`https://wa.me/?text=${encodeURIComponent(lines.join('\n'))}`, '_blank')
+  }
+
   const dataStr = new Date(partita.data).toLocaleDateString('it-IT', { day: 'numeric', month: 'short', year: 'numeric' })
   const stato = partita.stato || 'chiusa'
   // Per live/votazioni/chiusa usa i dati da partita (server); per pre_partita usa state locale aggiornabile
@@ -1112,6 +1127,15 @@ function PartitaCard({ partita, currentUser, onVoteClick, onChiudiVoti, onScomme
 
                 return (
                   <div style={{ marginTop: '1rem', paddingTop: '0.85rem', borderTop: '1px solid rgba(255,255,255,0.07)', display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+                    <button
+                      onClick={condividiWhatsApp}
+                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', width: '100%', padding: '0.7rem', borderRadius: '12px', border: '1px solid rgba(37,211,102,0.35)', background: 'rgba(37,211,102,0.1)', color: '#25d366', fontWeight: 850, fontSize: '0.82rem', letterSpacing: '0.3px', cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.18s ease' }}
+                      onMouseOver={(e) => { e.currentTarget.style.background = 'rgba(37,211,102,0.18)' }}
+                      onMouseOut={(e) => { e.currentTarget.style.background = 'rgba(37,211,102,0.1)' }}
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.5 14.4c-.3-.15-1.7-.84-1.96-.94-.26-.1-.45-.15-.64.15-.19.29-.74.94-.9 1.13-.17.19-.33.22-.62.07-.29-.15-1.22-.45-2.33-1.44-.86-.77-1.44-1.72-1.6-2.01-.17-.29-.02-.45.13-.6.13-.13.29-.33.44-.5.15-.17.19-.29.29-.48.1-.19.05-.36-.02-.5-.08-.15-.64-1.55-.88-2.12-.23-.55-.47-.48-.64-.49-.17-.01-.36-.01-.55-.01-.19 0-.5.07-.76.36-.26.29-1 .98-1 2.38 0 1.4 1.02 2.76 1.17 2.95.15.19 2.02 3.08 4.9 4.32.68.29 1.22.47 1.63.6.69.22 1.31.19 1.8.11.55-.08 1.7-.69 1.94-1.36.24-.67.24-1.24.17-1.36-.07-.12-.26-.19-.55-.34zM12.05 21.5h-.01a9.4 9.4 0 0 1-4.8-1.31l-.34-.2-3.57.94.95-3.48-.22-.36a9.38 9.38 0 0 1-1.44-5.01c0-5.19 4.23-9.42 9.43-9.42 2.52 0 4.88.98 6.66 2.76a9.35 9.35 0 0 1 2.76 6.67c-.01 5.19-4.24 9.42-9.42 9.42zm8.02-17.44A11.32 11.32 0 0 0 12.05.75C5.8.75.72 5.83.72 12.08c0 2 .52 3.95 1.51 5.67L.63 23.25l5.65-1.48a11.3 11.3 0 0 0 5.42 1.38h.01c6.25 0 11.33-5.08 11.33-11.33 0-3.03-1.18-5.87-3.32-8.01z"/></svg>
+                      Condividi convocazione su WhatsApp
+                    </button>
                     {renderSlot(squadraA, 'A', '#00d4ff', 'rgba(0,212,255,0.06)', 'rgba(0,212,255,0.14)')}
                     {renderSlot(squadraB, 'B', '#ef4444', 'rgba(239,68,68,0.06)', 'rgba(239,68,68,0.14)')}
 
