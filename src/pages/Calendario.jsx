@@ -528,6 +528,27 @@ function PartitaCard({ partita, currentUser, onVoteClick, onChiudiVoti, onScomme
     return true
   }
 
+  async function bilanciaSquadre() {
+    if (slotSaving) return
+    setSlotSaving(true)
+    const { data: fresca, error: fetchErr } = await supabase
+      .from('partite').select('squadra_a, squadra_b').eq('id', partita.id).single()
+    if (fetchErr) { alert('Errore: ' + fetchErr.message); setSlotSaving(false); return }
+    const tuttiIds = [...new Set([...(fresca.squadra_a || []), ...(fresca.squadra_b || [])])]
+    if (tuttiIds.length < 2) { alert('Servono almeno 2 giocatori iscritti per bilanciare'); setSlotSaving(false); return }
+    const { data: gg } = await supabase.from('giocatori').select('id, overall').in('id', tuttiIds)
+    const conOvr = tuttiIds
+      .map(id => ({ id, overall: gg?.find(g => String(g.id) === String(id))?.overall ?? 65 }))
+      .sort((a, b) => b.overall - a.overall)
+    const A = [], B = []
+    let sumA = 0, sumB = 0
+    for (const p of conOvr) {
+      if (sumA <= sumB) { A.push(p.id); sumA += p.overall } else { B.push(p.id); sumB += p.overall }
+    }
+    await adminSalvaSquadre(A, B)
+    setSlotSaving(false)
+  }
+
   async function adminAggiungi(playerId, squadra) {
     if (slotSaving) return
     setSlotSaving(true)
@@ -1136,6 +1157,16 @@ function PartitaCard({ partita, currentUser, onVoteClick, onChiudiVoti, onScomme
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.5 14.4c-.3-.15-1.7-.84-1.96-.94-.26-.1-.45-.15-.64.15-.19.29-.74.94-.9 1.13-.17.19-.33.22-.62.07-.29-.15-1.22-.45-2.33-1.44-.86-.77-1.44-1.72-1.6-2.01-.17-.29-.02-.45.13-.6.13-.13.29-.33.44-.5.15-.17.19-.29.29-.48.1-.19.05-.36-.02-.5-.08-.15-.64-1.55-.88-2.12-.23-.55-.47-.48-.64-.49-.17-.01-.36-.01-.55-.01-.19 0-.5.07-.76.36-.26.29-1 .98-1 2.38 0 1.4 1.02 2.76 1.17 2.95.15.19 2.02 3.08 4.9 4.32.68.29 1.22.47 1.63.6.69.22 1.31.19 1.8.11.55-.08 1.7-.69 1.94-1.36.24-.67.24-1.24.17-1.36-.07-.12-.26-.19-.55-.34zM12.05 21.5h-.01a9.4 9.4 0 0 1-4.8-1.31l-.34-.2-3.57.94.95-3.48-.22-.36a9.38 9.38 0 0 1-1.44-5.01c0-5.19 4.23-9.42 9.43-9.42 2.52 0 4.88.98 6.66 2.76a9.35 9.35 0 0 1 2.76 6.67c-.01 5.19-4.24 9.42-9.42 9.42zm8.02-17.44A11.32 11.32 0 0 0 12.05.75C5.8.75.72 5.83.72 12.08c0 2 .52 3.95 1.51 5.67L.63 23.25l5.65-1.48a11.3 11.3 0 0 0 5.42 1.38h.01c6.25 0 11.33-5.08 11.33-11.33 0-3.03-1.18-5.87-3.32-8.01z"/></svg>
                       Condividi convocazione su WhatsApp
                     </button>
+                    {currentUser?.role === 'admin' && (
+                      <button
+                        onClick={bilanciaSquadre}
+                        disabled={slotSaving}
+                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', width: '100%', padding: '0.7rem', borderRadius: '12px', border: '1px solid rgba(0,212,255,0.35)', background: 'rgba(0,212,255,0.1)', color: '#00d4ff', fontWeight: 850, fontSize: '0.82rem', letterSpacing: '0.3px', cursor: slotSaving ? 'default' : 'pointer', fontFamily: 'inherit', transition: 'all 0.18s ease', opacity: slotSaving ? 0.6 : 1 }}
+                      >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3v18M3 7h18M5 7l-2 5a3 3 0 0 0 6 0l-2-5M17 7l-2 5a3 3 0 0 0 6 0l-2-5"/></svg>
+                        {slotSaving ? 'Bilancio…' : 'Bilancia squadre per overall'}
+                      </button>
+                    )}
                     {renderSlot(squadraA, 'A', '#00d4ff', 'rgba(0,212,255,0.06)', 'rgba(0,212,255,0.14)')}
                     {renderSlot(squadraB, 'B', '#ef4444', 'rgba(239,68,68,0.06)', 'rgba(239,68,68,0.14)')}
 
