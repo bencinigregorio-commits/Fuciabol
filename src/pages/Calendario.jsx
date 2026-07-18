@@ -185,6 +185,39 @@ function Calendario({ currentUser }) {
         />
       )}
 
+      {/* RIEPILOGO ADMIN CONVOCAZIONI — solo admin, solo partite da giocare */}
+      {currentUser?.role === 'admin' && partite.some(p => p.stato === 'pre_partita') && (
+        <div style={{ marginBottom: '1.5rem', borderRadius: '18px', border: '1px solid rgba(0,212,255,0.16)', background: 'radial-gradient(circle at 100% 0%, rgba(0,212,255,0.07), transparent 45%), rgba(8,14,28,0.6)', padding: '1rem 1.15rem', overflow: 'hidden' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.85rem' }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#00d4ff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+            <span style={{ fontSize: '0.72rem', fontWeight: 900, color: '#00d4ff', letterSpacing: '1.3px', textTransform: 'uppercase' }}>Riepilogo convocazioni</span>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            {partite.filter(p => p.stato === 'pre_partita').map(p => {
+              const max = { '5v5': 5, '7v7': 7, '8v8': 8, '11v11': 11 }[p.formato] || 5
+              const a = (p.squadra_a || []).length
+              const b = (p.squadra_b || []).length
+              const mancanti = Math.max(0, max * 2 - (a + b))
+              const dataStr = new Date(p.data).toLocaleDateString('it-IT', { day: 'numeric', month: 'short' })
+              return (
+                <div key={p.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.6rem', flexWrap: 'wrap', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '11px', padding: '0.55rem 0.7rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', minWidth: 0 }}>
+                    <span style={{ fontWeight: 850, fontSize: '0.82rem', whiteSpace: 'nowrap' }}>{dataStr}{p.ora ? ` · ${p.ora}` : ''}</span>
+                    <span style={{ fontSize: '0.62rem', fontWeight: 800, color: '#00d4ff', background: 'rgba(0,212,255,0.1)', border: '1px solid rgba(0,212,255,0.25)', borderRadius: '6px', padding: '0.08rem 0.4rem' }}>{p.formato || '5v5'}</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', flexShrink: 0 }}>
+                    <span style={{ fontSize: '0.74rem', fontWeight: 700, color: 'rgba(255,255,255,0.65)' }}>🔵 {a} · 🔴 {b}</span>
+                    <span style={{ fontSize: '0.66rem', fontWeight: 850, letterSpacing: '0.3px', padding: '0.2rem 0.5rem', borderRadius: '999px', border: `1px solid ${mancanti > 0 ? 'rgba(255,215,0,0.3)' : 'rgba(0,255,136,0.35)'}`, background: mancanti > 0 ? 'rgba(255,215,0,0.08)' : 'rgba(0,255,136,0.1)', color: mancanti > 0 ? '#ffd700' : '#00ff88', whiteSpace: 'nowrap' }}>
+                      {mancanti > 0 ? `${mancanti} da trovare` : 'Al completo ✓'}
+                    </span>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
       {partite.length === 0 ? (
         <div style={{ background: 'rgba(15, 23, 41, 0.6)', border: '1px solid rgba(255, 255, 255, 0.05)', borderRadius: '20px', padding: '3rem', textAlign: 'center', color: 'rgba(255, 255, 255, 0.5)' }}>
           Nessuna partita registrata

@@ -337,7 +337,7 @@ function App() {
       activeTab={activeTab}
       onTabChange={setActiveTab}
     >
-      {activeTab === 'dashboard' && <Dashboard currentUser={currentUser} />}
+      {activeTab === 'dashboard' && <Dashboard currentUser={currentUser} onNavigate={setActiveTab} />}
       {activeTab === 'calendario' && <Calendario currentUser={currentUser} />}
       {activeTab === 'statistiche' && <Statistiche />}
       {activeTab === 'classifica' && <Classifica />}
