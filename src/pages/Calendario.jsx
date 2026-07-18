@@ -1690,21 +1690,34 @@ function ModalScommessa({ partita, currentUser, onClose, onSaved }) {
   const getNome = (id) => giocatori.find(g => g.id === id)?.nome || `#${id}`
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0, 0, 0, 0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', zIndex: 50, backdropFilter: 'blur(4px)' }} onClick={onClose}>
-      <div style={{ background: 'rgba(15, 23, 41, 0.98)', border: '1px solid rgba(255, 215, 0, 0.3)', borderRadius: '20px', padding: '2rem', maxWidth: '700px', width: '100%', maxHeight: '90vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-          <h2 style={{ fontSize: '2rem', fontWeight: 900 }}>🎰 Piazza Scommessa</h2>
-          <div style={{ background: 'linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(255, 165, 0, 0.1))', border: '1px solid rgba(255, 215, 0, 0.4)', borderRadius: '12px', padding: '0.5rem 1rem', fontSize: '1.2rem', fontWeight: 900, color: '#ffd700' }}>
-            💰 {creditiDisponibili}
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(3, 7, 18, 0.82)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', zIndex: 50, backdropFilter: 'blur(8px)' }} onClick={onClose}>
+      <style>{`
+        @keyframes msIn { from { opacity: 0; transform: translateY(24px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        .ms-modal { animation: msIn 0.28s ease both; }
+        .ms-modal::-webkit-scrollbar { width: 8px; }
+        .ms-modal::-webkit-scrollbar-thumb { background: rgba(255,215,0,0.2); border-radius: 8px; }
+        .ms-close:hover { background: rgba(255,255,255,0.12) !important; color: #fff !important; }
+      `}</style>
+      <div className="ms-modal" style={{ background: 'radial-gradient(circle at 85% 0%, rgba(255,215,0,0.08), transparent 42%), linear-gradient(160deg, rgba(15,23,41,0.97), rgba(6,11,24,0.96))', border: '1px solid rgba(255, 215, 0, 0.28)', borderRadius: '26px', padding: '1.6rem', maxWidth: '700px', width: '100%', maxHeight: '90vh', overflowY: 'auto', boxSizing: 'border-box', boxShadow: '0 30px 80px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.05)' }} onClick={e => e.stopPropagation()}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', marginBottom: '1.5rem' }}>
+          <div style={{ width: '46px', height: '46px', borderRadius: '15px', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(145deg, rgba(255,215,0,0.22), rgba(10,16,30,0.9))', border: '1px solid rgba(255,215,0,0.3)', boxShadow: '0 0 18px rgba(255,215,0,0.16)', fontSize: '1.3rem' }}>🎰</div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <h2 style={{ margin: 0, fontSize: '1.4rem', fontWeight: 950, letterSpacing: '0.3px', background: 'linear-gradient(135deg, #fff 0%, #ffe58a 55%, #ffd700 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>Piazza Scommessa</h2>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexShrink: 0 }}>
+            <div style={{ background: 'linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(255, 165, 0, 0.1))', border: '1px solid rgba(255, 215, 0, 0.4)', borderRadius: '999px', padding: '0.4rem 0.85rem', fontSize: '1.05rem', fontWeight: 950, color: '#ffd700', whiteSpace: 'nowrap' }}>
+              💰 {creditiDisponibili}
+            </div>
+            <button className="ms-close" onClick={onClose} style={{ width: '34px', height: '34px', borderRadius: '11px', border: '1px solid rgba(255,255,255,0.09)', background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.55)', fontSize: '1.1rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1, transition: 'all 0.18s ease' }}>×</button>
           </div>
         </div>
 
-        <div style={{ background: 'rgba(0, 0, 0, 0.3)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '15px', padding: '1.25rem', marginBottom: '1.5rem' }}>
-          <div style={{ fontSize: '0.9rem', color: 'rgba(255, 255, 255, 0.5)', marginBottom: '0.75rem', fontWeight: 600 }}>IMPORTO SCOMMESSA</div>
+        <div style={{ background: 'linear-gradient(160deg, rgba(255,255,255,0.05), rgba(255,255,255,0.015))', border: '1px solid rgba(255,215,0,0.16)', borderRadius: '16px', padding: '1.1rem', marginBottom: '1.25rem' }}>
+          <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.55)', marginBottom: '0.7rem', fontWeight: 850, letterSpacing: '0.6px', textTransform: 'uppercase' }}>Importo scommessa</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
             <input type="number" min="5" max={creditiDisponibili - 1} value={importo}
               onChange={(e) => setImporto(Math.max(5, Math.min(parseInt(e.target.value) || 5, creditiDisponibili - 1)))}
-              style={{ flex: 1, background: 'rgba(0, 0, 0, 0.4)', border: '1px solid rgba(255, 215, 0, 0.4)', borderRadius: '10px', padding: '0.75rem', color: '#ffd700', fontSize: '1.5rem', fontWeight: 900, textAlign: 'center', outline: 'none' }} />
+              style={{ flex: 1, minWidth: 0, background: 'rgba(0, 0, 0, 0.35)', border: '1px solid rgba(255, 215, 0, 0.4)', borderRadius: '12px', padding: '0.75rem', color: '#ffd700', fontSize: '1.5rem', fontWeight: 950, textAlign: 'center', outline: 'none', boxSizing: 'border-box' }} />
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
               {[10, 50, 100].map(v => (
                 <button key={v} onClick={() => setImporto(Math.min(v, creditiDisponibili - 1))} style={{ background: 'rgba(255, 215, 0, 0.1)', border: '1px solid rgba(255, 215, 0, 0.3)', borderRadius: '8px', padding: '0.4rem 0.75rem', color: '#ffd700', fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer' }}>
@@ -1779,9 +1792,9 @@ function ModalScommessa({ partita, currentUser, onClose, onSaved }) {
           >
             🎰 PIAZZA SCOMMESSA
           </button>
-          <button onClick={onClose} style={{ flex: 1, background: 'rgba(100, 116, 139, 0.3)', border: 'none', borderRadius: '12px', padding: '1rem', color: '#fff', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s' }}
-            onMouseOver={(e) => e.target.style.background = 'rgba(100, 116, 139, 0.5)'} onMouseOut={(e) => e.target.style.background = 'rgba(100, 116, 139, 0.3)'}>
-            ANNULLA
+          <button onClick={onClose} style={{ flex: 1, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.09)', borderRadius: '15px', padding: '1rem', color: 'rgba(255,255,255,0.7)', fontWeight: 850, fontSize: '0.9rem', letterSpacing: '1px', textTransform: 'uppercase', cursor: 'pointer', transition: 'all 0.2s' }}
+            onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'} onMouseOut={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}>
+            Annulla
           </button>
         </div>
       </div>
