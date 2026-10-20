@@ -1,10 +1,10 @@
 export function calcolaVotoFinale(partita, playerId, allVotazioni) {
   const votiAltriGiocatori = allVotazioni
-    .filter(v => v.voterId !== playerId && v.voterId !== 'admin')
+    .filter(v => String(v.voterId) !== String(playerId) && v.voterId !== 'admin')
     .map(v => v.voti[playerId])
     .filter(v => v !== undefined)
-  
-  const autovoto = allVotazioni.find(v => v.voterId === playerId)?.voti[playerId] || 6
+
+  const autovoto = allVotazioni.find(v => String(v.voterId) === String(playerId))?.voti[playerId] || 6
   const votoAdmin = allVotazioni.find(v => v.voterId === 'admin')?.voti[playerId] || 6
   
   const mediaAltri = votiAltriGiocatori.length > 0 
@@ -23,7 +23,7 @@ export function calcolaVotoFinale(partita, playerId, allVotazioni) {
   bonusStatistici += (eventi.assist || 0) * 0.15
   bonusStatistici = Math.max(-0.8, Math.min(0.8, bonusStatistici))
   
-  const inSquadraA = partita.squadra_a.includes(playerId)
+  const inSquadraA = (partita.squadra_a || []).some(id => String(id) === String(playerId))
   const vintoA = partita.punteggio_a > partita.punteggio_b
   const vintoB = partita.punteggio_b > partita.punteggio_a
   const haVinto = (inSquadraA && vintoA) || (!inSquadraA && vintoB)

@@ -16,7 +16,7 @@ function Calendario({ currentUser }) {
   useEffect(() => { caricaPartite(); caricaGiocatori() }, [])
 
   async function caricaGiocatori() {
-    const { data } = await supabase.from('giocatori').select('*')
+    const { data } = await supabase.from('giocatori').select('id, nome, overall, ruolo, foto_url')
     if (data) setGiocatoriAll(data)
   }
 
@@ -34,7 +34,7 @@ function Calendario({ currentUser }) {
       return
     }
 
-    const allPlayers = [...partita.squadra_a, ...partita.squadra_b]
+    const allPlayers = [...(partita.squadra_a || []), ...(partita.squadra_b || [])]
     const votiCalcolati = []
 
     for (const playerId of allPlayers) {
@@ -82,7 +82,7 @@ function Calendario({ currentUser }) {
     const maxVoto = Math.max(...votiCalcolati.map(v => v.votoFinale))
     const miglioreInCampo = votiCalcolati.find(v => v.votoFinale === maxVoto)
 
-    const allPlayers = [...partita.squadra_a, ...partita.squadra_b]
+    const allPlayers = [...(partita.squadra_a || []), ...(partita.squadra_b || [])]
     let maxGol = 0
     let capocannonieri = []
     allPlayers.forEach(id => {
@@ -321,7 +321,7 @@ function GazzettaFuciabol({ partite, giocatori, currentUser }) {
     // Solo l'ultima partita chiusa (partite[0] è già ordinato per data DESC)
     const ultimaPartita = partite[0]
     if (!ultimaPartita) return
-    const allIds = [...ultimaPartita.squadra_a, ...ultimaPartita.squadra_b]
+    const allIds = [...(ultimaPartita.squadra_a || []), ...(ultimaPartita.squadra_b || [])]
     const ranked = allIds
       .map(id => {
         const votoCalc = ultimaPartita.voti_calcolati?.find(v => v.playerId === id)
@@ -342,9 +342,9 @@ function GazzettaFuciabol({ partite, giocatori, currentUser }) {
     setGenerato(true)
     const getNome = (id) => giocatori.find(g => g.id === id)?.nome || id
     const datiPartite = partite.map(p => {
-      const squadraA = p.squadra_a.map(getNome).join(', ')
-      const squadraB = p.squadra_b.map(getNome).join(', ')
-      const allIds = [...p.squadra_a, ...p.squadra_b]
+      const squadraA = (p.squadra_a || []).map(getNome).join(', ')
+      const squadraB = (p.squadra_b || []).map(getNome).join(', ')
+      const allIds = [...(p.squadra_a || []), ...(p.squadra_b || [])]
       const eventi = allIds.map(id => {
         const e = p.eventi?.[id] || {}
         const v = p.voti_calcolati?.find(x => x.playerId === id)
@@ -357,17 +357,16 @@ function GazzettaFuciabol({ partite, giocatori, currentUser }) {
     const topNomi = topGiocatori.map(t => t.giocatore.nome + ' (media ' + t.media.toFixed(1) + ', ' + t.gol + ' gol)').join(', ')
     const prompt = 'Sei un commentatore sportivo ULTRA-ESAGERATO stile Mediaset Sport anni 90. Scrivi un articolo BREVISSIMO (max 5 righe) sulla Gazzetta Fuciabol, campionato di calcetto tra amici. Migliori: ' + topNomi + '. Risultati:\n' + datiPartite + '\nScrivi in italiano con toni esageratissimi, esclamazioni, MAIUSCOLO per enfasi. Inizia con titolone drammatico tra *** ***. Max 5 righe.'
     try {
-      const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
+      const response = await fetch('/api/gazzetta', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
-        body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 400, messages: [{ role: 'user', content: prompt }] })
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt })
       })
       const data = await response.json()
       if (data.error) {
-        setArticolo('Errore: ' + data.error.message)
+        setArticolo('Errore: ' + data.error)
       } else {
-        setArticolo(data.content?.[0]?.text || 'Errore nella generazione')
+        setArticolo(data.text || 'Errore nella generazione')
       }
     } catch (e) {
       setArticolo('Errore di connessione. Riprova!')
@@ -1000,7 +999,7 @@ function PartitaCard({ partita, currentUser, onVoteClick, onChiudiVoti, onScomme
             <>
               {/* STATO VOTAZIONI — solo in_votazione */}
               {stato === 'in_votazione' && (() => {
-                const allIds = [...partita.squadra_a, ...partita.squadra_b]
+                const allIds = [...(partita.squadra_a || []), ...(partita.squadra_b || [])]
                 const voterId = currentUser?.role === 'admin' ? 'admin' : currentUser?.id
                 const hannoVotato = (partita.votazioni || []).filter(v => allIds.some(id => String(id) === String(v.voterId)) || v.voterId === 'admin')
                 const idHannoVotato = hannoVotato.map(v => String(v.voterId))
@@ -1677,7 +1676,7 @@ function ModalInserisciRisultato({ partita, onClose, onSaved }) {
   useEffect(() => { caricaGiocatori() }, [])
 
   async function caricaGiocatori() {
-    const allIds = [...partita.squadra_a, ...partita.squadra_b]
+    const allIds = [...(partita.squadra_a || []), ...(partita.squadra_b || [])]
     const { data } = await supabase.from('giocatori').select('id, nome').in('id', allIds)
     if (data) setGiocatori(data)
   }
@@ -1703,7 +1702,7 @@ function ModalInserisciRisultato({ partita, onClose, onSaved }) {
   }
 
   const getNome = (id) => giocatori.find(g => g.id === id)?.nome || `#${id}`
-  const allIds = [...partita.squadra_a, ...partita.squadra_b]
+  const allIds = [...(partita.squadra_a || []), ...(partita.squadra_b || [])]
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(3, 7, 18, 0.82)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', zIndex: 50, backdropFilter: 'blur(8px)' }} onClick={onClose}>
@@ -1780,13 +1779,14 @@ function ModalScommessa({ partita, currentUser, onClose, onSaved }) {
   const [importo, setImporto] = useState(10)
   const [loading, setLoading] = useState(true)
   const [scommesseEsistenti, setScommesseEsistenti] = useState([])
+  const [salvando, setSalvando] = useState(false)
 
   useEffect(() => { caricaDati() }, [])
 
   async function caricaDati() {
     const allIds = [...(partita.squadra_a || []), ...(partita.squadra_b || [])]
     const { data: giocatoriData } = allIds.length > 0
-      ? await supabase.from('giocatori').select('*').in('id', allIds)
+      ? await supabase.from('giocatori').select('id, nome, overall, forma_punti').in('id', allIds)
       : { data: [] }
     const { data: giocatoreCorrente } = await supabase.from('giocatori').select('crediti').eq('id', currentUser.id).single()
     const { data: scommesseData } = await supabase.from('scommesse').select('*').eq('partita_id', partita.id).eq('giocatore_id', currentUser.id)
@@ -1812,22 +1812,28 @@ function ModalScommessa({ partita, currentUser, onClose, onSaved }) {
 
   async function salvaScommessa(tipo, scelta, quota) {
     if (!scelta) { alert('Seleziona una scelta!'); return }
+    if (salvando) return
+    setSalvando(true)
     const esistente = scommesseEsistenti.find(s => s.tipo === tipo)
 
     if (esistente) {
       const { data: g } = await supabase.from('giocatori').select('crediti').eq('id', currentUser.id).single()
-      const nuoviCrediti = (g.crediti || 500) + esistente.importo - importoValido
+      const creditiEffettivi = (g?.crediti ?? 500) + esistente.importo
+      if (importoValido > creditiEffettivi - 1) { alert('Crediti insufficienti!'); setSalvando(false); return }
+      const nuoviCrediti = creditiEffettivi - importoValido
       await supabase.from('scommesse').update({ scelta: String(scelta), importo: importoValido, quota }).eq('id', esistente.id)
       await supabase.from('giocatori').update({ crediti: nuoviCrediti }).eq('id', currentUser.id)
+      setCreditiDisponibili(nuoviCrediti)
     } else {
-      if (importoValido > creditiDisponibili - 1) { alert('Crediti insufficienti!'); return }
+      if (importoValido > creditiDisponibili - 1) { alert('Crediti insufficienti!'); setSalvando(false); return }
       await supabase.from('scommesse').insert({ partita_id: partita.id, giocatore_id: currentUser.id, tipo, scelta: String(scelta), importo: importoValido, quota, esito: 'pending' })
       await supabase.from('giocatori').update({ crediti: creditiDisponibili - importoValido }).eq('id', currentUser.id)
       setCreditiDisponibili(prev => prev - importoValido)
     }
 
     alert(`✅ Scommessa piazzata! ${importoValido} crediti puntati a quota ${quota}x`)
-    caricaDati()
+    await caricaDati()
+    setSalvando(false)
   }
 
   if (loading) return null
@@ -1930,11 +1936,12 @@ function ModalScommessa({ partita, currentUser, onClose, onSaved }) {
               if (tab === 'migliore') salvaScommessa('migliore_in_campo', sceltaMigliore, quoteMigliore[sceltaMigliore])
               if (tab === 'capocannoniere') salvaScommessa('capocannoniere', sceltaCapo, quoteCapo[sceltaCapo])
             }}
-            style={{ flex: 1, background: 'linear-gradient(135deg, #ffd700, #ffa500)', border: 'none', borderRadius: '12px', padding: '1rem', color: '#0f1729', fontWeight: 700, cursor: 'pointer', fontSize: '1rem', boxShadow: '0 4px 15px rgba(255, 215, 0, 0.4)', transition: 'all 0.2s' }}
-            onMouseOver={(e) => e.target.style.transform = 'translateY(-2px)'}
+            disabled={salvando}
+            style={{ flex: 1, background: 'linear-gradient(135deg, #ffd700, #ffa500)', border: 'none', borderRadius: '12px', padding: '1rem', color: '#0f1729', fontWeight: 700, cursor: salvando ? 'default' : 'pointer', fontSize: '1rem', boxShadow: '0 4px 15px rgba(255, 215, 0, 0.4)', transition: 'all 0.2s', opacity: salvando ? 0.65 : 1 }}
+            onMouseOver={(e) => !salvando && (e.target.style.transform = 'translateY(-2px)')}
             onMouseOut={(e) => e.target.style.transform = 'translateY(0)'}
           >
-            🎰 PIAZZA SCOMMESSA
+            {salvando ? '⏳ Attendi…' : '🎰 PIAZZA SCOMMESSA'}
           </button>
           <button onClick={onClose} style={{ flex: 1, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.09)', borderRadius: '15px', padding: '1rem', color: 'rgba(255,255,255,0.7)', fontWeight: 850, fontSize: '0.9rem', letterSpacing: '1px', textTransform: 'uppercase', cursor: 'pointer', transition: 'all 0.2s' }}
             onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'} onMouseOut={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}>
@@ -1954,8 +1961,8 @@ function ModalVotazioni({ partita, currentUser, onClose, onSaved }) {
   useEffect(() => { caricaDati() }, [])
 
   async function caricaDati() {
-    const allIds = [...partita.squadra_a, ...partita.squadra_b]
-    const { data } = await supabase.from('giocatori').select('*').in('id', allIds)
+    const allIds = [...(partita.squadra_a || []), ...(partita.squadra_b || [])]
+    const { data } = await supabase.from('giocatori').select('id, nome').in('id', allIds)
     if (data) {
       setGiocatori(data)
       const votiInit = {}
@@ -1994,7 +2001,7 @@ function ModalVotazioni({ partita, currentUser, onClose, onSaved }) {
   }
 
   if (loading) return null
-  const allPlayers = [...partita.squadra_a, ...partita.squadra_b]
+  const allPlayers = [...(partita.squadra_a || []), ...(partita.squadra_b || [])]
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(3, 7, 18, 0.82)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', zIndex: 50, backdropFilter: 'blur(8px)' }} onClick={onClose}>

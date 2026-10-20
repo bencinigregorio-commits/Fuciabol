@@ -87,7 +87,7 @@ function Statistiche() {
   useEffect(() => { caricaDati() }, [])
 
   async function caricaDati() {
-    const { data: giocatoriData } = await supabase.from('giocatori').select('*').order('overall', { ascending: false })
+    const { data: giocatoriData } = await supabase.from('giocatori').select('id, nome, ruolo, overall, foto_url, is_guest, voti_storico').order('overall', { ascending: false })
     const { data: partiteData } = await supabase.from('partite').select('*').eq('stato', 'chiusa').order('data', { ascending: false }).order('id', { ascending: false })
     if (giocatoriData) setGiocatori(giocatoriData)
     if (partiteData) setPartite(partiteData)
@@ -121,13 +121,13 @@ function Statistiche() {
     let gol = 0, assist = 0, partiteGiocate = 0
     let vittorie = 0, pareggi = 0, sconfitte = 0
     partite.forEach(p => {
-      const allPlayers = [...p.squadra_a, ...p.squadra_b]
+      const allPlayers = [...(p.squadra_a || []), ...(p.squadra_b || [])]
       if (!allPlayers.includes(g.id)) return
       partiteGiocate++
       const eventi = p.eventi?.[g.id] || {}
       gol += eventi.gol || 0
       assist += eventi.assist || 0
-      const isSquadraA = p.squadra_a.includes(g.id)
+      const isSquadraA = (p.squadra_a || []).includes(g.id)
       if (p.punteggio_a > p.punteggio_b) { if (isSquadraA) vittorie++; else sconfitte++ }
       else if (p.punteggio_a < p.punteggio_b) { if (isSquadraA) sconfitte++; else vittorie++ }
       else pareggi++

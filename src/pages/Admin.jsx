@@ -55,8 +55,19 @@ function Admin() {
 
   async function eliminaPartita(partita) {
     if (!confirm(`Sei sicuro di voler eliminare la partita del ${new Date(partita.data).toLocaleDateString('it-IT')}?\n\nQuesta azione è irreversibile.`)) return
+
+    // Rimborsa le scommesse pending collegate, altrimenti i crediti puntati andrebbero persi
+    const { data: scommessePending } = await supabase.from('scommesse').select('*').eq('partita_id', partita.id).eq('esito', 'pending')
+    if (scommessePending && scommessePending.length > 0) {
+      for (const s of scommessePending) {
+        const { data: g } = await supabase.from('giocatori').select('crediti').eq('id', s.giocatore_id).single()
+        if (g) await supabase.from('giocatori').update({ crediti: (g.crediti || 0) + s.importo }).eq('id', s.giocatore_id)
+      }
+      await supabase.from('scommesse').delete().eq('partita_id', partita.id).eq('esito', 'pending')
+    }
+
     if (!partita.votazioni_aperte && partita.voti_calcolati) {
-      const allPlayers = [...partita.squadra_a, ...partita.squadra_b]
+      const allPlayers = [...(partita.squadra_a || []), ...(partita.squadra_b || [])]
       for (const playerId of allPlayers) {
         const giocatore = giocatori.find(g => g.id === playerId)
         if (!giocatore) continue
@@ -69,7 +80,7 @@ function Admin() {
     }
     const { error } = await supabase.from('partite').delete().eq('id', partita.id)
     if (error) alert('Errore: ' + error.message)
-    else { alert('✓ Partita eliminata!'); caricaDati() }
+    else { alert('✓ Partita eliminata!' + (scommessePending?.length > 0 ? ` Rimborsate ${scommessePending.length} scommesse pending.` : '')); caricaDati() }
   }
 
   async function riapriVotazioni(partita) {

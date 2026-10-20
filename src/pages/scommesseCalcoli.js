@@ -105,7 +105,7 @@ export function verificaVincitaMiglioreInCampo(partita, giocatoreId) {
 export function verificaVincitaCapocannoniere(partita, giocatoreId) {
   if (!partita.eventi) return false
   
-  const allPlayers = [...partita.squadra_a, ...partita.squadra_b]
+  const allPlayers = [...(partita.squadra_a || []), ...(partita.squadra_b || [])]
   
   let maxGol = 0
   let capocannonieri = []
