@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../supabase'
 import PackOpening from './PackOpening'
+import { calcolaClassifica } from './classificaUtils'
 
 const CARD_CONFIGS = {
   gold: {
@@ -42,6 +43,8 @@ function Dashboard({ currentUser, onNavigate }) {
   const [scommesse, setScommesse] = useState([])
   const [loading, setLoading] = useState(true)
   const [packOpening, setPackOpening] = useState(null)
+  const [streak, setStreak] = useState(0)
+  const [rivale, setRivale] = useState(null)
 
   useEffect(() => {
     if (currentUser?.id) caricaDati()
@@ -67,6 +70,10 @@ function Dashboard({ currentUser, onNavigate }) {
       .eq('giocatore_id', currentUser.id)
       .order('created_at', { ascending: false })
 
+    const { data: tuttiGiocatoriData } = await supabase
+      .from('giocatori')
+      .select('id, nome, is_guest')
+
     if (giocatoreData) {
       setGiocatore(giocatoreData)
       rilevaLevelUp(giocatoreData)
@@ -82,9 +89,44 @@ function Dashboard({ currentUser, onNavigate }) {
       )
       // Partite ancora aperte (non chiuse), anche quelle a cui il giocatore non si è ancora iscritto
       setProssime(partiteData.filter(p => p.stato !== 'chiusa'))
+
+      const tuttePartiteChiuse = partiteData
+        .filter(p => p.stato === 'chiusa')
+        .sort((a, b) => new Date(b.data || 0) - new Date(a.data || 0))
+      calcolaStreak(tuttePartiteChiuse)
+
+      if (tuttiGiocatoriData && !giocatoreData?.is_guest) {
+        calcolaRivale(tuttiGiocatoriData, tuttePartiteChiuse)
+      }
     }
 
     setLoading(false)
+  }
+
+  function calcolaStreak(tuttePartiteChiuse) {
+    let n = 0
+    for (const p of tuttePartiteChiuse) {
+      const inA = (p.squadra_a || []).some(id => String(id) === String(currentUser.id))
+      const inB = (p.squadra_b || []).some(id => String(id) === String(currentUser.id))
+      if (inA || inB) n++
+      else break
+    }
+    setStreak(n)
+  }
+
+  function calcolaRivale(tuttiGiocatoriData, tuttePartiteChiuse) {
+    const fissi = tuttiGiocatoriData.filter(g => !g.is_guest)
+    const classifica = calcolaClassifica(fissi, tuttePartiteChiuse)
+    const idx = classifica.findIndex(g => String(g.id) === String(currentUser.id))
+    if (idx === -1 || classifica.length < 2) { setRivale(null); return }
+
+    if (idx === 0) {
+      const dietro = classifica[1]
+      setRivale({ nome: dietro.nome, gap: classifica[0].punti - dietro.punti, posizione: 1, direzione: 'vantaggio' })
+    } else {
+      const davanti = classifica[idx - 1]
+      setRivale({ nome: davanti.nome, gap: davanti.punti - classifica[idx].punti, posizione: idx + 1, direzione: 'insegue' })
+    }
   }
 
   function rilevaLevelUp(giocatoreData) {
@@ -1022,6 +1064,38 @@ function Dashboard({ currentUser, onNavigate }) {
           </div>
         </div>
       </section>
+
+      {(streak >= 2 || rivale) && (
+        <div style={{ display: 'grid', gridTemplateColumns: streak >= 2 && rivale ? 'repeat(2, minmax(0,1fr))' : '1fr', gap: '0.85rem', marginTop: '1rem' }}>
+          {streak >= 2 && (
+            <div className="panel-card" style={{ display: 'flex', alignItems: 'center', gap: '0.9rem' }}>
+              <div style={{ fontSize: '2.2rem', lineHeight: 1 }}>🔥</div>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontSize: '1.3rem', fontWeight: 950, color: '#ffa500', lineHeight: 1 }}>{streak} di fila</div>
+                <div style={{ fontSize: '0.74rem', color: 'rgba(255,255,255,0.5)', fontWeight: 650, marginTop: '0.25rem' }}>Non rompere la striscia!</div>
+              </div>
+            </div>
+          )}
+          {rivale && (
+            <div className="panel-card" style={{ display: 'flex', alignItems: 'center', gap: '0.9rem' }}>
+              <div style={{ fontSize: '2.2rem', lineHeight: 1 }}>{rivale.direzione === 'vantaggio' ? '👑' : '⚔️'}</div>
+              <div style={{ minWidth: 0 }}>
+                {rivale.direzione === 'vantaggio' ? (
+                  <>
+                    <div style={{ fontSize: '1rem', fontWeight: 900, color: '#ffd700', lineHeight: 1.2 }}>1° posto</div>
+                    <div style={{ fontSize: '0.74rem', color: 'rgba(255,255,255,0.5)', fontWeight: 650, marginTop: '0.25rem' }}>{rivale.gap} pt di vantaggio su {rivale.nome.split(' ')[0]}</div>
+                  </>
+                ) : (
+                  <>
+                    <div style={{ fontSize: '1rem', fontWeight: 900, color: '#00d4ff', lineHeight: 1.2 }}>{rivale.gap} {rivale.gap === 1 ? 'punto' : 'punti'} da {rivale.nome.split(' ')[0]}</div>
+                    <div style={{ fontSize: '0.74rem', color: 'rgba(255,255,255,0.5)', fontWeight: 650, marginTop: '0.25rem' }}>Battilo nella prossima per superarlo</div>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="card-grid">
         <section className="panel-card credits-card" style={{ animationDelay: '0.05s' }}>
