@@ -337,12 +337,18 @@ function App() {
       activeTab={activeTab}
       onTabChange={setActiveTab}
     >
-      {activeTab === 'dashboard' && <Dashboard currentUser={currentUser} onNavigate={setActiveTab} />}
-      {activeTab === 'calendario' && <Calendario currentUser={currentUser} />}
-      {activeTab === 'statistiche' && <Statistiche />}
-      {activeTab === 'classifica' && <Classifica />}
-      {activeTab === 'scommesse' && <Scommesse />}
-      {activeTab === 'admin' && <Admin />}
+      <style>{`
+        @keyframes pageTransitionIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+        .page-transition { animation: pageTransitionIn 0.32s cubic-bezier(0.16, 1, 0.3, 1) both; }
+      `}</style>
+      <div key={activeTab} className="page-transition">
+        {activeTab === 'dashboard' && <Dashboard currentUser={currentUser} onNavigate={setActiveTab} />}
+        {activeTab === 'calendario' && <Calendario currentUser={currentUser} />}
+        {activeTab === 'statistiche' && <Statistiche />}
+        {activeTab === 'classifica' && <Classifica />}
+        {activeTab === 'scommesse' && <Scommesse />}
+        {activeTab === 'admin' && <Admin />}
+      </div>
     </Layout>
   )
 }

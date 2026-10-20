@@ -1399,8 +1399,13 @@ function ModalGoalInput({ partita, giocatori, liveEventi, onConfirm, onClose }) 
   const titoli = { 1: 'CHI HA SEGNATO?', 2: 'SCEGLI MARCATORE', 3: 'ASSIST DI?', 4: 'CONFERMA GOL' }
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(0,0,0,0.82)', backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }} onClick={onClose}>
-      <div style={{ width: '100%', maxWidth: '480px', background: 'linear-gradient(180deg, rgba(12,18,35,0.99), rgba(8,13,28,1))', border: '1px solid rgba(0,255,136,0.22)', borderBottom: 'none', borderRadius: '22px 22px 0 0', padding: '1.25rem 1.25rem 2.5rem', maxHeight: '85vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(0,0,0,0.82)', backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', animation: 'mgiOverlayIn 0.22s ease both' }} onClick={onClose}>
+      <style>{`
+        @keyframes mgiOverlayIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes mgiSheetIn { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        .mgi-sheet { animation: mgiSheetIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) both; }
+      `}</style>
+      <div className="mgi-sheet" style={{ width: '100%', maxWidth: '480px', background: 'linear-gradient(180deg, rgba(12,18,35,0.99), rgba(8,13,28,1))', border: '1px solid rgba(0,255,136,0.22)', borderBottom: 'none', borderRadius: '22px 22px 0 0', padding: '1.25rem 1.25rem 2.5rem', maxHeight: '85vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
 
         {/* Handle */}
         <div style={{ width: '36px', height: '4px', background: 'rgba(255,255,255,0.13)', borderRadius: '2px', margin: '0 auto 1.1rem' }} />
@@ -1701,8 +1706,14 @@ function ModalInserisciRisultato({ partita, onClose, onSaved }) {
   const allIds = [...partita.squadra_a, ...partita.squadra_b]
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0, 0, 0, 0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', zIndex: 50, backdropFilter: 'blur(4px)' }} onClick={onClose}>
-      <div style={{ background: 'rgba(15, 23, 41, 0.95)', border: '1px solid rgba(0, 212, 255, 0.2)', borderRadius: '20px', padding: '2rem', maxWidth: '600px', width: '100%', maxHeight: '90vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(3, 7, 18, 0.82)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', zIndex: 50, backdropFilter: 'blur(8px)' }} onClick={onClose}>
+      <style>{`
+        @keyframes mirIn { from { opacity: 0; transform: translateY(24px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        .mir-modal { animation: mirIn 0.28s ease both; }
+        .mir-modal::-webkit-scrollbar { width: 8px; }
+        .mir-modal::-webkit-scrollbar-thumb { background: rgba(0,212,255,0.2); border-radius: 8px; }
+      `}</style>
+      <div className="mir-modal" style={{ background: 'radial-gradient(circle at 85% 0%, rgba(0,212,255,0.1), transparent 42%), linear-gradient(160deg, rgba(15,23,41,0.97), rgba(6,11,24,0.96))', border: '1px solid rgba(0, 212, 255, 0.22)', borderRadius: '26px', padding: '2rem', maxWidth: '600px', width: '100%', maxHeight: '90vh', overflowY: 'auto', boxSizing: 'border-box', boxShadow: '0 30px 80px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.05)' }} onClick={e => e.stopPropagation()}>
         <h2 style={{ fontSize: '2rem', fontWeight: 900, marginBottom: '0.5rem' }}>📝 Inserisci Risultato</h2>
         <p style={{ color: 'rgba(255, 255, 255, 0.5)', fontSize: '0.9rem', marginBottom: '1.5rem' }}>
           Dopo aver salvato, le votazioni si apriranno automaticamente.
@@ -1986,8 +1997,14 @@ function ModalVotazioni({ partita, currentUser, onClose, onSaved }) {
   const allPlayers = [...partita.squadra_a, ...partita.squadra_b]
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0, 0, 0, 0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', zIndex: 50, backdropFilter: 'blur(4px)' }} onClick={onClose}>
-      <div style={{ background: 'rgba(15, 23, 41, 0.95)', border: '1px solid rgba(0, 212, 255, 0.2)', borderRadius: '20px', padding: '2rem', maxWidth: '700px', width: '100%', maxHeight: '90vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(3, 7, 18, 0.82)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', zIndex: 50, backdropFilter: 'blur(8px)' }} onClick={onClose}>
+      <style>{`
+        @keyframes mvIn { from { opacity: 0; transform: translateY(24px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        .mv-modal { animation: mvIn 0.28s ease both; }
+        .mv-modal::-webkit-scrollbar { width: 8px; }
+        .mv-modal::-webkit-scrollbar-thumb { background: rgba(0,212,255,0.2); border-radius: 8px; }
+      `}</style>
+      <div className="mv-modal" style={{ background: 'radial-gradient(circle at 85% 0%, rgba(0,212,255,0.1), transparent 42%), linear-gradient(160deg, rgba(15,23,41,0.97), rgba(6,11,24,0.96))', border: '1px solid rgba(0, 212, 255, 0.22)', borderRadius: '26px', padding: '2rem', maxWidth: '700px', width: '100%', maxHeight: '90vh', overflowY: 'auto', boxSizing: 'border-box', boxShadow: '0 30px 80px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.05)' }} onClick={e => e.stopPropagation()}>
         <h2 style={{ fontSize: '2rem', fontWeight: 900, marginBottom: '1rem' }}>🗳️ Vota i Giocatori</h2>
         <div style={{ fontSize: '0.9rem', color: 'rgba(255, 255, 255, 0.5)', marginBottom: '2rem' }}>Vota tutti i giocatori (anche te stesso) da 1 a 10.</div>
         <div style={{ display: 'grid', gap: '1rem', marginBottom: '2rem' }}>
