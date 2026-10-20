@@ -31,7 +31,7 @@ function Scommesse() {
   async function caricaDati() {
     const { data: giocatoriData } = await supabase
       .from('giocatori')
-      .select('*')
+      .select('id, nome, ruolo, overall, crediti, forma_punti, foto_url, is_guest, voti_storico')
       .order('crediti', { ascending: false })
 
     const { data: scommesseData } = await supabase

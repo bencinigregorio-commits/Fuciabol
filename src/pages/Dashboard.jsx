@@ -96,7 +96,7 @@ function Dashboard({ currentUser, onNavigate }) {
 
     const { data: giocatoreData } = await supabase
       .from('giocatori')
-      .select('*')
+      .select('id, nome, ruolo, overall, crediti, forma_punti, foto_url, is_guest, voti_storico')
       .eq('id', currentUser.id)
       .single()
 

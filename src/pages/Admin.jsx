@@ -12,7 +12,7 @@ function Admin() {
 
   async function caricaDati() {
     const { data: partiteData } = await supabase.from('partite').select('*').order('data', { ascending: false })
-    const { data: giocatoriData } = await supabase.from('giocatori').select('*').order('nome')
+    const { data: giocatoriData } = await supabase.from('giocatori').select('id, nome, ruolo, overall, crediti, forma_punti, foto_url, is_guest, voti_storico').order('nome')
     if (partiteData) setPartite(partiteData)
     if (giocatoriData) setGiocatori(giocatoriData)
   }
@@ -298,7 +298,7 @@ function GiocatoreRow({ g, onEdit, onDelete }) {
             {g.nome}
             {g.is_guest && <span style={{ fontSize: '0.65rem', fontWeight: 800, color: '#ffa500', background: 'rgba(255,165,0,0.12)', border: '1px solid rgba(255,165,0,0.35)', borderRadius: '5px', padding: '0.1rem 0.4rem', letterSpacing: '0.5px', textTransform: 'uppercase' }}>GUEST</span>}
           </div>
-          <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)' }}>{g.ruolo} • OVR {g.overall} • PIN: {g.pin} • 💰 {g.crediti ?? 500}</div>
+          <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)' }}>{g.ruolo} • OVR {g.overall} • PIN protetto 🔒 • 💰 {g.crediti ?? 500}</div>
         </div>
       </div>
       <div style={{ display: 'flex', gap: '0.5rem' }}>
@@ -316,7 +316,7 @@ function GiocatoreRow({ g, onEdit, onDelete }) {
 function ModalGiocatore({ giocatore, onClose, onSaved }) {
   const [nome, setNome] = useState(giocatore?.nome || '')
   const [ruolo, setRuolo] = useState(giocatore?.ruolo || 'CC')
-  const [pin, setPin] = useState(giocatore?.pin || '')
+  const [pin, setPin] = useState('')
   const [overall, setOverall] = useState(giocatore?.overall || 65)
   const [crediti, setCrediti] = useState(giocatore?.crediti || 500)
   const [isGuest, setIsGuest] = useState(giocatore?.is_guest || false)
@@ -326,12 +326,14 @@ function ModalGiocatore({ giocatore, onClose, onSaved }) {
 
   async function salva() {
     if (!nome.trim()) { alert('Inserisci il nome!'); return }
-    if (!pin.trim()) { alert('Inserisci il PIN!'); return }
-    if (pin === '1234') { alert("Il PIN 1234 è riservato all'admin!"); return }
+    if (!giocatore && !pin.trim()) { alert('Inserisci il PIN!'); return }
+    if (pin.trim() && pin === '1234') { alert("Il PIN 1234 è riservato all'admin!"); return }
     setLoading(true)
     try {
       if (giocatore) {
-        const { error } = await supabase.from('giocatori').update({ nome, ruolo, pin, overall: parseInt(overall), crediti: parseInt(crediti), is_guest: isGuest }).eq('id', giocatore.id)
+        const payload = { nome, ruolo, overall: parseInt(overall), crediti: parseInt(crediti), is_guest: isGuest }
+        if (pin.trim()) payload.pin = pin
+        const { error } = await supabase.from('giocatori').update(payload).eq('id', giocatore.id)
         if (error) { alert('Errore: ' + error.message); return }
         alert('✓ Giocatore aggiornato!')
       } else {
@@ -363,8 +365,8 @@ function ModalGiocatore({ giocatore, onClose, onSaved }) {
             </select>
           </div>
           <div>
-            <label style={{ display: 'block', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)', marginBottom: '0.4rem', fontWeight: 600 }}>PIN</label>
-            <input value={pin} onChange={e => setPin(e.target.value)} placeholder="Es. 5678" maxLength={6} style={{ width: '100%', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(0,212,255,0.3)', borderRadius: '10px', padding: '0.75rem', color: '#fff', fontSize: '1rem' }} />
+            <label style={{ display: 'block', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)', marginBottom: '0.4rem', fontWeight: 600 }}>PIN{giocatore ? ' (lascia vuoto per non cambiarlo)' : ''}</label>
+            <input value={pin} onChange={e => setPin(e.target.value)} placeholder={giocatore ? '••••' : 'Es. 5678'} maxLength={6} style={{ width: '100%', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(0,212,255,0.3)', borderRadius: '10px', padding: '0.75rem', color: '#fff', fontSize: '1rem' }} />
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
             <div>

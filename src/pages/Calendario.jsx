@@ -76,7 +76,7 @@ function Calendario({ currentUser }) {
 
     const { data: giocatori } = await supabase
       .from('giocatori')
-      .select('*')
+      .select('id, nome, ruolo, overall, crediti, forma_punti, foto_url, is_guest, voti_storico')
       .in('id', allPlayers)
 
     for (const giocatore of giocatori) {
