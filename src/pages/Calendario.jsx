@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../supabase'
 import { calcolaVotoFinale, votoToPuntiForma, aggiornaOverall } from './calcoli'
 import { calcolaQuoteRisultato, calcolaQuoteMiglioreInCampo, calcolaQuoteCapocannoniere, verificaVincitaRisultato, verificaVincitaMiglioreInCampo, verificaVincitaCapocannoniere } from './scommesseCalcoli'
+import { generaImmagineRiepilogo } from './riepilogoCard'
 
 function Calendario({ currentUser }) {
   const [partite, setPartite] = useState([])
@@ -517,6 +518,7 @@ function PartitaCard({ partita, currentUser, onVoteClick, onChiudiVoti, onScomme
   const [squadraB, setSquadraB] = useState(partita.squadra_b || [])
   const [slotSaving, setSlotSaving] = useState(false)
   const [allGiocatori, setAllGiocatori] = useState([])
+  const [generandoRiepilogo, setGenerandoRiepilogo] = useState(false)
 
   useEffect(() => {
     caricaNomi()
@@ -722,6 +724,34 @@ function PartitaCard({ partita, currentUser, onVoteClick, onChiudiVoti, onScomme
     currentSquadraB.forEach((id, i) => lines.push(`${i + 1}. ${getNome(id)}`))
     if (currentSquadraB.length === 0) lines.push('—')
     window.open(`https://wa.me/?text=${encodeURIComponent(lines.join('\n'))}`, '_blank')
+  }
+
+  async function condividiRiepilogo() {
+    if (generandoRiepilogo) return
+    setGenerandoRiepilogo(true)
+    try {
+      const blob = await generaImmagineRiepilogo(partita, giocatori)
+      const file = new File([blob], `fuciabol-${partita.data}.png`, { type: 'image/png' })
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({ files: [file], title: 'FUCIABOL', text: 'Riepilogo partita FUCIABOL ⚽' })
+        } catch (shareErr) {
+          if (shareErr?.name !== 'AbortError') throw shareErr
+        }
+      } else {
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `fuciabol-riepilogo-${partita.data}.png`
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+        URL.revokeObjectURL(url)
+      }
+    } catch (e) {
+      alert('Impossibile generare il riepilogo. Riprova.')
+    }
+    setGenerandoRiepilogo(false)
   }
 
   const dataStr = new Date(partita.data).toLocaleDateString('it-IT', { day: 'numeric', month: 'short', year: 'numeric' })
@@ -1095,8 +1125,8 @@ function PartitaCard({ partita, currentUser, onVoteClick, onChiudiVoti, onScomme
                 </div>
               </div>}
 
-              {/* CHIUSA: tabellino */}
-              {stato === 'chiusa' && (marcatori.length > 0 || assistman.length > 0 || mvp) && (
+              {/* CHIUSA: tabellino + condivisione */}
+              {stato === 'chiusa' && (
                 <div style={{ marginTop: '1rem', paddingTop: '0.85rem', borderTop: '1px solid rgba(255,255,255,0.07)' }}>
                   {marcatori.length > 0 && (
                     <div style={{ marginBottom: '0.6rem' }}>
@@ -1123,13 +1153,28 @@ function PartitaCard({ partita, currentUser, onVoteClick, onChiudiVoti, onScomme
                     </div>
                   )}
                   {mvp && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(255,215,0,0.06)', border: '1px solid rgba(255,215,0,0.15)', borderRadius: '8px', padding: '0.4rem 0.75rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(255,215,0,0.06)', border: '1px solid rgba(255,215,0,0.15)', borderRadius: '8px', padding: '0.4rem 0.75rem', marginBottom: '0.75rem' }}>
                       <span style={{ fontSize: '0.7rem', color: '#ffd700' }}>⭐</span>
                       <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#ffd700' }}>MVP</span>
                       <span style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.7)' }}>{getNome(mvp.playerId)}</span>
                       <span style={{ fontSize: '0.72rem', fontWeight: 900, color: '#ffd700', marginLeft: 'auto' }}>{mvp.votoFinale.toFixed(1)}</span>
                     </div>
                   )}
+
+                  <button
+                    onClick={condividiRiepilogo}
+                    disabled={generandoRiepilogo}
+                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', width: '100%', padding: '0.7rem', borderRadius: '12px', border: '1px solid rgba(0,212,255,0.3)', background: 'rgba(0,212,255,0.08)', color: '#00d4ff', fontWeight: 850, fontSize: '0.82rem', letterSpacing: '0.3px', cursor: generandoRiepilogo ? 'default' : 'pointer', fontFamily: 'inherit', transition: 'all 0.18s ease', opacity: generandoRiepilogo ? 0.6 : 1 }}
+                  >
+                    {generandoRiepilogo ? (
+                      <>⏳ Generazione in corso…</>
+                    ) : (
+                      <>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+                        Condividi riepilogo partita
+                      </>
+                    )}
+                  </button>
                 </div>
               )}
 
