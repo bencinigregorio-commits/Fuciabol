@@ -3,6 +3,10 @@ import { supabase } from '../supabase'
 import PackOpening from './PackOpening'
 import { calcolaClassifica } from './classificaUtils'
 
+// Chiave pubblica VAPID — sicura da avere nel client, serve solo ai servizi
+// push per identificare il mittente. La chiave privata resta solo sul server.
+const VAPID_PUBLIC_KEY = 'BDeyzFUjwfCjslUrAj8G9ZGkcn1e3JHT3cokaQY1CDZDLcgxfNfJCgVpJPSQbWgFq4J5p3Tb1yDLTyuqVzO3gzc'
+
 const CARD_CONFIGS = {
   gold: {
     bg: 'linear-gradient(155deg, #9f6b05 0%, #d59b18 22%, #ffe26c 42%, #d59b18 62%, #8a5d04 100%)',
@@ -45,6 +49,43 @@ function Dashboard({ currentUser, onNavigate }) {
   const [packOpening, setPackOpening] = useState(null)
   const [streak, setStreak] = useState(0)
   const [rivale, setRivale] = useState(null)
+  const [notifState, setNotifState] = useState(() => (typeof Notification !== 'undefined' ? Notification.permission : 'unsupported'))
+  const [attivandoNotifiche, setAttivandoNotifiche] = useState(false)
+
+  const notificheSupportate = typeof window !== 'undefined' && 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window
+
+  function urlBase64ToUint8Array(base64String) {
+    const padding = '='.repeat((4 - (base64String.length % 4)) % 4)
+    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/')
+    const rawData = atob(base64)
+    return Uint8Array.from([...rawData].map(c => c.charCodeAt(0)))
+  }
+
+  async function attivaNotifiche() {
+    if (attivandoNotifiche) return
+    setAttivandoNotifiche(true)
+    try {
+      const permission = await Notification.requestPermission()
+      setNotifState(permission)
+      if (permission !== 'granted') { setAttivandoNotifiche(false); return }
+
+      const registration = await navigator.serviceWorker.ready
+      const subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+      })
+      const json = subscription.toJSON()
+      await supabase.from('push_subscriptions').upsert({
+        giocatore_id: currentUser.id,
+        endpoint: json.endpoint,
+        p256dh: json.keys.p256dh,
+        auth: json.keys.auth
+      }, { onConflict: 'endpoint' })
+    } catch (e) {
+      alert('Impossibile attivare le notifiche. Riprova dalle impostazioni del browser.')
+    }
+    setAttivandoNotifiche(false)
+  }
 
   useEffect(() => {
     if (currentUser?.id) caricaDati()
@@ -1064,6 +1105,23 @@ function Dashboard({ currentUser, onNavigate }) {
           </div>
         </div>
       </section>
+
+      {notificheSupportate && notifState === 'default' && (
+        <div className="panel-card" style={{ marginTop: '1rem', display: 'flex', alignItems: 'center', gap: '0.9rem', flexWrap: 'wrap' }}>
+          <div style={{ fontSize: '1.9rem', lineHeight: 1 }}>🔔</div>
+          <div style={{ flex: 1, minWidth: '180px' }}>
+            <div style={{ fontWeight: 900, fontSize: '0.95rem' }}>Attiva le notifiche</div>
+            <div style={{ fontSize: '0.74rem', color: 'rgba(255,255,255,0.5)', fontWeight: 650, marginTop: '0.2rem' }}>Non perderti le prossime partite e le convocazioni</div>
+          </div>
+          <button
+            onClick={attivaNotifiche}
+            disabled={attivandoNotifiche}
+            style={{ background: 'linear-gradient(135deg, #00d4ff, #0099ff)', border: 'none', borderRadius: '12px', padding: '0.65rem 1.2rem', color: '#0f1729', fontWeight: 850, fontSize: '0.82rem', cursor: attivandoNotifiche ? 'default' : 'pointer', opacity: attivandoNotifiche ? 0.65 : 1, flexShrink: 0 }}
+          >
+            {attivandoNotifiche ? 'Attivazione…' : 'Attiva'}
+          </button>
+        </div>
+      )}
 
       {(streak >= 2 || rivale) && (
         <div style={{ display: 'grid', gridTemplateColumns: streak >= 2 && rivale ? 'repeat(2, minmax(0,1fr))' : '1fr', gap: '0.85rem', marginTop: '1rem' }}>

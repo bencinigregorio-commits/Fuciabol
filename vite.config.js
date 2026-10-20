@@ -6,7 +6,13 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      filename: 'sw.js',
       registerType: 'autoUpdate',
+      injectManifest: {
+        globPatterns: ['**/*.{js,css,html,ico,png,svg}']
+      },
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
       manifest: {
         name: 'FUCIABOL',
@@ -34,19 +40,6 @@ export default defineConfig({
             sizes: '512x512',
             type: 'image/png',
             purpose: 'any maskable'
-          }
-        ]
-      },
-      workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
-        runtimeCaching: [
-          {
-            urlPattern: /^https:\/\/.*\.supabase\.co\/.*/i,
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'supabase-cache',
-              expiration: { maxEntries: 50, maxAgeSeconds: 60 * 60 * 24 }
-            }
           }
         ]
       }
