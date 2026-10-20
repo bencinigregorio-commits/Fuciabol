@@ -13,12 +13,35 @@ function Calendario({ currentUser }) {
   const [showScommessa, setShowScommessa] = useState(null)
   const [showRisultato, setShowRisultato] = useState(null)
   const [showPassate, setShowPassate] = useState(false)
+  const [notificando, setNotificando] = useState(false)
 
   useEffect(() => { caricaPartite(); caricaGiocatori() }, [])
 
   async function caricaGiocatori() {
     const { data } = await supabase.from('giocatori').select('id, nome, overall, ruolo, foto_url')
     if (data) setGiocatoriAll(data)
+  }
+
+  async function notificaGiocatori() {
+    if (notificando) return
+    setNotificando(true)
+    try {
+      const res = await fetch('/api/send-notification', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: '⚽ FUCIABOL',
+          body: 'C\'è una partita in programma, vai a iscriverti!',
+          url: '/'
+        })
+      })
+      const data = await res.json()
+      if (data.error) alert('Errore: ' + data.error)
+      else alert(`✓ Notifica inviata a ${data.sent} giocatori${data.failed > 0 ? ` (${data.failed} non raggiungibili)` : ''}.`)
+    } catch (e) {
+      alert('Errore di connessione, riprova.')
+    }
+    setNotificando(false)
   }
 
   async function caricaPartite() {
@@ -193,9 +216,18 @@ function Calendario({ currentUser }) {
       {/* RIEPILOGO ADMIN CONVOCAZIONI — solo admin, solo partite da giocare */}
       {currentUser?.role === 'admin' && partite.some(p => p.stato === 'pre_partita') && (
         <div style={{ marginBottom: '1.5rem', borderRadius: '18px', border: '1px solid rgba(0,212,255,0.16)', background: 'radial-gradient(circle at 100% 0%, rgba(0,212,255,0.07), transparent 45%), rgba(8,14,28,0.6)', padding: '1rem 1.15rem', overflow: 'hidden' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.85rem' }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#00d4ff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-            <span style={{ fontSize: '0.72rem', fontWeight: 900, color: '#00d4ff', letterSpacing: '1.3px', textTransform: 'uppercase' }}>Riepilogo convocazioni</span>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem', marginBottom: '0.85rem', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#00d4ff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              <span style={{ fontSize: '0.72rem', fontWeight: 900, color: '#00d4ff', letterSpacing: '1.3px', textTransform: 'uppercase' }}>Riepilogo convocazioni</span>
+            </div>
+            <button
+              onClick={notificaGiocatori}
+              disabled={notificando}
+              style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: 'rgba(0,212,255,0.1)', border: '1px solid rgba(0,212,255,0.3)', borderRadius: '8px', padding: '0.4rem 0.75rem', color: '#00d4ff', fontSize: '0.72rem', fontWeight: 800, cursor: notificando ? 'default' : 'pointer', opacity: notificando ? 0.6 : 1, fontFamily: 'inherit' }}
+            >
+              {notificando ? '⏳ Invio…' : '📣 Notifica tutti'}
+            </button>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
             {partite.filter(p => p.stato === 'pre_partita').map(p => {
