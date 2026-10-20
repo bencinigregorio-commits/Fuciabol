@@ -17,7 +17,7 @@ function Classifica() {
   useEffect(() => { caricaDati() }, [])
 
   async function caricaDati() {
-    const { data: giocatoriData } = await supabase.from('giocatori').select('*')
+    const { data: giocatoriData } = await supabase.from('giocatori').select('id, nome, ruolo, overall, foto_url, is_guest')
     const { data: partiteData } = await supabase.from('partite').select('*').eq('stato', 'chiusa')
 
     if (giocatoriData) setGiocatori(giocatoriData)
