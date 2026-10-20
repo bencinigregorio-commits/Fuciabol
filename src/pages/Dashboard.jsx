@@ -46,6 +46,7 @@ function Dashboard({ currentUser, onNavigate }) {
   const [prossime, setProssime] = useState([])
   const [scommesse, setScommesse] = useState([])
   const [loading, setLoading] = useState(true)
+  const [erroreCaricamento, setErroreCaricamento] = useState(null)
   const [packOpening, setPackOpening] = useState(null)
   const [streak, setStreak] = useState(0)
   const [rivale, setRivale] = useState(null)
@@ -93,14 +94,15 @@ function Dashboard({ currentUser, onNavigate }) {
 
   async function caricaDati() {
     setLoading(true)
+    setErroreCaricamento(null)
 
-    const { data: giocatoreData } = await supabase
+    const { data: giocatoreData, error: giocatoreError } = await supabase
       .from('giocatori')
       .select('id, nome, ruolo, overall, crediti, forma_punti, foto_url, is_guest, voti_storico')
       .eq('id', currentUser.id)
       .single()
 
-    const { data: partiteData } = await supabase
+    const { data: partiteData, error: partiteError } = await supabase
       .from('partite')
       .select('*')
       .eq('votazioni_aperte', false)
@@ -114,6 +116,14 @@ function Dashboard({ currentUser, onNavigate }) {
     const { data: tuttiGiocatoriData } = await supabase
       .from('giocatori')
       .select('id, nome, is_guest')
+
+    if (giocatoreError) {
+      setErroreCaricamento(`[giocatori] ${giocatoreError.message}`)
+    } else if (partiteError) {
+      setErroreCaricamento(`[partite] ${partiteError.message}`)
+    } else if (!giocatoreData) {
+      setErroreCaricamento('Nessun dato giocatore trovato per questo utente.')
+    }
 
     if (giocatoreData) {
       setGiocatore(giocatoreData)
@@ -191,6 +201,19 @@ function Dashboard({ currentUser, onNavigate }) {
     } catch (e) {}
     setPackOpening(null)
   }
+
+  if (!loading && erroreCaricamento) return (
+    <div style={{ textAlign: 'center', padding: '4rem 1rem', color: 'rgba(255,255,255,0.6)' }}>
+      <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>⚠️</div>
+      <div style={{ fontWeight: 800, marginBottom: '0.5rem' }}>Errore nel caricamento della Dashboard</div>
+      <div style={{ fontSize: '0.8rem', color: '#ff8080', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)', borderRadius: '10px', padding: '0.75rem 1rem', display: 'inline-block', maxWidth: '90%', wordBreak: 'break-word', fontFamily: 'monospace' }}>
+        {erroreCaricamento}
+      </div>
+      <div style={{ marginTop: '1.25rem' }}>
+        <button onClick={() => currentUser?.id && caricaDati()} style={{ background: 'linear-gradient(135deg, #00d4ff, #0099ff)', border: 'none', borderRadius: '12px', padding: '0.7rem 1.4rem', color: '#0f1729', fontWeight: 800, cursor: 'pointer' }}>Riprova</button>
+      </div>
+    </div>
+  )
 
   if (loading || !giocatore) return (
     <div style={{ textAlign: 'center', padding: '4rem 1rem', color: 'rgba(255,255,255,0.5)' }}>
