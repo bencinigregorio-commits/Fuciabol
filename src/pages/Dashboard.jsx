@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../supabase'
+import PackOpening from './PackOpening'
 
 const CARD_CONFIGS = {
   gold: {
@@ -40,6 +41,7 @@ function Dashboard({ currentUser, onNavigate }) {
   const [prossime, setProssime] = useState([])
   const [scommesse, setScommesse] = useState([])
   const [loading, setLoading] = useState(true)
+  const [packOpening, setPackOpening] = useState(null)
 
   useEffect(() => {
     if (currentUser?.id) caricaDati()
@@ -65,7 +67,10 @@ function Dashboard({ currentUser, onNavigate }) {
       .eq('giocatore_id', currentUser.id)
       .order('created_at', { ascending: false })
 
-    if (giocatoreData) setGiocatore(giocatoreData)
+    if (giocatoreData) {
+      setGiocatore(giocatoreData)
+      rilevaLevelUp(giocatoreData)
+    }
     if (scommesseData) setScommesse(scommesseData)
     if (partiteData) {
       setPartite(
@@ -80,6 +85,28 @@ function Dashboard({ currentUser, onNavigate }) {
     }
 
     setLoading(false)
+  }
+
+  function rilevaLevelUp(giocatoreData) {
+    try {
+      const key = `fuciabol_last_ovr_${giocatoreData.id}`
+      const lastSeen = localStorage.getItem(key)
+      const currentOverall = giocatoreData.overall || 65
+      if (lastSeen !== null && currentOverall > parseInt(lastSeen, 10)) {
+        setPackOpening({ from: parseInt(lastSeen, 10), to: currentOverall })
+      } else {
+        localStorage.setItem(key, String(currentOverall))
+      }
+    } catch (e) {
+      // localStorage non disponibile (es. modalità privata): nessuna animazione, nessun crash
+    }
+  }
+
+  function chiudiPackOpening() {
+    try {
+      localStorage.setItem(`fuciabol_last_ovr_${giocatore.id}`, String(packOpening.to))
+    } catch (e) {}
+    setPackOpening(null)
   }
 
   if (loading || !giocatore) return (
@@ -1146,6 +1173,20 @@ function Dashboard({ currentUser, onNavigate }) {
           )}
         </section>
       </div>
+
+      {packOpening && (
+        <PackOpening
+          cfg={cfg}
+          cardType={cardType}
+          nome={nome}
+          cognome={cognome}
+          ruolo={giocatore.ruolo}
+          fotoUrl={giocatore.foto_url}
+          fromOverall={packOpening.from}
+          toOverall={packOpening.to}
+          onClose={chiudiPackOpening}
+        />
+      )}
     </div>
   )
 }
