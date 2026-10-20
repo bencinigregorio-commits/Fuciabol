@@ -222,7 +222,14 @@ function App() {
       return
     }
 
-    const { data } = await supabase.from('giocatori').select('*').eq('pin', pinToCheck).single()
+    // Prova prima la funzione sicura (dopo la migrazione SQL che protegge il pin);
+    // se non esiste ancora, usa la query diretta come prima — zero downtime.
+    const { data: rpcData, error: rpcError } = await supabase.rpc('login_by_pin', { input_pin: pinToCheck })
+    let data = rpcData
+    if (rpcError || !data) {
+      const res = await supabase.from('giocatori').select('*').eq('pin', pinToCheck).single()
+      data = res.data
+    }
 
     if (data) {
       const user = { id: data.id, nome: data.nome, role: 'player' }
