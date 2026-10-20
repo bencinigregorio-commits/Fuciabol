@@ -227,7 +227,7 @@ function App() {
     const { data: rpcData, error: rpcError } = await supabase.rpc('login_by_pin', { input_pin: pinToCheck })
     let data = rpcData
     if (rpcError || !data) {
-      const res = await supabase.from('giocatori').select('*').eq('pin', pinToCheck).single()
+      const res = await supabase.from('giocatori').select('id, nome, ruolo, overall, crediti, is_guest').eq('pin', pinToCheck).single()
       data = res.data
     }
 
