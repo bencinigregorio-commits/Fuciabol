@@ -82,6 +82,7 @@ function Statistiche() {
   const [selected, setSelected] = useState(null)
   const [showLegenda, setShowLegenda] = useState(false)
   const [showGuest, setShowGuest] = useState(false)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => { caricaDati() }, [])
 
@@ -90,7 +91,18 @@ function Statistiche() {
     const { data: partiteData } = await supabase.from('partite').select('*').eq('stato', 'chiusa').order('data', { ascending: false }).order('id', { ascending: false })
     if (giocatoriData) setGiocatori(giocatoriData)
     if (partiteData) setPartite(partiteData)
+    setLoading(false)
   }
+
+  if (loading) return (
+    <div style={{ textAlign: 'center', padding: '4rem 1rem', color: 'rgba(255,255,255,0.5)' }}>
+      <style>{`@keyframes spin { from { transform: rotate(0deg) } to { transform: rotate(360deg) } }`}</style>
+      <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'linear-gradient(145deg, rgba(0,212,255,0.12), rgba(10,16,30,0.9))', border: '1px solid rgba(0,212,255,0.28)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem', animation: 'spin 1s linear infinite' }}>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#00d4ff" strokeWidth="2" strokeLinecap="round"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4"/></svg>
+      </div>
+      <div>Caricamento...</div>
+    </div>
+  )
 
   // Trova il miglior giocatore FISSO dell'ultima partita chiusa (i guest non ricevono l'IF)
   const guestIds = new Set(giocatori.filter(g => g.is_guest).map(g => String(g.id)))

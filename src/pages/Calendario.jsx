@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../supabase'
 import { calcolaVotoFinale, votoToPuntiForma, aggiornaOverall } from './calcoli'
 import { calcolaQuoteRisultato, calcolaQuoteMiglioreInCampo, calcolaQuoteCapocannoniere, verificaVincitaRisultato, verificaVincitaMiglioreInCampo, verificaVincitaCapocannoniere } from './scommesseCalcoli'
+import { generaImmagineRiepilogo } from './riepilogoCard'
 
 function Calendario({ currentUser }) {
   const [partite, setPartite] = useState([])
@@ -517,6 +518,7 @@ function PartitaCard({ partita, currentUser, onVoteClick, onChiudiVoti, onScomme
   const [squadraB, setSquadraB] = useState(partita.squadra_b || [])
   const [slotSaving, setSlotSaving] = useState(false)
   const [allGiocatori, setAllGiocatori] = useState([])
+  const [generandoRiepilogo, setGenerandoRiepilogo] = useState(false)
 
   useEffect(() => {
     caricaNomi()
@@ -722,6 +724,34 @@ function PartitaCard({ partita, currentUser, onVoteClick, onChiudiVoti, onScomme
     currentSquadraB.forEach((id, i) => lines.push(`${i + 1}. ${getNome(id)}`))
     if (currentSquadraB.length === 0) lines.push('—')
     window.open(`https://wa.me/?text=${encodeURIComponent(lines.join('\n'))}`, '_blank')
+  }
+
+  async function condividiRiepilogo() {
+    if (generandoRiepilogo) return
+    setGenerandoRiepilogo(true)
+    try {
+      const blob = await generaImmagineRiepilogo(partita, giocatori)
+      const file = new File([blob], `fuciabol-${partita.data}.png`, { type: 'image/png' })
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({ files: [file], title: 'FUCIABOL', text: 'Riepilogo partita FUCIABOL ⚽' })
+        } catch (shareErr) {
+          if (shareErr?.name !== 'AbortError') throw shareErr
+        }
+      } else {
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `fuciabol-riepilogo-${partita.data}.png`
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+        URL.revokeObjectURL(url)
+      }
+    } catch (e) {
+      alert('Impossibile generare il riepilogo. Riprova.')
+    }
+    setGenerandoRiepilogo(false)
   }
 
   const dataStr = new Date(partita.data).toLocaleDateString('it-IT', { day: 'numeric', month: 'short', year: 'numeric' })
@@ -1095,8 +1125,8 @@ function PartitaCard({ partita, currentUser, onVoteClick, onChiudiVoti, onScomme
                 </div>
               </div>}
 
-              {/* CHIUSA: tabellino */}
-              {stato === 'chiusa' && (marcatori.length > 0 || assistman.length > 0 || mvp) && (
+              {/* CHIUSA: tabellino + condivisione */}
+              {stato === 'chiusa' && (
                 <div style={{ marginTop: '1rem', paddingTop: '0.85rem', borderTop: '1px solid rgba(255,255,255,0.07)' }}>
                   {marcatori.length > 0 && (
                     <div style={{ marginBottom: '0.6rem' }}>
@@ -1123,13 +1153,28 @@ function PartitaCard({ partita, currentUser, onVoteClick, onChiudiVoti, onScomme
                     </div>
                   )}
                   {mvp && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(255,215,0,0.06)', border: '1px solid rgba(255,215,0,0.15)', borderRadius: '8px', padding: '0.4rem 0.75rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(255,215,0,0.06)', border: '1px solid rgba(255,215,0,0.15)', borderRadius: '8px', padding: '0.4rem 0.75rem', marginBottom: '0.75rem' }}>
                       <span style={{ fontSize: '0.7rem', color: '#ffd700' }}>⭐</span>
                       <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#ffd700' }}>MVP</span>
                       <span style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.7)' }}>{getNome(mvp.playerId)}</span>
                       <span style={{ fontSize: '0.72rem', fontWeight: 900, color: '#ffd700', marginLeft: 'auto' }}>{mvp.votoFinale.toFixed(1)}</span>
                     </div>
                   )}
+
+                  <button
+                    onClick={condividiRiepilogo}
+                    disabled={generandoRiepilogo}
+                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', width: '100%', padding: '0.7rem', borderRadius: '12px', border: '1px solid rgba(0,212,255,0.3)', background: 'rgba(0,212,255,0.08)', color: '#00d4ff', fontWeight: 850, fontSize: '0.82rem', letterSpacing: '0.3px', cursor: generandoRiepilogo ? 'default' : 'pointer', fontFamily: 'inherit', transition: 'all 0.18s ease', opacity: generandoRiepilogo ? 0.6 : 1 }}
+                  >
+                    {generandoRiepilogo ? (
+                      <>⏳ Generazione in corso…</>
+                    ) : (
+                      <>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+                        Condividi riepilogo partita
+                      </>
+                    )}
+                  </button>
                 </div>
               )}
 
@@ -1354,8 +1399,13 @@ function ModalGoalInput({ partita, giocatori, liveEventi, onConfirm, onClose }) 
   const titoli = { 1: 'CHI HA SEGNATO?', 2: 'SCEGLI MARCATORE', 3: 'ASSIST DI?', 4: 'CONFERMA GOL' }
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(0,0,0,0.82)', backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }} onClick={onClose}>
-      <div style={{ width: '100%', maxWidth: '480px', background: 'linear-gradient(180deg, rgba(12,18,35,0.99), rgba(8,13,28,1))', border: '1px solid rgba(0,255,136,0.22)', borderBottom: 'none', borderRadius: '22px 22px 0 0', padding: '1.25rem 1.25rem 2.5rem', maxHeight: '85vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(0,0,0,0.82)', backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', animation: 'mgiOverlayIn 0.22s ease both' }} onClick={onClose}>
+      <style>{`
+        @keyframes mgiOverlayIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes mgiSheetIn { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        .mgi-sheet { animation: mgiSheetIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) both; }
+      `}</style>
+      <div className="mgi-sheet" style={{ width: '100%', maxWidth: '480px', background: 'linear-gradient(180deg, rgba(12,18,35,0.99), rgba(8,13,28,1))', border: '1px solid rgba(0,255,136,0.22)', borderBottom: 'none', borderRadius: '22px 22px 0 0', padding: '1.25rem 1.25rem 2.5rem', maxHeight: '85vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
 
         {/* Handle */}
         <div style={{ width: '36px', height: '4px', background: 'rgba(255,255,255,0.13)', borderRadius: '2px', margin: '0 auto 1.1rem' }} />
@@ -1656,8 +1706,14 @@ function ModalInserisciRisultato({ partita, onClose, onSaved }) {
   const allIds = [...partita.squadra_a, ...partita.squadra_b]
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0, 0, 0, 0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', zIndex: 50, backdropFilter: 'blur(4px)' }} onClick={onClose}>
-      <div style={{ background: 'rgba(15, 23, 41, 0.95)', border: '1px solid rgba(0, 212, 255, 0.2)', borderRadius: '20px', padding: '2rem', maxWidth: '600px', width: '100%', maxHeight: '90vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(3, 7, 18, 0.82)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', zIndex: 50, backdropFilter: 'blur(8px)' }} onClick={onClose}>
+      <style>{`
+        @keyframes mirIn { from { opacity: 0; transform: translateY(24px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        .mir-modal { animation: mirIn 0.28s ease both; }
+        .mir-modal::-webkit-scrollbar { width: 8px; }
+        .mir-modal::-webkit-scrollbar-thumb { background: rgba(0,212,255,0.2); border-radius: 8px; }
+      `}</style>
+      <div className="mir-modal" style={{ background: 'radial-gradient(circle at 85% 0%, rgba(0,212,255,0.1), transparent 42%), linear-gradient(160deg, rgba(15,23,41,0.97), rgba(6,11,24,0.96))', border: '1px solid rgba(0, 212, 255, 0.22)', borderRadius: '26px', padding: '2rem', maxWidth: '600px', width: '100%', maxHeight: '90vh', overflowY: 'auto', boxSizing: 'border-box', boxShadow: '0 30px 80px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.05)' }} onClick={e => e.stopPropagation()}>
         <h2 style={{ fontSize: '2rem', fontWeight: 900, marginBottom: '0.5rem' }}>📝 Inserisci Risultato</h2>
         <p style={{ color: 'rgba(255, 255, 255, 0.5)', fontSize: '0.9rem', marginBottom: '1.5rem' }}>
           Dopo aver salvato, le votazioni si apriranno automaticamente.
@@ -1941,8 +1997,14 @@ function ModalVotazioni({ partita, currentUser, onClose, onSaved }) {
   const allPlayers = [...partita.squadra_a, ...partita.squadra_b]
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0, 0, 0, 0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', zIndex: 50, backdropFilter: 'blur(4px)' }} onClick={onClose}>
-      <div style={{ background: 'rgba(15, 23, 41, 0.95)', border: '1px solid rgba(0, 212, 255, 0.2)', borderRadius: '20px', padding: '2rem', maxWidth: '700px', width: '100%', maxHeight: '90vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(3, 7, 18, 0.82)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', zIndex: 50, backdropFilter: 'blur(8px)' }} onClick={onClose}>
+      <style>{`
+        @keyframes mvIn { from { opacity: 0; transform: translateY(24px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        .mv-modal { animation: mvIn 0.28s ease both; }
+        .mv-modal::-webkit-scrollbar { width: 8px; }
+        .mv-modal::-webkit-scrollbar-thumb { background: rgba(0,212,255,0.2); border-radius: 8px; }
+      `}</style>
+      <div className="mv-modal" style={{ background: 'radial-gradient(circle at 85% 0%, rgba(0,212,255,0.1), transparent 42%), linear-gradient(160deg, rgba(15,23,41,0.97), rgba(6,11,24,0.96))', border: '1px solid rgba(0, 212, 255, 0.22)', borderRadius: '26px', padding: '2rem', maxWidth: '700px', width: '100%', maxHeight: '90vh', overflowY: 'auto', boxSizing: 'border-box', boxShadow: '0 30px 80px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.05)' }} onClick={e => e.stopPropagation()}>
         <h2 style={{ fontSize: '2rem', fontWeight: 900, marginBottom: '1rem' }}>🗳️ Vota i Giocatori</h2>
         <div style={{ fontSize: '0.9rem', color: 'rgba(255, 255, 255, 0.5)', marginBottom: '2rem' }}>Vota tutti i giocatori (anche te stesso) da 1 a 10.</div>
         <div style={{ display: 'grid', gap: '1rem', marginBottom: '2rem' }}>
