@@ -3,6 +3,7 @@ import { supabase } from '../supabase'
 import { calcolaVotoFinale, votoToPuntiForma, aggiornaOverall } from './calcoli'
 import { calcolaQuoteRisultato, calcolaQuoteMiglioreInCampo, calcolaQuoteCapocannoniere, verificaVincitaRisultato, verificaVincitaMiglioreInCampo, verificaVincitaCapocannoniere } from './scommesseCalcoli'
 import { generaImmagineRiepilogo } from './riepilogoCard'
+import { generaImmagineTOTW } from './totwCard'
 
 function Calendario({ currentUser }) {
   const [partite, setPartite] = useState([])
@@ -185,6 +186,9 @@ function Calendario({ currentUser }) {
           currentUser={currentUser}
         />
       )}
+
+      {/* TEAM OF THE WEEK */}
+      <TeamOfTheWeek partite={partite} giocatori={giocatoriAll} />
 
       {/* RIEPILOGO ADMIN CONVOCAZIONI — solo admin, solo partite da giocare */}
       {currentUser?.role === 'admin' && partite.some(p => p.stato === 'pre_partita') && (
@@ -1375,6 +1379,96 @@ function PartitaCard({ partita, currentUser, onVoteClick, onChiudiVoti, onScomme
         />
       )}
     </>
+  )
+}
+
+function TeamOfTheWeek({ partite, giocatori }) {
+  const [generando, setGenerando] = useState(false)
+
+  const seiGiorniFa = new Date()
+  seiGiorniFa.setDate(seiGiorniFa.getDate() - 7)
+
+  const partiteSettimana = partite.filter(p => p.stato === 'chiusa' && p.voti_calcolati?.length > 0 && new Date(p.data) >= seiGiorniFa)
+
+  const mediaPerGiocatore = {}
+  partiteSettimana.forEach(p => {
+    p.voti_calcolati.forEach(v => {
+      if (!mediaPerGiocatore[v.playerId]) mediaPerGiocatore[v.playerId] = { somma: 0, n: 0 }
+      mediaPerGiocatore[v.playerId].somma += v.votoFinale
+      mediaPerGiocatore[v.playerId].n += 1
+    })
+  })
+
+  const topPlayers = Object.entries(mediaPerGiocatore)
+    .map(([id, { somma, n }]) => {
+      const g = giocatori.find(x => String(x.id) === String(id))
+      if (!g) return null
+      return { id, nome: g.nome, ruolo: g.ruolo, fotoUrl: g.foto_url, media: somma / n, partiteCount: n }
+    })
+    .filter(Boolean)
+    .sort((a, b) => b.media - a.media)
+    .slice(0, 9)
+
+  if (topPlayers.length === 0) return null
+
+  async function condividiTOTW() {
+    if (generando) return
+    setGenerando(true)
+    try {
+      const blob = await generaImmagineTOTW(topPlayers, 'I migliori delle ultime partite')
+      const file = new File([blob], `fuciabol-totw-${Date.now()}.png`, { type: 'image/png' })
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({ files: [file], title: 'FUCIABOL — Team of the Week', text: 'Team of the Week FUCIABOL 🏆' })
+        } catch (shareErr) {
+          if (shareErr?.name !== 'AbortError') throw shareErr
+        }
+      } else {
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `fuciabol-totw-${Date.now()}.png`
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+        URL.revokeObjectURL(url)
+      }
+    } catch (e) {
+      alert('Impossibile generare il Team of the Week. Riprova.')
+    }
+    setGenerando(false)
+  }
+
+  return (
+    <div style={{ marginBottom: '2.5rem', borderRadius: '20px', overflow: 'hidden', border: '1px solid rgba(255,215,0,0.26)', background: 'linear-gradient(160deg, rgba(10,16,30,0.97), rgba(15,23,41,0.97))' }}>
+      <div style={{ padding: '1.1rem 1.4rem', borderBottom: '1px solid rgba(255,215,0,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.7rem' }}>
+          <div style={{ fontSize: '1.4rem' }}>🏆</div>
+          <div>
+            <div style={{ fontSize: '1.1rem', fontWeight: 950, color: '#ffd700', letterSpacing: '1px', textTransform: 'uppercase', lineHeight: 1 }}>Team of the Week</div>
+            <div style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.35)', marginTop: '3px' }}>I migliori delle ultime partite</div>
+          </div>
+        </div>
+        <button
+          onClick={condividiTOTW}
+          disabled={generando}
+          style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', background: 'linear-gradient(135deg, #ffd700, #ffa500)', border: 'none', borderRadius: '10px', padding: '0.55rem 1rem', color: '#0f1729', fontWeight: 850, fontSize: '0.78rem', cursor: generando ? 'default' : 'pointer', opacity: generando ? 0.65 : 1, fontFamily: 'inherit' }}
+        >
+          {generando ? '⏳ Generazione…' : '📸 Condividi'}
+        </button>
+      </div>
+      <div style={{ padding: '1.2rem 1rem', display: 'flex', gap: '0.65rem', overflowX: 'auto' }}>
+        {topPlayers.map((p, i) => (
+          <div key={p.id} style={{ flexShrink: 0, width: '76px', textAlign: 'center' }}>
+            <div style={{ width: '58px', height: '58px', borderRadius: '50%', margin: '0 auto 0.4rem', overflow: 'hidden', background: 'rgba(0,212,255,0.1)', border: `2px solid ${i === 0 ? 'rgba(255,215,0,0.6)' : 'rgba(0,212,255,0.3)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              {p.fotoUrl ? <img src={p.fotoUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top' }} /> : <span style={{ fontSize: '1.4rem' }}>👤</span>}
+            </div>
+            <div style={{ fontSize: '0.68rem', fontWeight: 800, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.nome.split(' ')[0]}</div>
+            <div style={{ fontSize: '0.74rem', fontWeight: 950, color: p.media >= 7 ? '#00ff88' : p.media >= 6 ? '#00d4ff' : '#ffd700', marginTop: '0.15rem' }}>{p.media.toFixed(1)}</div>
+          </div>
+        ))}
+      </div>
+    </div>
   )
 }
 
