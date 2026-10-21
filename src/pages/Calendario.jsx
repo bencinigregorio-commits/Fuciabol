@@ -4,6 +4,9 @@ import { calcolaVotoFinale, votoToPuntiForma, aggiornaOverall } from './calcoli'
 import { calcolaQuoteRisultato, calcolaQuoteMiglioreInCampo, calcolaQuoteCapocannoniere, verificaVincitaRisultato, verificaVincitaMiglioreInCampo, verificaVincitaCapocannoniere } from './scommesseCalcoli'
 import { generaImmagineRiepilogo } from './riepilogoCard'
 import { generaImmagineTOTW } from './totwCard'
+import FormazioniCampo from '../components/FormazioniCampo'
+import { caricaAspettoGiocatori, unisciAspetto } from './campionciniData'
+import { capienza, bilanciaPerOverall } from './formazioni'
 
 function Calendario({ currentUser }) {
   const [partite, setPartite] = useState([])
@@ -554,6 +557,7 @@ function PartitaCard({ partita, currentUser, onVoteClick, onChiudiVoti, onScomme
   const [slotSaving, setSlotSaving] = useState(false)
   const [allGiocatori, setAllGiocatori] = useState([])
   const [generandoRiepilogo, setGenerandoRiepilogo] = useState(false)
+  const [formazione, setFormazione] = useState(partita.formazione || {})
 
   useEffect(() => {
     caricaNomi()
@@ -573,8 +577,11 @@ function PartitaCard({ partita, currentUser, onVoteClick, onChiudiVoti, onScomme
   async function caricaNomi() {
     const ids = [...(partita.squadra_a || []), ...(partita.squadra_b || [])]
     if (ids.length === 0) { setGiocatori([]); return }
-    const { data } = await supabase.from('giocatori').select('id, nome, foto_url, overall, is_guest').in('id', ids)
-    if (data) setGiocatori(data)
+    const { data } = await supabase.from('giocatori').select('id, nome, ruolo, foto_url, overall, is_guest').in('id', ids)
+    if (data) {
+      const { data: appearance } = await caricaAspettoGiocatori()
+      setGiocatori(appearance ? unisciAspetto(data, appearance) : data)
+    }
   }
 
   async function caricaTuttiGiocatori() {
@@ -585,8 +592,11 @@ function PartitaCard({ partita, currentUser, onVoteClick, onChiudiVoti, onScomme
   async function aggiornaCacheNomi(nuovaA, nuovaB) {
     const ids = [...new Set([...nuovaA, ...nuovaB])]
     if (ids.length === 0) { setGiocatori([]); return }
-    const { data } = await supabase.from('giocatori').select('id, nome, foto_url, overall, is_guest').in('id', ids)
-    if (data) setGiocatori(data)
+    const { data } = await supabase.from('giocatori').select('id, nome, ruolo, foto_url, overall, is_guest').in('id', ids)
+    if (data) {
+      const { data: appearance } = await caricaAspettoGiocatori()
+      setGiocatori(appearance ? unisciAspetto(data, appearance) : data)
+    }
   }
 
   async function adminSalvaSquadre(nuovaA, nuovaB) {
@@ -610,11 +620,9 @@ function PartitaCard({ partita, currentUser, onVoteClick, onChiudiVoti, onScomme
     const conOvr = tuttiIds
       .map(id => ({ id, overall: gg?.find(g => String(g.id) === String(id))?.overall ?? 65 }))
       .sort((a, b) => b.overall - a.overall)
-    const A = [], B = []
-    let sumA = 0, sumB = 0
-    for (const p of conOvr) {
-      if (sumA <= sumB) { A.push(p.id); sumA += p.overall } else { B.push(p.id); sumB += p.overall }
-    }
+    const max = capienza(partita.formato)
+    if (conOvr.length > max * 2) { alert('Troppi iscritti per questo formato. Rimuovi gli iscritti in eccesso.'); setSlotSaving(false); return }
+    const { A, B } = bilanciaPerOverall(conOvr, max)
     await adminSalvaSquadre(A, B)
     setSlotSaving(false)
   }
@@ -680,6 +688,8 @@ function PartitaCard({ partita, currentUser, onVoteClick, onChiudiVoti, onScomme
     if (fetchErr) { alert('Errore: ' + fetchErr.message); setSlotSaving(false); return }
     let nuovaA = (fresca.squadra_a || []).filter(id => String(id) !== String(playerId))
     let nuovaB = (fresca.squadra_b || []).filter(id => String(id) !== String(playerId))
+    const max = capienza(partita.formato)
+    if ((squadra === 'A' ? nuovaA.length : nuovaB.length) >= max) { alert('Squadra piena'); setSlotSaving(false); return }
     if (squadra === 'A') nuovaA = [...nuovaA, playerId]
     else nuovaB = [...nuovaB, playerId]
     const { error } = await supabase.from('partite').update({ squadra_a: nuovaA, squadra_b: nuovaB }).eq('id', partita.id)
@@ -689,8 +699,11 @@ function PartitaCard({ partita, currentUser, onVoteClick, onChiudiVoti, onScomme
     // ricarica nomi per includere eventualmente se stesso
     const ids = [...new Set([...nuovaA, ...nuovaB])]
     if (ids.length > 0) {
-      const { data } = await supabase.from('giocatori').select('id, nome, foto_url, overall, is_guest').in('id', ids)
-      if (data) setGiocatori(data)
+      const { data } = await supabase.from('giocatori').select('id, nome, ruolo, foto_url, overall, is_guest').in('id', ids)
+      if (data) {
+      const { data: appearance } = await caricaAspettoGiocatori()
+      setGiocatori(appearance ? unisciAspetto(data, appearance) : data)
+    }
     }
     setSlotSaving(false)
   }
@@ -745,6 +758,12 @@ function PartitaCard({ partita, currentUser, onVoteClick, onChiudiVoti, onScomme
 
   const getNome = (id) => (giocatori.find(g => g.id === id)?.nome || `#${id}`).replace(/\s*\(.*?\)/g, '').trim()
   const getFoto = (id) => giocatori.find(g => g.id === id)?.foto_url || null
+
+  async function salvaFormazione(overrides) {
+    const { error } = await supabase.from('partite').update({ formazione: overrides }).eq('id', partita.id)
+    if (error) throw new Error('Disposizione non salvata. Verifica che la migrazione 0003 sia stata applicata su Supabase e riprova.')
+    setFormazione(overrides)
+  }
 
   function condividiWhatsApp() {
     const fmt = partita.formato ? ` (${partita.formato})` : ''
@@ -1261,6 +1280,7 @@ function PartitaCard({ partita, currentUser, onVoteClick, onChiudiVoti, onScomme
 
                 return (
                   <div style={{ marginTop: '1rem', paddingTop: '0.85rem', borderTop: '1px solid rgba(255,255,255,0.07)', display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+                    <FormazioniCampo partita={{ ...partita, squadra_a: squadraA, squadra_b: squadraB, formazione }} giocatori={giocatori} isAdmin={currentUser?.role === 'admin'} onSave={salvaFormazione} />
                     <button
                       onClick={condividiWhatsApp}
                       style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', width: '100%', padding: '0.7rem', borderRadius: '12px', border: '1px solid rgba(37,211,102,0.35)', background: 'rgba(37,211,102,0.1)', color: '#25d366', fontWeight: 850, fontSize: '0.82rem', letterSpacing: '0.3px', cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.18s ease' }}

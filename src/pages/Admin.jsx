@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../supabase'
+import CampionciniAdmin from './CampionciniAdmin'
 
 function Admin() {
+  const [section, setSection] = useState('giocatori')
   const [partite, setPartite] = useState([])
   const [giocatori, setGiocatori] = useState([])
   const [uploadingId, setUploadingId] = useState(null)
@@ -153,6 +155,11 @@ function Admin() {
       </div>
       <div style={{ height: '1px', background: 'linear-gradient(90deg, rgba(0,212,255,0.55), rgba(0,212,255,0.1), transparent)', margin: '1.1rem 0 1.75rem' }} />
 
+      <nav aria-label="Sezioni amministrazione" style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 24 }}>
+        {[['giocatori', 'Giocatori'], ['campioncini', 'Campioncini'], ['partite', 'Partite'], ['impostazioni', 'Impostazioni']].map(([key, label]) => <button key={key} onClick={() => setSection(key)} aria-pressed={section === key} style={{ padding: '12px 16px', minHeight: 44, borderRadius: 12, border: '1px solid #00d4ff40', background: section === key ? '#00d4ff' : '#00d4ff10', color: section === key ? '#071322' : '#cbd5e1', font: '700 14px system-ui', cursor: 'pointer' }}>{label}</button>)}
+      </nav>
+      {section === 'campioncini' && <CampionciniAdmin giocatori={giocatori} />}
+      {section === 'giocatori' && <>
       {/* GESTIONE GIOCATORI */}
       <div style={{ background: 'rgba(15, 23, 41, 0.6)', border: '1px solid rgba(0, 212, 255, 0.2)', borderRadius: '15px', padding: '1.5rem', marginBottom: '2rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
@@ -224,6 +231,8 @@ function Admin() {
         </div>
       </div>
 
+      </>}
+      {section === 'impostazioni' && <>
       {/* Zona Pericolosa */}
       <div style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '15px', padding: '1.5rem', marginBottom: '2rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
@@ -236,6 +245,8 @@ function Admin() {
         </button>
       </div>
 
+      </>}
+      {section === 'partite' && <>
       {/* Gestione Partite */}
       <div style={{ background: 'rgba(15, 23, 41, 0.6)', border: '1px solid rgba(255, 255, 255, 0.05)', borderRadius: '15px', padding: '1.5rem' }}>
         <h2 style={{ fontSize: '1.3rem', fontWeight: 700, marginBottom: '1rem' }}>Gestione Partite ({partite.length})</h2>
@@ -280,6 +291,7 @@ function Admin() {
         )}
       </div>
 
+      </>}
       {showNuovoGiocatore && <ModalGiocatore onClose={() => setShowNuovoGiocatore(false)} onSaved={() => { setShowNuovoGiocatore(false); caricaDati() }} />}
       {editingGiocatore && <ModalGiocatore giocatore={editingGiocatore} onClose={() => setEditingGiocatore(null)} onSaved={() => { setEditingGiocatore(null); caricaDati() }} />}
     </div>
