@@ -1,0 +1,1 @@
+export const buttonStyle = { padding: '0.7rem 1rem', minHeight: 44, borderRadius: 12, border: '1px solid #00d4ff55', background: '#00d4ff15', color: '#b9f3ff', font: '700 0.85rem system-ui', cursor: 'pointer' }
